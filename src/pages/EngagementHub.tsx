@@ -16,17 +16,78 @@ const engagementData = {
   budget: { total: 800000, used: 650000 },
 }
 
-const opinionProfiles = [
-  { id: 'OP001', name: 'Standard Unqualified', nameCn: '标准无保留意见', status: 'active', lastViewed: '2025-01-25', progress: 85 },
-  { id: 'OP002', name: 'Emphasis of Matter', nameCn: '强调事项段', status: 'draft', lastViewed: '2025-01-20', progress: 45 },
-  { id: 'OP003', name: 'Qualified - Scope', nameCn: '保留意见（范围受限）', status: 'pending', lastViewed: '2025-01-18', progress: 20 },
+interface KCwFile {
+  id: string
+  name: string
+  nameCn: string
+  status: string
+  lastViewed: string
+  type: string
+  workbookOpinionName: string
+  lastYearSerialNumber: string
+  currentYearAapId: string
+  opinionProfileIds: string[]
+}
+
+interface OpinionProfile {
+  id: string
+  name: string
+  nameCn: string
+  status: string
+  lastViewed: string
+  progress: number
+  entityNameEn: string
+  entityNameCn: string
+  opinionType: string
+  kcwFileIds: string[]
+}
+
+const opinionProfiles: OpinionProfile[] = [
+  {
+    id: 'OP001', name: 'Standard Unqualified', nameCn: '标准无保留意见', status: 'active',
+    lastViewed: '2025-01-25', progress: 85,
+    entityNameEn: 'Test 0323 | Test 0323', entityNameCn: '测试0323',
+    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC002']
+  },
+  {
+    id: 'OP002', name: 'Emphasis of Matter', nameCn: '强调事项段', status: 'draft',
+    lastViewed: '2025-01-20', progress: 45,
+    entityNameEn: '无 | 专项报告 test', entityNameCn: '专项报告测试',
+    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC003']
+  },
+  {
+    id: 'OP003', name: 'Qualified - Scope', nameCn: '保留意见（范围受限）', status: 'pending',
+    lastViewed: '2025-01-18', progress: 20,
+    entityNameEn: '无 | 验资报告 Test', entityNameCn: '验资报告测试',
+    opinionType: 'Others', kcwFileIds: ['KC001']
+  },
 ]
 
-const kcwFiles = [
-  { id: 'KC001', name: 'Audit Planning Memo', nameCn: '审计计划备忘录', status: 'completed', lastViewed: '2025-01-24', type: 'Planning' },
-  { id: 'KC002', name: 'Risk Assessment Doc', nameCn: '风险评估文档', status: 'in-progress', lastViewed: '2025-01-22', type: 'Risk' },
-  { id: 'KC003', name: 'Fraud Risk Analysis', nameCn: '舞弊风险分析', status: 'pending', lastViewed: '2025-01-15', type: 'Fraud' },
-  { id: 'KC004', name: 'ITGC Testing Results', nameCn: 'IT一般控制测试结果', status: 'completed', lastViewed: '2025-01-20', type: 'ITGC' },
+const kcwFiles: KCwFile[] = [
+  {
+    id: 'KC001', name: '241231_Stat_RF_sample2_FSA_ISA_single', nameCn: '241231_统计_RF_样本2_FSA_ISA_单一',
+    status: 'completed', lastViewed: '2025-01-24', type: 'Planning',
+    workbookOpinionName: '241231_Stat_RF_sample2_FSA_ISA_single',
+    lastYearSerialNumber: 'Dummy Firm Cert No.2600020 / R0000012667(06)',
+    currentYearAapId: 'R000001267106',
+    opinionProfileIds: ['OP001', 'OP002', 'OP003']
+  },
+  {
+    id: 'KC002', name: '241231_Stat_RF_sample2_FSA_ISA_single', nameCn: '241231_统计_RF_样本2_FSA_ISA_单一',
+    status: 'in-progress', lastViewed: '2025-01-22', type: 'Risk',
+    workbookOpinionName: '241231_Stat_RF_sample2_FSA_ISA_single',
+    lastYearSerialNumber: 'Dummy Firm Cert No.2600093 / R000001267076(06)',
+    currentYearAapId: 'R000001258885',
+    opinionProfileIds: ['OP001']
+  },
+  {
+    id: 'KC003', name: '241231_Stat_RF_sample2_FSA_ISA_single', nameCn: '241231_统计_RF_样本2_FSA_ISA_单一',
+    status: 'pending', lastViewed: '2025-01-15', type: 'Fraud',
+    workbookOpinionName: '241231_Stat_RF_sample2_FSA_ISA_single',
+    lastYearSerialNumber: 'Dummy Firm Cert No.2600104 / R000001267079(06)',
+    currentYearAapId: 'R000001258895',
+    opinionProfileIds: ['OP002']
+  },
 ]
 
 function EngagementHub() {
@@ -42,23 +103,49 @@ function EngagementHub() {
   const budgetPct = Math.round((engagementData.budget.used / engagementData.budget.total) * 100)
   const budgetOver = budgetPct > 100
 
-  const currentData = dataType === 'opinion' ? opinionProfiles : kcwFiles
+  const getKcwFilesForOpinion = (op: OpinionProfile) => {
+    return kcwFiles.filter(kf => op.kcwFileIds.includes(kf.id))
+  }
 
-  const filteredData = currentData.filter(item => {
-    const name = lang === 'zh' ? (item as any).nameCn : item.name
+  const getOpinionProfilesForKcw = (kf: KCwFile) => {
+    return opinionProfiles.filter(op => kf.opinionProfileIds.includes(op.id))
+  }
+
+  const filteredOpinions = opinionProfiles.filter(op => {
+    const name = lang === 'zh' ? op.nameCn : op.name
     return name.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
-  const sortedData = [...filteredData].sort((a, b) => {
+  const filteredKcwFiles = kcwFiles.filter(kf => {
+    const name = lang === 'zh' ? kf.nameCn : kf.name
+    return name.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
+  const sortedOpinions = [...filteredOpinions].sort((a, b) => {
     if (sortBy === 'lastViewed') {
       return new Date(b.lastViewed).getTime() - new Date(a.lastViewed).getTime()
     }
-    const nameA = lang === 'zh' ? (a as any).nameCn : a.name
-    const nameB = lang === 'zh' ? (b as any).nameCn : b.name
+    const nameA = lang === 'zh' ? a.nameCn : a.name
+    const nameB = lang === 'zh' ? b.nameCn : b.name
     if (sortBy === 'az') return nameA.localeCompare(nameB)
     if (sortBy === 'za') return nameB.localeCompare(nameA)
     return 0
   })
+
+  const sortedKcwFiles = [...filteredKcwFiles].sort((a, b) => {
+    if (sortBy === 'lastViewed') {
+      return new Date(b.lastViewed).getTime() - new Date(a.lastViewed).getTime()
+    }
+    const nameA = lang === 'zh' ? a.nameCn : a.name
+    const nameB = lang === 'zh' ? b.nameCn : b.name
+    if (sortBy === 'az') return nameA.localeCompare(nameB)
+    if (sortBy === 'za') return nameB.localeCompare(nameA)
+    return 0
+  })
+
+  const handleOpinionClick = (opinionId: string) => {
+    navigate(`/opinion/${clientId}/${engagementId}/${opinionId}`)
+  }
 
   return (
     <div className="engagement-hub animate-fade-in">
@@ -165,36 +252,131 @@ function EngagementHub() {
           </div>
         </div>
 
-        <div className={`opinion-kcw-content ${viewMode}`}>
-          {sortedData.map(item => (
-            <div key={item.id} className={`ok-item ${viewMode}`}>
-              <div className="ok-icon">
-                {dataType === 'opinion' ? (
+        {/* Tile + Opinion Profile */}
+        {viewMode === 'tile' && dataType === 'opinion' && (
+          <div className="opinion-kcw-content tile">
+            {sortedOpinions.map(op => (
+              <div key={op.id} className="ok-item tile" onClick={() => handleOpinionClick(op.id)}>
+                <div className="ok-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                   </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                  </svg>
-                )}
-              </div>
-              <div className="ok-info">
-                <h4>{lang === 'zh' ? (item as any).nameCn : item.name}</h4>
-                <div className="ok-meta">
-                  <span className={`ok-status ${item.status}`}>{item.status}</span>
-                  <span className="ok-date">{t('lastViewed')}: {item.lastViewed}</span>
-                  {'progress' in item && (
+                </div>
+                <div className="ok-info">
+                  <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
+                  <div className="ok-meta">
+                    <span className={`ok-status ${op.status}`}>{op.status}</span>
+                    <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
                     <div className="ok-progress-bar">
-                      <div className="ok-progress-fill" style={{ width: `${item.progress}%` }} />
+                      <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
                     </div>
-                  )}
-                  {'type' in item && <span className="ok-type">{(item as any).type}</span>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tile + KCw File */}
+        {viewMode === 'tile' && dataType === 'kcw' && (
+          <div className="opinion-kcw-content tile">
+            {sortedKcwFiles.map(kf => {
+              const relatedOps = getOpinionProfilesForKcw(kf)
+              return (
+                <div key={kf.id} className="ok-item tile kcw-tile">
+                  <div className="ok-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </svg>
+                  </div>
+                  <div className="ok-info">
+                    <h4>{kf.name}</h4>
+                    <div className="ok-meta">
+                      <span className={`ok-status ${kf.status}`}>{kf.status}</span>
+                      <span className="ok-date">{t('lastViewed')}: {kf.lastViewed}</span>
+                    </div>
+                    <div className="ok-related">
+                      <span className="ok-related-label">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</span>
+                      <div className="ok-related-tags">
+                        {relatedOps.map(op => (
+                          <span key={op.id} className="ok-related-tag" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                            {lang === 'zh' ? op.nameCn : op.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* List + Opinion Profile */}
+        {viewMode === 'list' && dataType === 'opinion' && (
+          <div className="opinion-kcw-content list">
+            {sortedOpinions.map(op => {
+              const relatedKcw = getKcwFilesForOpinion(op)
+              return (
+                <div key={op.id} className="ok-item list" onClick={() => handleOpinionClick(op.id)}>
+                  <div className="ok-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                  </div>
+                  <div className="ok-info">
+                    <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
+                    <div className="ok-meta">
+                      <span className={`ok-status ${op.status}`}>{op.status}</span>
+                      <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
+                      <div className="ok-progress-bar">
+                        <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="ok-list-extra">
+                    <span className="ok-extra-type">{op.opinionType}</span>
+                    <span className="ok-extra-count">{relatedKcw.length} KCw</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* List + KCw File */}
+        {viewMode === 'list' && dataType === 'kcw' && (
+          <div className="opinion-kcw-content list">
+            {sortedKcwFiles.map(kf => {
+              const relatedOps = getOpinionProfilesForKcw(kf)
+              return (
+                <div key={kf.id} className="ok-item list kcw-list">
+                  <div className="ok-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </svg>
+                  </div>
+                  <div className="ok-info">
+                    <h4>{kf.name}</h4>
+                    <div className="ok-meta">
+                      <span className={`ok-status ${kf.status}`}>{kf.status}</span>
+                      <span className="ok-date">{t('lastViewed')}: {kf.lastViewed}</span>
+                    </div>
+                  </div>
+                  <div className="ok-list-extra">
+                    <div className="ok-related-tags horizontal">
+                      {relatedOps.map(op => (
+                        <span key={op.id} className="ok-related-tag" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                          {lang === 'zh' ? op.nameCn : op.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* 功能模块 Tab 切换 */}
