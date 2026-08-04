@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import './EngagementHub.css'
 
@@ -99,6 +99,29 @@ function EngagementHub() {
   const [sortBy, setSortBy] = useState('lastViewed')
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile')
   const [dataType, setDataType] = useState<'opinion' | 'kcw'>('opinion')
+  const [expandedOpinionRows, setExpandedOpinionRows] = useState<Set<string>>(new Set())
+
+  // Default expand first row on mount (only for opinion list view)
+  useEffect(() => {
+    if (dataType === 'opinion' && sortedOpinions.length > 0) {
+      setExpandedOpinionRows(new Set([sortedOpinions[0].id]))
+    }
+  }, [dataType])
+
+  const toggleOpinionRow = (id: string) => {
+    const next = new Set(expandedOpinionRows)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setExpandedOpinionRows(next)
+  }
+
+  const expandAllRows = () => {
+    setExpandedOpinionRows(new Set(sortedOpinions.map(op => op.id)))
+  }
+
+  const collapseAllRows = () => {
+    setExpandedOpinionRows(new Set())
+  }
 
   const budgetPct = Math.round((engagementData.budget.used / engagementData.budget.total) * 100)
   const budgetOver = budgetPct > 100
@@ -231,6 +254,11 @@ function EngagementHub() {
                 <option value="za">{t('sortZA')}</option>
               </select>
             </div>
+            {viewMode === 'list' && dataType === 'opinion' && (
+              <button className="expand-all-btn" onClick={expandedOpinionRows.size === sortedOpinions.length ? collapseAllRows : expandAllRows}>
+                {expandedOpinionRows.size === sortedOpinions.length ? (lang === 'zh' ? '折叠全部' : 'Collapse All') : (lang === 'zh' ? '展开全部' : 'Expand All')}
+              </button>
+            )}
           </div>
           <div className="toolbar-right">
             <div className="view-toggle">
@@ -255,25 +283,44 @@ function EngagementHub() {
         {/* Tile + Opinion Profile */}
         {viewMode === 'tile' && dataType === 'opinion' && (
           <div className="opinion-kcw-content tile">
-            {sortedOpinions.map(op => (
-              <div key={op.id} className="ok-item tile" onClick={() => handleOpinionClick(op.id)}>
-                <div className="ok-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                  </svg>
-                </div>
-                <div className="ok-info">
-                  <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
-                  <div className="ok-meta">
-                    <span className={`ok-status ${op.status}`}>{op.status}</span>
-                    <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
-                    <div className="ok-progress-bar">
-                      <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
+            {sortedOpinions.map(op => {
+              const relatedKcw = getKcwFilesForOpinion(op)
+              return (
+                <div key={op.id} className="ok-item tile" onClick={() => handleOpinionClick(op.id)}>
+                  <div className="ok-icon opinion-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <path d="M9 14l2 2 4-4"/>
+                      <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
+                    </svg>
+                  </div>
+                  <div className="ok-info">
+                    <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
+                    <div className="ok-meta">
+                      <span className={`ok-status ${op.status}`}>{op.status}</span>
+                      <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
+                      <div className="ok-progress-bar">
+                        <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="ok-related">
+                    <span className="ok-related-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</span>
+                    <div className="ok-related-tags">
+                      {relatedKcw.map(kf => (
+                        <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                          </svg>
+                          {kf.name}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
@@ -284,13 +331,15 @@ function EngagementHub() {
               const relatedOps = getOpinionProfilesForKcw(kf)
               return (
                 <div key={kf.id} className="ok-item tile kcw-tile">
-                  <div className="ok-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  <div className="ok-icon kcw-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                      <line x1="12" y1="11" x2="12" y2="17"/>
+                      <line x1="9" y1="14" x2="15" y2="14"/>
                     </svg>
                   </div>
                   <div className="ok-info">
-                    <h4>{kf.name}</h4>
+                    <h4 className="kcw-name" title={kf.name}>{kf.name}</h4>
                     <div className="ok-meta">
                       <span className={`ok-status ${kf.status}`}>{kf.status}</span>
                       <span className="ok-date">{t('lastViewed')}: {kf.lastViewed}</span>
@@ -299,7 +348,10 @@ function EngagementHub() {
                       <span className="ok-related-label">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</span>
                       <div className="ok-related-tags">
                         {relatedOps.map(op => (
-                          <span key={op.id} className="ok-related-tag" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                          <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                            </svg>
                             {lang === 'zh' ? op.nameCn : op.name}
                           </span>
                         ))}
@@ -317,27 +369,53 @@ function EngagementHub() {
           <div className="opinion-kcw-content list">
             {sortedOpinions.map(op => {
               const relatedKcw = getKcwFilesForOpinion(op)
+              const isExpanded = expandedOpinionRows.has(op.id)
               return (
-                <div key={op.id} className="ok-item list" onClick={() => handleOpinionClick(op.id)}>
-                  <div className="ok-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                  </div>
-                  <div className="ok-info">
-                    <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
-                    <div className="ok-meta">
-                      <span className={`ok-status ${op.status}`}>{op.status}</span>
-                      <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
-                      <div className="ok-progress-bar">
-                        <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
+                <div key={op.id} className="ok-list-wrapper">
+                  <div className="ok-item list" onClick={() => toggleOpinionRow(op.id)}>
+                    <button className="ok-expand-btn-inline">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                        <path d="m9 18 6-6-6-6"/>
+                      </svg>
+                    </button>
+                    <div className="ok-icon opinion-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <path d="M9 14l2 2 4-4"/>
+                        <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
+                      </svg>
+                    </div>
+                    <div className="ok-info">
+                      <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
+                      <div className="ok-meta">
+                        <span className={`ok-status ${op.status}`}>{op.status}</span>
+                        <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
+                        <div className="ok-progress-bar">
+                          <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
+                        </div>
                       </div>
                     </div>
+                    <div className="ok-list-extra">
+                      <span className="ok-extra-type">{op.opinionType}</span>
+                      <span className="ok-extra-count">{relatedKcw.length} KCw</span>
+                    </div>
                   </div>
-                  <div className="ok-list-extra">
-                    <span className="ok-extra-type">{op.opinionType}</span>
-                    <span className="ok-extra-count">{relatedKcw.length} KCw</span>
-                  </div>
+                  {isExpanded && (
+                    <div className="ok-list-expand animate-fade-in">
+                      <div className="ok-expand-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</div>
+                      <div className="ok-expand-tags">
+                        {relatedKcw.map(kf => (
+                          <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                            </svg>
+                            {kf.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -351,22 +429,28 @@ function EngagementHub() {
               const relatedOps = getOpinionProfilesForKcw(kf)
               return (
                 <div key={kf.id} className="ok-item list kcw-list">
-                  <div className="ok-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  <div className="ok-icon kcw-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                      <line x1="12" y1="11" x2="12" y2="17"/>
+                      <line x1="9" y1="14" x2="15" y2="14"/>
                     </svg>
                   </div>
                   <div className="ok-info">
-                    <h4>{kf.name}</h4>
+                    <h4 className="kcw-name" title={kf.name}>{kf.name}</h4>
                     <div className="ok-meta">
                       <span className={`ok-status ${kf.status}`}>{kf.status}</span>
                       <span className="ok-date">{t('lastViewed')}: {kf.lastViewed}</span>
                     </div>
                   </div>
                   <div className="ok-list-extra">
+                    <span className="ok-extra-label">{lang === 'zh' ? '关联 Opinion Profiles' : 'Linked Opinion Profiles'}:</span>
                     <div className="ok-related-tags horizontal">
                       {relatedOps.map(op => (
-                        <span key={op.id} className="ok-related-tag" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                        <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                          </svg>
                           {lang === 'zh' ? op.nameCn : op.name}
                         </span>
                       ))}
@@ -385,23 +469,6 @@ function EngagementHub() {
           <button className="modules-tab active">{t('engagementModules')}</button>
         </div>
         <div className="modules-tabs-content">
-          <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/procedures`)}>
-            <div className="module-icon-bg blue">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-              </svg>
-            </div>
-            <div className="module-content">
-              <h3>{t('moduleAuditProcedures')}</h3>
-              <p>{lang === 'zh' ? '审计程序执行中心，包含Vouching、JE Testing、Credit Review等核心审计程序' : 'Audit procedure execution center, including Vouching, JE Testing, Credit Review and other core audit procedures'}</p>
-            </div>
-            <div className="module-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </div>
-          </div>
-
           <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/workpapers`)}>
             <div className="module-icon-bg amber">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -428,6 +495,23 @@ function EngagementHub() {
             <div className="module-content">
               <h3>{lang === 'zh' ? '数据处理工程师' : 'Data Processing Engineer'}</h3>
               <p>{lang === 'zh' ? '财务数据采集、清洗、转换与分析处理中心，支持多数据源接入' : 'Financial data collection, cleaning, transformation and analysis center, supporting multi-source data access'}</p>
+            </div>
+            <div className="module-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </div>
+          </div>
+
+          <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/procedures`)}>
+            <div className="module-icon-bg blue">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <div className="module-content">
+              <h3>{t('moduleAuditProcedures')}</h3>
+              <p>{lang === 'zh' ? '审计程序执行中心，包含Vouching、JE Testing、Credit Review等核心审计程序' : 'Audit procedure execution center, including Vouching, JE Testing, Credit Review and other core audit procedures'}</p>
             </div>
             <div className="module-arrow">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
