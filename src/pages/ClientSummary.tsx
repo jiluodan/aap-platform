@@ -302,7 +302,7 @@ function ClientSummary() {
                 <div className="engagements-section animate-fade-in">
                   <div className="engagements-header">
                     <h4>{t('engagementCodes')}</h4>
-                    <span className="engagements-count">{t('projectsCount', { count: client.armsProfiles.length })}</span>
+                    <span className="engagements-count">{lang === 'zh' ? '项目' : 'Engagement'}</span>
                   </div>
                   <div className="engagements-grid">
                     {client.armsProfiles.map((profile, pi) => (
