@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import './Sidebar.css'
@@ -7,7 +7,7 @@ interface NavItem {
   id: string
   label: string
   labelEn: string
-  icon: React.ReactNode
+  icon: ReactNode
   path: string
   children?: { id: string; label: string; labelZh: string; path: string }[]
 }

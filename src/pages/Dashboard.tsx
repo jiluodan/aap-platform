@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import './Dashboard.css'
 
 type ReportType = 'engagement' | 'management'
@@ -8,7 +8,7 @@ interface MetricCard {
   value: string
   change: string
   changeType: 'positive' | 'negative' | 'neutral'
-  icon: React.ReactNode
+  icon: ReactNode
   color: string
 }
 

@@ -139,7 +139,7 @@ function Support() {
     closed: mockEnquiries.filter(e => e.status === 'closed').length,
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     alert(`Enquiry submitted: ${formData.title}`)
     setFormData({ title: '', type: 'technical', priority: 'medium', description: '' })
