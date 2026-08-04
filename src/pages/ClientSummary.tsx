@@ -136,11 +136,6 @@ function ClientSummary() {
   const navigate = useNavigate()
   const { lang, t } = useLanguage()
   const [expandedClient, setExpandedClient] = useState<string | null>('1')
-  const [filter, setFilter] = useState('all')
-
-  const filteredClients = filter === 'all'
-    ? clients
-    : clients.filter(c => c.armsProfiles.some(e => e.status === filter))
 
   const toggleExpand = (id: string) => {
     setExpandedClient(expandedClient === id ? null : id)
@@ -214,7 +209,7 @@ function ClientSummary() {
 
       {/* Client Cards List */}
       <div className="clients-list">
-        {filteredClients.map((client, index) => {
+        {clients.map((client, index) => {
           const summary = getClientSummary(client)
           return (
             <div

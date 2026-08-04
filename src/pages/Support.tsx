@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import './Support.css'
 
 type EnquiryType = 'technical' | 'data' | 'access' | 'training' | 'other'

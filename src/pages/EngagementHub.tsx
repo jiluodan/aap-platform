@@ -3,17 +3,6 @@ import { useState } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import './EngagementHub.css'
 
-const phases = [
-  { id: 'planning', number: 1, title: '审计计划', titleEn: 'Planning', icon: '📐', status: 'completed' as const },
-  { id: 'risk-assessment', number: 2, title: '风险评估', titleEn: 'Risk Assessment', icon: '🔍', status: 'completed' as const },
-  { id: 'data-collection', number: 3, title: '数据采集', titleEn: 'Data Collection', icon: '📥', status: 'active' as const },
-  { id: 'business-process', number: 4, title: '业务流程', titleEn: 'Business Process', icon: '⚙️', status: 'active' as const },
-  { id: 'audit-procedures', number: 5, title: '审计程序', titleEn: 'Audit Procedures', icon: '🔧', status: 'pending' as const },
-  { id: 'evidence', number: 6, title: '审计证据', titleEn: 'Evidence', icon: '📋', status: 'pending' as const },
-  { id: 'adjustments', number: 7, title: '调整分录', titleEn: 'Adjustments', icon: '⚖️', status: 'pending' as const },
-  { id: 'reporting', number: 8, title: '报告出具', titleEn: 'Reporting', icon: '📄', status: 'pending' as const },
-]
-
 const engagementData = {
   clientName: 'Aurora Robotics Systems Inc.',
   engagementCode: 'DEMO-ROBOT-2025',
@@ -221,7 +210,7 @@ function EngagementHub() {
               </svg>
             </div>
             <div className="module-content">
-              <h3>{t('auditProcedures')}</h3>
+              <h3>{t('moduleAuditProcedures')}</h3>
               <p>{lang === 'zh' ? '审计程序执行中心，包含Vouching、JE Testing、Credit Review等核心审计程序' : 'Audit procedure execution center, including Vouching, JE Testing, Credit Review and other core audit procedures'}</p>
             </div>
             <div className="module-arrow">
