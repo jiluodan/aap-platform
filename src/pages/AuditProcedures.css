@@ -1,0 +1,299 @@
+.audit-procedures {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.proc-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.breadcrumb-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.breadcrumb-back:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}
+
+.breadcrumb-sep {
+  color: var(--border);
+  font-size: 13px;
+}
+
+.breadcrumb-current {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* 页面头部 */
+.proc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.proc-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.proc-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.proc-filters {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-card);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+}
+
+.proc-filters button {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.proc-filters button.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 统计 */
+.proc-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.proc-stat {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+  min-width: 100px;
+}
+
+.proc-stat-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.proc-stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* 程序卡片 */
+.procedures-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.procedure-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid transparent;
+  transition: all var(--transition-base);
+  animation: fadeInScale 0.35s ease-out both;
+}
+
+.procedure-card.risk-high {
+  border-left-color: var(--danger);
+}
+
+.procedure-card.risk-medium {
+  border-left-color: var(--warning);
+}
+
+.procedure-card.risk-low {
+  border-left-color: var(--success);
+}
+
+.proc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.proc-code {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: #EBF4FF;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.proc-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.proc-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.proc-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.proc-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.proc-category {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.proc-risk {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-body);
+}
+
+.proc-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-light);
+  margin-bottom: 14px;
+}
+
+.proc-assignee {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.assignee-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.proc-wp-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.proc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.proc-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg-body);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  border: none;
+  cursor: pointer;
+}
+
+.proc-btn:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
+}
+
+.proc-btn.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.proc-btn.primary:hover {
+  background: var(--primary-light);
+}
+
+@media (max-width: 1200px) {
+  .procedures-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .procedures-grid {
+    grid-template-columns: 1fr;
+  }
+  .proc-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .proc-stats {
+    flex-wrap: wrap;
+  }
+}

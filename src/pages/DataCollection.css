@@ -1,0 +1,256 @@
+.data-collection {
+  padding: 24px;
+}
+
+.collection-header {
+  margin-bottom: 24px;
+}
+
+/* 上传区域 */
+.upload-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.upload-zone {
+  background: var(--bg-white);
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  border: 2px dashed var(--border-color);
+  transition: var(--transition);
+}
+
+.upload-zone:hover {
+  border-color: var(--primary-light);
+  background: #f7fafc;
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.upload-zone h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.upload-zone p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.upload-btn {
+  padding: 10px 28px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: var(--primary-light);
+}
+
+.upload-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.upload-progress {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.upload-tips {
+  background: var(--bg-white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.upload-tips h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.upload-tips ul {
+  list-style: none;
+}
+
+.upload-tips li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  padding-left: 16px;
+  position: relative;
+}
+
+.upload-tips li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+/* 数据源 */
+.data-sources {
+  margin-bottom: 24px;
+}
+
+.sources-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.source-card {
+  background: var(--bg-white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  border-left: 3px solid var(--border-color);
+}
+
+.source-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.source-card.connected {
+  border-left-color: var(--success-color);
+}
+
+.source-card.syncing {
+  border-left-color: var(--warning-color);
+}
+
+.source-card.disconnected {
+  border-left-color: var(--danger-color);
+}
+
+.source-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.source-icon {
+  font-size: 24px;
+}
+
+.source-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.source-status.connected {
+  background: #f0fff4;
+  color: var(--success-color);
+}
+
+.source-status.syncing {
+  background: #fffaf0;
+  color: var(--warning-color);
+}
+
+.source-status.disconnected {
+  background: #fff5f5;
+  color: var(--danger-color);
+}
+
+.source-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.source-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.meta-label {
+  color: var(--text-muted);
+}
+
+.meta-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.source-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.source-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.source-btn:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.source-btn.primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.source-btn.primary:hover {
+  background: var(--primary-light);
+}
+
+@media (max-width: 1200px) {
+  .upload-section {
+    grid-template-columns: 1fr;
+  }
+  .sources-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .sources-grid {
+    grid-template-columns: 1fr;
+  }
+}
