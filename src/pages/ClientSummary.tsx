@@ -38,15 +38,15 @@ interface Client {
 const clients: Client[] = [
   {
     id: '1',
-    name: 'Aurora Robotics Systems Inc.',
-    nameEn: 'Aurora Robotics Systems Inc. (Fictitious Demo Co.)',
+    name: 'Aurora Robotics Systems Group.',
+    nameEn: 'Aurora Robotics Aurora Robotics Systems Group. 1001452765',
     industry: '工业机器人与智能制造系统集成',
     gaap: '中国企业会计准则',
     market: 'Pre-IPO Growth Company',
     kycRiskLevel: 'red',
     armsProfiles: [
       {
-        id: 'e1', code: 'DEMO-ROBOT-2025', name: '2025年度财务报表审计',
+        id: 'e1', code: 'DEMO-ROBOT-2025', name: '2025 Aurora Robotics SH annual audit_1668465',
         period: '2025.01-2025.12', status: 'active', progress: 68, riskLevel: 'high',
         lifecyclePhase: '执行阶段', lifecyclePhaseEn: 'Execution',
         pbcStatus: 'pending', workPaperCount: 156, procedureCount: 42,
@@ -55,7 +55,7 @@ const clients: Client[] = [
         budgetOverrun: true,
       },
       {
-        id: 'e2', code: 'DEMO-ROBOT-IPO', name: 'IPO审计',
+        id: 'e2', code: 'DEMO-ROBOT-IPO', name: '2025 Aurora Robotics BJ annual audit_1659011',
         period: '2024.01-2025.12', status: 'active', progress: 35, riskLevel: 'high',
         lifecyclePhase: '计划阶段', lifecyclePhaseEn: 'Planning',
         pbcStatus: 'overdue', workPaperCount: 89, procedureCount: 28,
@@ -64,7 +64,7 @@ const clients: Client[] = [
         budgetOverrun: false,
       },
       {
-        id: 'e3', code: 'DEMO-ROBOT-IC', name: '内部控制审计',
+        id: 'e3', code: 'DEMO-ROBOT-IC', name: '2025 Aurora Robotics HK annual audit_1605824',
         period: '2025.01-2025.12', status: 'planning', progress: 10, riskLevel: 'medium',
         lifecyclePhase: '风险评估', lifecyclePhaseEn: 'Risk Assessment',
         pbcStatus: 'complete', workPaperCount: 12, procedureCount: 8,
@@ -76,15 +76,15 @@ const clients: Client[] = [
   },
   {
     id: '2',
-    name: 'Stellar Pharma Group',
-    nameEn: 'Stellar Pharma Group Limited',
+    name: 'Stellar Pharma Inc.',
+    nameEn: 'Stellar Pharma Inc.',
     industry: '生物医药研发与制造',
     gaap: '中国企业会计准则',
     market: '科创板上市公司',
     kycRiskLevel: 'yellow',
     armsProfiles: [
       {
-        id: 'e4', code: 'STELLAR-2025', name: '2025年度财务报表审计',
+        id: 'e4', code: 'STELLAR-2025', name: '2025 Stellar Pharma annual audit_1668779',
         period: '2025.01-2025.12', status: 'active', progress: 45, riskLevel: 'medium',
         lifecyclePhase: '执行阶段', lifecyclePhaseEn: 'Execution',
         pbcStatus: 'complete', workPaperCount: 134, procedureCount: 38,
@@ -97,14 +97,14 @@ const clients: Client[] = [
   {
     id: '3',
     name: 'Nova Energy Holdings',
-    nameEn: 'Nova Energy Holdings Co., Ltd.',
+    nameEn: 'Nova Energy Holdings',
     industry: '新能源发电与储能',
     gaap: '中国企业会计准则',
     market: '主板上市公司',
     kycRiskLevel: 'green',
     armsProfiles: [
       {
-        id: 'e5', code: 'NOVA-2025', name: '2025年度财务报表审计',
+        id: 'e5', code: 'NOVA-2025', name: 'Nova Energy - health check_1549770',
         period: '2025.01-2025.12', status: 'active', progress: 72, riskLevel: 'medium',
         lifecyclePhase: '报告阶段', lifecyclePhaseEn: 'Reporting',
         pbcStatus: 'complete', workPaperCount: 198, procedureCount: 51,
@@ -113,7 +113,7 @@ const clients: Client[] = [
         budgetOverrun: false,
       },
       {
-        id: 'e6', code: 'NOVA-ESG', name: 'ESG报告鉴证',
+        id: 'e6', code: 'NOVA-ESG', name: 'Nova Energy Holdings IPO 2023-2025_1684752',
         period: '2025.01-2025.12', status: 'planning', progress: 5, riskLevel: 'low',
         lifecyclePhase: '项目启动', lifecyclePhaseEn: 'Initiation',
         pbcStatus: 'complete', workPaperCount: 5, procedureCount: 3,
@@ -125,7 +125,7 @@ const clients: Client[] = [
   },
   {
     id: '4',
-    name: 'Quantum Finance Corp',
+    name: 'Quantum Finance Corporation',
     nameEn: 'Quantum Finance Corporation',
     industry: '金融科技与数字支付',
     gaap: '中国企业会计准则',
@@ -133,7 +133,7 @@ const clients: Client[] = [
     kycRiskLevel: 'red',
     armsProfiles: [
       {
-        id: 'e7', code: 'QUANTUM-2025', name: '2025年度财务报表审计',
+        id: 'e7', code: 'QUANTUM-2025', name: '2025 Quantum Finance annual audit_16538418',
         period: '2025.01-2025.12', status: 'active', progress: 55, riskLevel: 'high',
         lifecyclePhase: '执行阶段', lifecyclePhaseEn: 'Execution',
         pbcStatus: 'overdue', workPaperCount: 112, procedureCount: 35,
@@ -189,7 +189,7 @@ function ClientSummary() {
 
                 {/* Quick Access System Cards (replaces ARMS Summary) */}
                 <div className="quick-access-inline">
-                  <div className="qa-mini-card qa-sentinel" onClick={(e) => { e.stopPropagation(); navigate('/sentinel') }}>
+                  <div className="qa-mini-card qa-sentinel" onClick={(e) => { e.stopPropagation() }}>
                     <div className="qa-mini-icon sentinel">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -198,7 +198,7 @@ function ClientSummary() {
                     <span className="qa-mini-label">Sentinel</span>
                   </div>
 
-                  <div className="qa-mini-card qa-ceac" onClick={(e) => { e.stopPropagation(); navigate('/ceac') }}>
+                  <div className="qa-mini-card qa-ceac" onClick={(e) => { e.stopPropagation() }}>
                     <div className="qa-mini-icon ceac">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -207,16 +207,7 @@ function ClientSummary() {
                     <span className="qa-mini-label">CEAC</span>
                   </div>
 
-                  <div className="qa-mini-card qa-engagement-letter" onClick={(e) => { e.stopPropagation(); navigate('/engagement-letter') }}>
-                    <div className="qa-mini-icon engagement-letter">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                      </svg>
-                    </div>
-                    <span className="qa-mini-label">Engagement Letter</span>
-                  </div>
-
-                  <div className={`qa-mini-card qa-kyc-risk ${client.kycRiskLevel}`} onClick={(e) => { e.stopPropagation(); navigate('/kyc-risk') }}>
+                  <div className={`qa-mini-card qa-kyc-risk ${client.kycRiskLevel}`} onClick={(e) => { e.stopPropagation() }}>
                     <div className={`qa-mini-icon kyc-risk ${client.kycRiskLevel}`}>
                       {client.kycRiskLevel === 'red' && (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

@@ -7,11 +7,11 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .summary-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, var(--primary-800), var(--primary-500));
@@ -63,17 +63,17 @@
 .summary-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 28px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .stat-card-wide {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-light);
   transition: all var(--transition-base);
@@ -116,8 +116,8 @@
 }
 
 .stat-icon-bg {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -148,7 +148,7 @@
 }
 
 .stat-number {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1.2;
@@ -165,15 +165,15 @@
 .quick-access-inline {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .qa-mini-card {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border-radius: var(--radius-lg);
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
   background: var(--bg-card);
   border: 1.5px solid var(--border-light);
   cursor: pointer;
@@ -235,9 +235,9 @@
 
 /* Mini icon */
 .qa-mini-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,7 +248,7 @@
 }
 
 .qa-mini-card:hover .qa-mini-icon {
-  transform: scale(1.15) rotate(-8deg);
+  transform: scale(1.12) rotate(-6deg);
 }
 
 .qa-mini-icon.sentinel { background: linear-gradient(135deg, #eef2ff, #ddd6fe); color: #4f46e5; }
@@ -259,18 +259,18 @@
 .qa-mini-icon.kyc-risk.green { background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #059669; }
 
 .qa-mini-label {
-  font-size: 11.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.1px;
 }
 
 /* Client Cards */
 .clients-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .client-card {
@@ -308,9 +308,9 @@
 /* Client Header */
 .client-card-header {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 24px 28px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 16px;
   cursor: pointer;
   transition: background var(--transition-fast);
   position: relative;
@@ -340,29 +340,29 @@
 .client-identity {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
 .client-avatar-large {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-lg);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--primary-700), var(--accent-500));
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 51, 141, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 51, 141, 0.2);
   transition: transform var(--transition-bounce);
 }
 
 .client-card-header:hover .client-avatar-large {
-  transform: scale(1.08) rotate(-3deg);
+  transform: scale(1.06) rotate(-2deg);
 }
 
 .client-names {
@@ -370,30 +370,38 @@
 }
 
 .client-name-cn {
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.3;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .client-name-en {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 2px;
-  line-height: 1.3;
+  margin-top: 1px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .client-tags {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 5px;
+  margin-top: 4px;
   flex-wrap: wrap;
 }
 
 .client-tag {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 2px 7px;
   background: var(--bg-card-alt);
   color: var(--text-secondary);
   border-radius: var(--radius-full);
@@ -500,10 +508,10 @@
 .roll-forward-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  border-radius: var(--radius-md);
-  font-size: 12px;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
   font-weight: 700;
   color: var(--primary-600);
   background: linear-gradient(135deg, var(--primary-50), var(--accent-50));
@@ -531,8 +539,8 @@
 
 /* Expand Icon */
 .client-expand-icon {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--bg-card-alt);
   display: flex;
@@ -554,7 +562,7 @@
 
 /* Engagements Section */
 .engagements-section {
-  padding: 0 28px 28px;
+  padding: 0 16px 16px;
   border-top: 1px solid var(--border-light);
   background: linear-gradient(180deg, var(--bg-card-alt), var(--bg-card));
 }
@@ -563,15 +571,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 0 16px;
+  padding: 12px 0 10px;
 }
 
 .engagements-header h4 {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
 }
 
 .engagements-count {
@@ -587,14 +595,14 @@
 .engagements-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 
 /* ARMS Profile Card */
 .engagement-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 14px;
   cursor: pointer;
   border: 1.5px solid var(--border-light);
   transition: all var(--transition-base);
