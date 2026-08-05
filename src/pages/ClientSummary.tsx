@@ -149,9 +149,9 @@ const clients: Client[] = [
     market: 'Pre-IPO',
     kycRiskLevel: 'red',
     armsProfileCode: '2025-00621-03',
-    clientType: 'Foreign invested enterprise',
-    clientLob: 'FSO',
-    sector: 'Financial Services',
+    clientType: 'Multinational companies',
+    clientLob: 'Consumer,Retail&Leis',
+    sector: 'Consumer Goods',
     armsProfiles: [
       {
         id: 'e7', code: '16538418', name: '2025 Quantum Finance annual audit',
