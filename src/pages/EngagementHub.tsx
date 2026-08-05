@@ -126,6 +126,24 @@ function EngagementHub() {
   const budgetPct = Math.round((engagementData.budget.used / engagementData.budget.total) * 100)
   const budgetOver = budgetPct > 100
 
+  // Bar chart data for engagement metrics - vertical bar chart
+  interface BarMetricItem {
+    label: string
+    value: number
+    maxValue: number
+    unit: string
+    color: string
+  }
+
+  const engagementMetrics: BarMetricItem[] = [
+    { label: 'Time (hrs)', value: 1240, maxValue: 1600, unit: '', color: '#3b82f6' },
+    { label: 'Cost (CNY)', value: 65, maxValue: 80, unit: 'w', color: '#10b981' },
+    { label: 'Budget Used', value: 81, maxValue: 100, unit: '%', color: budgetOver ? '#ef4444' : budgetPct > 80 ? '#f59e0b' : '#10b981' },
+    { label: 'Fee (CNY)', value: 42, maxValue: 60, unit: 'w', color: '#8b5cf6' },
+    { label: 'FRR (%)', value: 68, maxValue: 100, unit: '%', color: '#06b6d4' },
+    { label: 'WIP (hrs)', value: 320, maxValue: 500, unit: '', color: '#f97316' },
+  ]
+
   const getKcwFilesForOpinion = (op: OpinionProfile) => {
     return kcwFiles.filter(kf => op.kcwFileIds.includes(kf.id))
   }
@@ -181,10 +199,10 @@ function EngagementHub() {
           {t('backToOverview')}
         </button>
         <span className="breadcrumb-sep">/</span>
-        <span className="breadcrumb-current">{engagementData.engagementCode}</span>
+        <span className="breadcrumb-current">{engagementData.engagementName}</span>
       </div>
 
-      {/* 项目头部信息 */}
+      {/* 项目头部信息 + 迷你柱状图 */}
       <div className="engagement-hero">
         <div className="hero-main">
           <h1 className="hero-title">{engagementData.clientName}</h1>
@@ -192,38 +210,25 @@ function EngagementHub() {
           <div className="hero-tags">
             <span className="hero-tag">Industry: 工业机器人与智能制造系统集成</span>
             <span className="hero-tag code">Engagement Code: {engagementData.engagementCode}</span>
-            <span className="hero-tag">{t('financePeriod')}: {engagementData.period}</span>
           </div>
         </div>
-      </div>
-
-      {/* 关键指标卡片 */}
-      <div className="hub-metrics">
-        <div className="metric-card">
-          <span className="metric-label">{t('planningMateriality')}</span>
-          <span className="metric-value">{engagementData.materiality}</span>
-          <span className="metric-sub">{lang === 'zh' ? engagementData.materialityPctCn : engagementData.materialityPct}</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">{t('timeCostBudget')}</span>
-          <span className="metric-value">CNY {(engagementData.budget.used / 10000).toFixed(1)}w</span>
-          <span className="metric-sub">{t('budgetUsed', { pct: String(budgetPct) })}</span>
-          <div className="metric-progress">
-            <div
-              className="metric-progress-bar"
-              style={{
-                width: `${Math.min(budgetPct, 100)}%`,
-                background: budgetOver ? 'var(--coral-500)' : budgetPct > 80 ? 'var(--amber-500)' : 'var(--teal-400)',
-              }}
-            />
-          </div>
-          {budgetOver && <span className="budget-alert">{t('budgetOver')}</span>}
-          {!budgetOver && budgetPct <= 80 && <span className="budget-ok">{t('budgetOnTrack')}</span>}
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">{t('alertClosure')}</span>
-          <span className="metric-value">{engagementData.alerts.closed}/{engagementData.alerts.total}</span>
-          <span className="metric-sub">8 significant alerts linked to Fraud & JE</span>
+        {/* Mini Bar Chart in Hero Right */}
+        <div className="hero-mini-chart">
+          {engagementMetrics.map((metric, index) => (
+            <div key={index} className="mini-bar-item">
+              <span className="mini-bar-label">{metric.label}</span>
+              <div className="mini-bar-track">
+                <div
+                  className="mini-bar-fill"
+                  style={{
+                    height: `${(metric.value / metric.maxValue) * 100}%`,
+                    background: metric.color,
+                  }}
+                />
+              </div>
+              <span className="mini-bar-value" style={{ color: metric.color }}>{metric.value}{metric.unit}</span>
+            </div>
+          ))}
         </div>
       </div>
 

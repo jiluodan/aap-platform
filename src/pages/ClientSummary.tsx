@@ -33,6 +33,11 @@ interface Client {
   market: string
   armsProfiles: ArmsProfile[]
   kycRiskLevel: 'red' | 'yellow' | 'green'
+  // ARMS Profile Code and client classification info
+  armsProfileCode: string
+  clientType: string
+  clientLob: string
+  sector: string
 }
 
 const clients: Client[] = [
@@ -44,6 +49,10 @@ const clients: Client[] = [
     gaap: '中国企业会计准则',
     market: 'Pre-IPO Growth Company',
     kycRiskLevel: 'red',
+    armsProfileCode: '2025-00479-01',
+    clientType: 'State owned enterprise',
+    clientLob: 'IGH',
+    sector: 'Real Estate and Building Construction',
     armsProfiles: [
       {
         id: 'e1', code: '1668465', name: '2025 Aurora Robotics SH annual audit',
@@ -82,6 +91,10 @@ const clients: Client[] = [
     gaap: '中国企业会计准则',
     market: '科创板上市公司',
     kycRiskLevel: 'yellow',
+    armsProfileCode: '2025-00382-15',
+    clientType: 'Private enterprise',
+    clientLob: 'GFS',
+    sector: 'Pharmaceuticals and Biotechnology',
     armsProfiles: [
       {
         id: 'e4', code: '1668779', name: '2025 Stellar Pharma annual audit',
@@ -102,6 +115,10 @@ const clients: Client[] = [
     gaap: '中国企业会计准则',
     market: '主板上市公司',
     kycRiskLevel: 'green',
+    armsProfileCode: '2025-00156-08',
+    clientType: 'Listed company',
+    clientLob: 'E&Y',
+    sector: 'Energy and Utilities',
     armsProfiles: [
       {
         id: 'e5', code: '1549770', name: 'Nova Energy - health check',
@@ -131,6 +148,10 @@ const clients: Client[] = [
     gaap: '中国企业会计准则',
     market: 'Pre-IPO',
     kycRiskLevel: 'red',
+    armsProfileCode: '2025-00621-03',
+    clientType: 'Foreign invested enterprise',
+    clientLob: 'FSO',
+    sector: 'Financial Services',
     armsProfiles: [
       {
         id: 'e7', code: '16538418', name: '2025 Quantum Finance annual audit',
@@ -178,11 +199,11 @@ function ClientSummary() {
                   <div className="client-avatar-large">{client.name.charAt(0)}</div>
                   <div className="client-names">
                     <h3 className="client-name-cn">{client.name}</h3>
-                    <p className="client-name-en">{client.nameEn}</p>
+                    <p className="client-name-en">ARMS's profile code: {client.armsProfileCode}</p>
                     <div className="client-tags">
-                      <span className="client-tag">{client.industry}</span>
-                      <span className="client-tag">{client.gaap}</span>
-                      <span className="client-tag highlight">{client.market}</span>
+                      <span className="client-tag">{client.clientType}</span>
+                      <span className="client-tag">{client.clientLob}</span>
+                      <span className="client-tag">{client.sector}</span>
                     </div>
                   </div>
                 </div>
@@ -230,21 +251,6 @@ function ClientSummary() {
                     <span className="qa-mini-label">KYC Risk</span>
                   </div>
                   </div>
-
-                  {/* Roll Forward Button */}
-                  <button
-                    className="roll-forward-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      alert(`Roll Forward Opinion Profile for ${client.name}`)
-                    }}
-                    title={t('rollForward')}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                    </svg>
-                    <span>{t('rollForwardShort')}</span>
-                  </button>
 
                   <div className="client-expand-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
