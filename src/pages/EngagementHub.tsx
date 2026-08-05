@@ -116,30 +116,8 @@ function EngagementHub() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('lastViewed')
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile')
-  const [expandedOpinionRows, setExpandedOpinionRows] = useState<Set<string>>(new Set())
+  const [listTab, setListTab] = useState<'opinion' | 'kcw'>('opinion')
   const [completionPopupTarget, setCompletionPopupTarget] = useState<string | null>(null) // which KCw file's popup to show
-
-  // Default expand first row on mount (only for opinion list view)
-  useEffect(() => {
-    if (sortedOpinions.length > 0) {
-      setExpandedOpinionRows(new Set([sortedOpinions[0].id]))
-    }
-  }, [])
-
-  const toggleOpinionRow = (id: string) => {
-    const next = new Set(expandedOpinionRows)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    setExpandedOpinionRows(next)
-  }
-
-  const expandAllRows = () => {
-    setExpandedOpinionRows(new Set(sortedOpinions.map(op => op.id)))
-  }
-
-  const collapseAllRows = () => {
-    setExpandedOpinionRows(new Set())
-  }
 
   const budgetPct = Math.round((engagementData.budget.used / engagementData.budget.total) * 100)
   const budgetOver = budgetPct > 100
@@ -277,33 +255,30 @@ function EngagementHub() {
                 <option value="za">{t('sortZA')}</option>
               </select>
             </div>
-            {viewMode === 'list' && (
-              <button className="expand-all-btn" onClick={expandedOpinionRows.size === sortedOpinions.length ? collapseAllRows : expandAllRows}>
-                {expandedOpinionRows.size === sortedOpinions.length ? (lang === 'zh' ? '折叠全部' : 'Collapse All') : (lang === 'zh' ? '展开全部' : 'Expand All')}
+            {/* View mode toggle - moved next to Sort By */}
+            <div className="view-toggle-inline">
+              <button className={`view-btn ${viewMode === 'tile' ? 'active' : ''}`} onClick={() => setViewMode('tile')}>
+                <i className="fas fa-th-large"></i>
+                <span>{t('tileView')}</span>
               </button>
-            )}
-          </div>
-          <div className="toolbar-right">
-            <div className="view-toggle">
-              <button className={viewMode === 'tile' ? 'active' : ''} onClick={() => setViewMode('tile')}>
-                {t('tileView')}
-              </button>
-              <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
-                {t('listView')}
+              <button className={`view-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>
+                <i className="fas fa-list"></i>
+                <span>{t('listView')}</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Content: Left Opinion Profile + Right KCw File */}
-        <div className="opinion-kcw-content two-column">
-          {/* Left: Opinion Profile */}
-          <div className="opinion-column">
-            <h3 className="column-title">
-              <i className="fas fa-file-alt"></i> Opinion Profile
-              <span className="column-count">{sortedOpinions.length}</span>
-            </h3>
-            {viewMode === 'tile' ? (
+        {/* Content Area */}
+        {viewMode === 'tile' ? (
+          /* ===== TILE VIEW: Two-column layout (unchanged) ===== */
+          <div className="opinion-kcw-content two-column">
+            {/* Left: Opinion Profile */}
+            <div className="opinion-column">
+              <h3 className="column-title">
+                <i className="fas fa-file-alt"></i> Opinion Profile
+                <span className="column-count">{sortedOpinions.length}</span>
+              </h3>
               <div className="opinion-grid">
                 {sortedOpinions.map(op => {
                   const relatedKcw = getKcwFilesForOpinion(op)
@@ -351,76 +326,14 @@ function EngagementHub() {
                   )
                 })}
               </div>
-            ) : (
-              <div className="opinion-list-view">
-                {sortedOpinions.map(op => {
-                  const relatedKcw = getKcwFilesForOpinion(op)
-                  const isExpanded = expandedOpinionRows.has(op.id)
-                  return (
-                    <div key={op.id} className="ok-list-wrapper">
-                      <div className="ok-item list" onClick={() => toggleOpinionRow(op.id)}>
-                        <button className="ok-expand-btn-inline">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                            <path d="m9 18 6-6-6-6"/>
-                          </svg>
-                        </button>
-                        <div className="ok-icon opinion-icon">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <path d="M9 14l2 2 4-4"/>
-                            <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
-                          </svg>
-                        </div>
-                        <div className="ok-info">
-                          <h4>{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</h4>
-                          {/* Phase stepper (compact for list) */}
-                          <div className="phase-stepper compact">
-                            {PHASE_STEPS.map((step, idx) => (
-                              <div key={step.key} className={`phase-step ${op.phase >= step.key ? 'active' : ''} ${op.phase === step.key ? 'current' : ''}`}>
-                                <div className="phase-dot">{step.key}</div>
-                                {idx < PHASE_STEPS.length - 1 && <div className={`phase-line ${op.phase > step.key ? 'active' : ''}`} />}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="phase-label compact-label">
-                            {lang === 'zh' ? PHASE_STEPS.find(s => s.key === op.phase)?.labelCn : PHASE_STEPS.find(s => s.key === op.phase)?.label}
-                          </div>
-                        </div>
-                        <div className="ok-list-extra">
-                          <span className="ok-extra-type">{op.opinionType}</span>
-                          <span className="ok-extra-count">{relatedKcw.length} KCw</span>
-                        </div>
-                      </div>
-                      {isExpanded && (
-                        <div className="ok-list-expand animate-fade-in">
-                          <div className="ok-expand-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</div>
-                          <div className="ok-expand-tags">
-                            {relatedKcw.map(kf => (
-                              <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                                </svg>
-                                {kf.name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Right: KCw File */}
-          <div className="kcw-column">
-            <h3 className="column-title">
-              <i className="fas fa-database"></i> KCw File
-              <span className="column-count">{sortedKcwFiles.length}</span>
-            </h3>
-            {viewMode === 'tile' ? (
+            {/* Right: KCw File */}
+            <div className="kcw-column">
+              <h3 className="column-title">
+                <i className="fas fa-database"></i> KCw File
+                <span className="column-count">{sortedKcwFiles.length}</span>
+              </h3>
               <div className="kcw-grid">
                 {sortedKcwFiles.map(kf => {
                   const relatedOps = getOpinionProfilesForKcw(kf)
@@ -500,85 +413,168 @@ function EngagementHub() {
                   )
                 })}
               </div>
-            ) : (
-              <div className="kcw-list-view">
-                {sortedKcwFiles.map(kf => {
-                  const relatedOps = getOpinionProfilesForKcw(kf)
-                  const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
-                  return (
-                    <div key={kf.id} className="ok-item list kcw-list">
-                      <div className="ok-icon kcw-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                          <line x1="12" y1="11" x2="12" y2="17"/>
-                          <line x1="9" y1="14" x2="15" y2="14"/>
-                        </svg>
-                      </div>
-                      <div className="ok-info">
-                        <h4 className="kcw-name" title={kf.name}>{kf.name}</h4>
-                        <div className="ok-meta">
-                          <span
-                            className="completion-status-badge"
-                            style={{ color: statusInfo.color, background: statusInfo.bgColor }}
-                            onClick={e => { e.stopPropagation(); setCompletionPopupTarget(completionPopupTarget === kf.id ? null : kf.id) }}
-                            title={lang === 'zh' ? '点击查看完成状态详情' : 'Click to view completion status details'}
-                          >
-                            {lang === 'zh' ? '完成状态' : 'Completion Status'}
-                            <i className="fas fa-chevron-right" style={{ fontSize: '9px', marginLeft: '4px' }}></i>
-                          </span>
-                        </div>
-                        {completionPopupTarget === kf.id && (
-                          <div className="completion-popup" onClick={e => e.stopPropagation()}>
-                            <div className="popup-header">
-                              <i className="fas fa-tasks"></i>
-                              {lang === 'zh' ? 'KCw 文件完成状态' : 'KCw File Completion Status'}
-                              <button className="popup-close" onClick={() => setCompletionPopupTarget(null)}>
-                                <i className="fas fa-times"></i>
-                              </button>
-                            </div>
-                            <div className="popup-body">
-                              <div className="popup-file-name">{kf.name}</div>
-                              <div className="popup-status-list">
-                                {KCW_STATUS_TYPES.map(st => (
-                                  <div
-                                    key={st.key}
-                                    className={`popup-status-item ${kf.status === st.key ? 'current' : ''}`}
-                                    style={{ borderColor: st.color }}
-                                  >
-                                    <div className="status-dot" style={{ background: st.color }} />
-                                    <span className="status-name">{lang === 'zh' ? st.labelCn : st.label}</span>
-                                    {kf.status === st.key && (
-                                      <span className="current-badge" style={{ background: st.color, color: '#fff' }}>
-                                        {lang === 'zh' ? '当前' : 'Current'}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="ok-list-extra">
-                        <span className="ok-extra-label">{lang === 'zh' ? '关联 Opinion Profiles' : 'Linked Opinion Profiles'}:</span>
-                        <div className="ok-related-tags horizontal">
-                          {relatedOps.map(op => (
-                            <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                              </svg>
-                              {lang === 'zh' ? op.nameCn : op.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* ===== LIST VIEW: Tab switching + Table layout ===== */
+          <div className="list-view-container">
+            {/* Tab bar with icon buttons */}
+            <div className="list-view-tab-bar">
+              <button
+                className={`list-view-tab ${listTab === 'opinion' ? 'active' : ''}`}
+                onClick={() => setListTab('opinion')}
+              >
+                <span className="tab-dot opinion-dot"></span>
+                {lang === 'zh' ? 'Opinion Profile' : 'Opinion Profile'}
+                <span className="tab-count">{sortedOpinions.length}</span>
+              </button>
+              <button
+                className={`list-view-tab ${listTab === 'kcw' ? 'active' : ''}`}
+                onClick={() => setListTab('kcw')}
+              >
+                <span className="tab-dot kcw-dot"></span>
+                KCw File
+                <span className="tab-count">{sortedKcwFiles.length}</span>
+              </button>
+            </div>
+
+            {/* Table content area */}
+            <div className="data-table-container">
+              {listTab === 'opinion' ? (
+                /* ========== OPINION TABLE ========== */
+                <table className="data-table opinion-table">
+                  <thead>
+                    <tr>
+                      <th className="col-aap-id">AAP ID</th>
+                      <th className="col-entity">{lang === 'zh' ? 'Entity name' : 'Entity name'}</th>
+                      <th className="col-opinion-type">{lang === 'zh' ? 'Opinion type' : 'Opinion type'}</th>
+                      <th className="col-report-type">{lang === 'zh' ? 'Report type' : 'Report type'}</th>
+                      <th className="col-period">{lang === 'zh' ? 'Financial period end' : 'Financial period end'}</th>
+                      <th className="col-report-date">{lang === 'zh' ? 'Report date' : 'Report date'}</th>
+                      <th className="col-phase">Phase 1</th>
+                      <th className="col-phase">Phase 2</th>
+                      <th className="col-phase">Phase 3</th>
+                      <th className="col-phase">Phase 4</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedOpinions.map(op => (
+                      <tr key={op.id}>
+                        <td className="col-aap-id"><span className="aap-id-link">{op.id}</span></td>
+                        <td className="col-entity">
+                          <div>{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</div>
+                        </td>
+                        <td className="col-opinion-type"><span className="type-badge">{op.opinionType}</span></td>
+                        <td className="col-report-type">{lang === 'zh' ? '年度审计' : 'Annual Audit'}</td>
+                        <td className="col-period">2025-12-31</td>
+                        <td className="col-report-date">2026-04-30</td>
+                        {[1, 2, 3, 4].map(phaseNum => (
+                          <td key={phaseNum} className="col-phase">
+                            {op.phase > phaseNum ? (
+                              <span className="phase-check done" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                              </span>
+                            ) : op.phase === phaseNum ? (
+                              <span className="phase-check current" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6"><circle cx="12" cy="12" r="6"/></svg>
+                              </span>
+                            ) : (
+                              <span className="phase-check pending" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2"><circle cx="12" cy="12" r="6"/></svg>
+                              </span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                /* ========== KCw FILE TABLE ========== */
+                <table className="data-table kcw-table">
+                  <thead>
+                    <tr>
+                      <th className="col-aap-id">AAP ID</th>
+                      <th className="col-filename">{lang === 'zh' ? 'File name' : 'File name'}</th>
+                      <th className="col-type">{lang === 'zh' ? 'Type' : 'Type'}</th>
+                      <th className="col-completion">{lang === 'zh' ? 'Completion status' : 'Completion status'}</th>
+                      <th className="col-workbook">{lang === 'zh' ? 'Workbook opinion name' : 'Workbook opinion name'}</th>
+                      <th className="col-serial">{lang === 'zh' ? 'Last year serial number' : 'Last year serial number'}</th>
+                      <th className="col-linked">{lang === 'zh' ? 'Linked Opinion Profiles' : 'Linked Opinion Profiles'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedKcwFiles.map(kf => {
+                      const relatedOps = getOpinionProfilesForKcw(kf)
+                      const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
+                      return (
+                        <tr key={kf.id}>
+                          <td className="col-aap-id"><span className="aap-id-link">{kf.currentYearAapId}</span></td>
+                          <td className="col-filename" title={kf.name}>{kf.name}</td>
+                          <td className="col-type"><span className="type-badge">{kf.type}</span></td>
+                          <td className="col-completion">
+                            <span
+                              className="status-badge"
+                              style={{ color: statusInfo.color, background: statusInfo.bgColor }}
+                              onClick={e => { e.stopPropagation(); setCompletionPopupTarget(completionPopupTarget === kf.id ? null : kf.id) }}
+                            >
+                              {lang === 'zh' ? statusInfo.labelCn : statusInfo.label}
+                            </span>
+                            {completionPopupTarget === kf.id && (
+                              <div className="completion-popup table-popup" onClick={e => e.stopPropagation()}>
+                                <div className="popup-header">
+                                  <i className="fas fa-tasks"></i>
+                                  {lang === 'zh' ? 'KCw 文件完成状态' : 'KCw File Completion Status'}
+                                  <button className="popup-close" onClick={() => setCompletionPopupTarget(null)}>
+                                    <i className="fas fa-times"></i>
+                                  </button>
+                                </div>
+                                <div className="popup-body">
+                                  <div className="popup-file-name">{kf.name}</div>
+                                  <div className="popup-status-list">
+                                    {KCW_STATUS_TYPES.map(st => (
+                                      <div
+                                        key={st.key}
+                                        className={`popup-status-item ${kf.status === st.key ? 'current' : ''}`}
+                                        style={{ borderColor: st.color }}
+                                      >
+                                        <div className="status-dot" style={{ background: st.color }} />
+                                        <span className="status-name">{lang === 'zh' ? st.labelCn : st.label}</span>
+                                        {kf.status === st.key && (
+                                          <span className="current-badge" style={{ background: st.color, color: '#fff' }}>
+                                            {lang === 'zh' ? '当前' : 'Current'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="col-workbook" title={kf.workbookOpinionName}>{kf.workbookOpinionName}</td>
+                          <td className="col-serial" title={kf.lastYearSerialNumber}>{kf.lastYearSerialNumber}</td>
+                          <td className="col-linked">
+                            <div className="linked-tags">
+                              {relatedOps.map(op => (
+                                <span
+                                  key={op.id}
+                                  className="linked-tag"
+                                >
+                                  {lang === 'zh' ? op.nameCn : op.name}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 功能模块 Tab 切换 */}
