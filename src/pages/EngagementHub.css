@@ -683,8 +683,7 @@
   flex-shrink: 0;
 }
 
-.view-toggle,
-.type-toggle {
+.view-toggle {
   display: flex;
   background: var(--bg-card-alt);
   border-radius: var(--radius-md);
@@ -693,8 +692,7 @@
   flex-shrink: 0;
 }
 
-.view-toggle button,
-.type-toggle button {
+.view-toggle button {
   padding: 5px 11px;
   font-size: 11px;
   font-weight: 600;
@@ -707,25 +705,95 @@
   white-space: nowrap;
 }
 
-.view-toggle button.active,
-.type-toggle button.active {
+.view-toggle button.active {
   background: var(--primary-500);
   color: white;
   box-shadow: 0 2px 8px rgba(0, 91, 184, 0.25);
 }
 
-/* Opinion KCw Content */
-.opinion-kcw-content {
+/* Two-column layout: Left Opinion + Right KCw */
+.opinion-kcw-content.two-column {
   display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.opinion-column,
+.kcw-column {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
-.opinion-kcw-content.tile {
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+.column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary-100);
+  margin: 0;
 }
 
-.opinion-kcw-content.list {
-  grid-template-columns: 1fr;
+.column-title i {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: white;
+}
+
+.opinion-column .column-title i {
+  background: linear-gradient(145deg, #4f46e5, #3730a3);
+}
+
+.kcw-column .column-title i {
+  background: linear-gradient(145deg, #0d9488, #115e59);
+}
+
+.column-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--primary-50);
+  color: var(--primary-600);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+/* Opinion grid (tile mode inside left column) */
+.opinion-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* KCw grid (tile mode inside right column) */
+.kcw-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Opinion list view (list mode inside left column) */
+.opinion-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* KCw list view (list mode inside right column) */
+.kcw-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .ok-item {
@@ -743,10 +811,36 @@
 }
 
 .ok-item.tile {
-  padding: 20px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+/* Icon + Title in same row for tile mode */
+.ok-header-row {
+  display: flex;
+  align-items: center;
   gap: 12px;
+}
+
+.ok-header-row .ok-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+
+.ok-title-inline {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .ok-item.list {
@@ -788,6 +882,7 @@
 .ok-info {
   flex: 1;
   min-width: 0;
+  position: relative;
 }
 
 .ok-info h4 {
@@ -857,6 +952,242 @@
   background: linear-gradient(90deg, var(--primary-500), var(--accent-400));
   border-radius: var(--radius-full);
   transition: width 0.6s ease;
+}
+
+/* ===== Phase Stepper (Opinion Profile) ===== */
+.phase-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.phase-stepper.compact {
+  transform: scale(0.85);
+  transform-origin: center center;
+  margin-top: 4px;
+}
+
+.phase-step {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.phase-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  border: 2px solid #e2e8f0;
+  color: #94a3b8;
+  background: white;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+/* Completed steps - GREEN */
+.phase-step.active:not(.current) .phase-dot {
+  border-color: #10b981;
+  background: #10b981;
+  color: white;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+/* Current (in-progress) step - BLUE */
+.phase-step.current .phase-dot {
+  border-color: var(--primary-500);
+  background: var(--primary-500);
+  color: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 3px 10px rgba(59, 130, 246, 0.35);
+  animation: phase-pulse-blue 2s infinite;
+}
+
+@keyframes phase-pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 3px 10px rgba(59, 130, 246, 0.35); }
+  50% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.08), 0 3px 14px rgba(59, 130, 246, 0.45); }
+}
+
+.phase-line {
+  flex: 1;
+  height: 2.5px;
+  margin-left: -4px; /* pull line into the dot area */
+  margin-right: -4px;
+  background: #e2e8f0;
+  transition: background 0.3s ease;
+  border-radius: 2px;
+}
+
+/* Completed line - GREEN */
+.phase-line.active {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.phase-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary-600);
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: var(--primary-50);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.phase-label.compact-label {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+/* ===== Completion Status Badge (KCw File) ===== */
+.completion-status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  user-select: none;
+  letter-spacing: 0.02em;
+}
+
+.completion-status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0.9;
+}
+
+/* ===== Completion Status Popup ===== */
+.completion-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-light);
+  animation: popup-in 0.2s ease-out;
+  overflow: hidden;
+}
+
+@keyframes popup-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.popup-header i {
+  color: var(--primary-500);
+  font-size: 13px;
+}
+
+.popup-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.popup-close:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
+}
+
+.popup-body {
+  padding: 12px 14px;
+}
+
+.popup-file-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popup-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popup-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+  background: var(--bg-secondary);
+  transition: all var(--transition-fast);
+}
+
+.popup-status-item.current {
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.popup-status-item.current .status-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.current-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ===== KCw Tile / List Related Tags ===== */

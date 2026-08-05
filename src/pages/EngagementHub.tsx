@@ -40,26 +40,27 @@ interface OpinionProfile {
   entityNameCn: string
   opinionType: string
   kcwFileIds: string[]
+  phase: number // 1=Submit opinion profile, 2=Apply serial number, 3=Submit Final declaration, 4=Close out
 }
 
 const opinionProfiles: OpinionProfile[] = [
   {
     id: 'OP001', name: 'Standard Unqualified', nameCn: '标准无保留意见', status: 'active',
     lastViewed: '2025-01-25', progress: 85,
-    entityNameEn: 'Test 0323 | Test 0323', entityNameCn: '测试0323',
-    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC002']
+    entityNameEn: 'Aurora Technology Group Co., Ltd.', entityNameCn: ' Aurora 科技集团有限公司',
+    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC002'], phase: 3
   },
   {
     id: 'OP002', name: 'Emphasis of Matter', nameCn: '强调事项段', status: 'draft',
     lastViewed: '2025-01-20', progress: 45,
-    entityNameEn: '无 | 专项报告 test', entityNameCn: '专项报告测试',
-    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC003']
+    entityNameEn: 'Golden Horizon Investment Holdings', entityNameCn: '金地平线投资控股有限公司',
+    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC003'], phase: 2
   },
   {
     id: 'OP003', name: 'Qualified - Scope', nameCn: '保留意见（范围受限）', status: 'pending',
     lastViewed: '2025-01-18', progress: 20,
-    entityNameEn: '无 | 验资报告 Test', entityNameCn: '验资报告测试',
-    opinionType: 'Others', kcwFileIds: ['KC001']
+    entityNameEn: 'Pacific Star Real Estate Development Co., Ltd.', entityNameCn: '太平洋星房地产开发有限公司',
+    opinionType: 'Others', kcwFileIds: ['KC001'], phase: 1
   },
 ]
 
@@ -90,6 +91,23 @@ const kcwFiles: KCwFile[] = [
   },
 ]
 
+// Phase steps definition
+const PHASE_STEPS = [
+  { key: 1, label: 'Submit opinion profile', labelCn: '提交意见档案' },
+  { key: 2, label: 'Apply serial number', labelCn: '申请编号' },
+  { key: 3, label: 'Submit Final declaration', labelCn: '提交最终声明' },
+  { key: 4, label: 'Close out', labelCn: '关闭' },
+]
+
+// KCw File completion status types
+const KCW_STATUS_TYPES = [
+  { key: 'completed', label: 'Completed', labelCn: '已完成', color: '#10b981', bgColor: '#d1fae5' },
+  { key: 'in-progress', label: 'In Progress', labelCn: '进行中', color: '#f59e0b', bgColor: '#fef3c7' },
+  { key: 'pending', label: 'Pending', labelCn: '待处理', color: '#94a3b8', bgColor: '#f1f5f9' },
+  { key: 'not-started', label: 'Not Started', labelCn: '未开始', color: '#d1d5db', bgColor: '#f9fafb' },
+  { key: 'on-hold', label: 'On Hold', labelCn: '暂停', color: '#ef4444', bgColor: '#fee2e2' },
+]
+
 function EngagementHub() {
   const { clientId, engagementId } = useParams()
   const navigate = useNavigate()
@@ -98,15 +116,15 @@ function EngagementHub() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('lastViewed')
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile')
-  const [dataType, setDataType] = useState<'opinion' | 'kcw'>('opinion')
   const [expandedOpinionRows, setExpandedOpinionRows] = useState<Set<string>>(new Set())
+  const [completionPopupTarget, setCompletionPopupTarget] = useState<string | null>(null) // which KCw file's popup to show
 
   // Default expand first row on mount (only for opinion list view)
   useEffect(() => {
-    if (dataType === 'opinion' && sortedOpinions.length > 0) {
+    if (sortedOpinions.length > 0) {
       setExpandedOpinionRows(new Set([sortedOpinions[0].id]))
     }
-  }, [dataType])
+  }, [])
 
   const toggleOpinionRow = (id: string) => {
     const next = new Set(expandedOpinionRows)
@@ -259,7 +277,7 @@ function EngagementHub() {
                 <option value="za">{t('sortZA')}</option>
               </select>
             </div>
-            {viewMode === 'list' && dataType === 'opinion' && (
+            {viewMode === 'list' && (
               <button className="expand-all-btn" onClick={expandedOpinionRows.size === sortedOpinions.length ? collapseAllRows : expandAllRows}>
                 {expandedOpinionRows.size === sortedOpinions.length ? (lang === 'zh' ? '折叠全部' : 'Collapse All') : (lang === 'zh' ? '展开全部' : 'Expand All')}
               </button>
@@ -274,198 +292,293 @@ function EngagementHub() {
                 {t('listView')}
               </button>
             </div>
-            <div className="type-toggle">
-              <button className={dataType === 'opinion' ? 'active' : ''} onClick={() => setDataType('opinion')}>
-                {t('byOpinionProfile')}
-              </button>
-              <button className={dataType === 'kcw' ? 'active' : ''} onClick={() => setDataType('kcw')}>
-                {t('byKCwFile')}
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Tile + Opinion Profile */}
-        {viewMode === 'tile' && dataType === 'opinion' && (
-          <div className="opinion-kcw-content tile">
-            {sortedOpinions.map(op => {
-              const relatedKcw = getKcwFilesForOpinion(op)
-              return (
-                <div key={op.id} className="ok-item tile" onClick={() => handleOpinionClick(op.id)}>
-                  <div className="ok-icon opinion-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <path d="M9 14l2 2 4-4"/>
-                      <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
-                    </svg>
-                  </div>
-                  <div className="ok-info">
-                    <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
-                    <div className="ok-meta">
-                      <span className={`ok-status ${op.status}`}>{op.status}</span>
-                      <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
-                      <div className="ok-progress-bar">
-                        <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ok-related">
-                    <span className="ok-related-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</span>
-                    <div className="ok-related-tags">
-                      {relatedKcw.map(kf => (
-                        <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        {/* Content: Left Opinion Profile + Right KCw File */}
+        <div className="opinion-kcw-content two-column">
+          {/* Left: Opinion Profile */}
+          <div className="opinion-column">
+            <h3 className="column-title">
+              <i className="fas fa-file-alt"></i> Opinion Profile
+              <span className="column-count">{sortedOpinions.length}</span>
+            </h3>
+            {viewMode === 'tile' ? (
+              <div className="opinion-grid">
+                {sortedOpinions.map(op => {
+                  const relatedKcw = getKcwFilesForOpinion(op)
+                  return (
+                    <div key={op.id} className="ok-item tile" onClick={() => handleOpinionClick(op.id)}>
+                      <div className="ok-header-row">
+                        <div className="ok-icon opinion-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <path d="M9 14l2 2 4-4"/>
+                            <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
                           </svg>
-                          {kf.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Tile + KCw File */}
-        {viewMode === 'tile' && dataType === 'kcw' && (
-          <div className="opinion-kcw-content tile">
-            {sortedKcwFiles.map(kf => {
-              const relatedOps = getOpinionProfilesForKcw(kf)
-              return (
-                <div key={kf.id} className="ok-item tile kcw-tile">
-                  <div className="ok-icon kcw-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                      <line x1="12" y1="11" x2="12" y2="17"/>
-                      <line x1="9" y1="14" x2="15" y2="14"/>
-                    </svg>
-                  </div>
-                  <div className="ok-info">
-                    <h4 className="kcw-name" title={kf.name}>{kf.name}</h4>
-                    <div className="ok-meta">
-                      <span className={`ok-status ${kf.status}`}>{kf.status}</span>
-                      <span className="ok-date">{t('lastViewed')}: {kf.lastViewed}</span>
-                    </div>
-                    <div className="ok-related">
-                      <span className="ok-related-label">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</span>
-                      <div className="ok-related-tags">
-                        {relatedOps.map(op => (
-                          <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                            </svg>
-                            {lang === 'zh' ? op.nameCn : op.name}
-                          </span>
-                        ))}
+                        </div>
+                        <h4 className="ok-title-inline">{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</h4>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* List + Opinion Profile */}
-        {viewMode === 'list' && dataType === 'opinion' && (
-          <div className="opinion-kcw-content list">
-            {sortedOpinions.map(op => {
-              const relatedKcw = getKcwFilesForOpinion(op)
-              const isExpanded = expandedOpinionRows.has(op.id)
-              return (
-                <div key={op.id} className="ok-list-wrapper">
-                  <div className="ok-item list" onClick={() => toggleOpinionRow(op.id)}>
-                    <button className="ok-expand-btn-inline">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                        <path d="m9 18 6-6-6-6"/>
-                      </svg>
-                    </button>
-                    <div className="ok-icon opinion-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <path d="M9 14l2 2 4-4"/>
-                        <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
-                      </svg>
-                    </div>
-                    <div className="ok-info">
-                      <h4>{lang === 'zh' ? op.nameCn : op.name}</h4>
-                      <div className="ok-meta">
-                        <span className={`ok-status ${op.status}`}>{op.status}</span>
-                        <span className="ok-date">{t('lastViewed')}: {op.lastViewed}</span>
-                        <div className="ok-progress-bar">
-                          <div className="ok-progress-fill" style={{ width: `${op.progress}%` }} />
+                      <div className="ok-info">
+                        {/* Phase stepper */}
+                        <div className="phase-stepper">
+                          {PHASE_STEPS.map((step, idx) => (
+                            <div key={step.key} className={`phase-step ${op.phase >= step.key ? 'active' : ''} ${op.phase === step.key ? 'current' : ''}`}>
+                              <div className="phase-dot">{step.key}</div>
+                              {idx < PHASE_STEPS.length - 1 && <div className={`phase-line ${op.phase > step.key ? 'active' : ''}`} />}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="phase-label">
+                          {lang === 'zh' ? PHASE_STEPS.find(s => s.key === op.phase)?.labelCn : PHASE_STEPS.find(s => s.key === op.phase)?.label}
+                        </div>
+                      </div>
+                      <div className="ok-related">
+                        <span className="ok-related-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</span>
+                        <div className="ok-related-tags">
+                          {relatedKcw.map(kf => (
+                            <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                              </svg>
+                              {kf.name}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     </div>
-                    <div className="ok-list-extra">
-                      <span className="ok-extra-type">{op.opinionType}</span>
-                      <span className="ok-extra-count">{relatedKcw.length} KCw</span>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="opinion-list-view">
+                {sortedOpinions.map(op => {
+                  const relatedKcw = getKcwFilesForOpinion(op)
+                  const isExpanded = expandedOpinionRows.has(op.id)
+                  return (
+                    <div key={op.id} className="ok-list-wrapper">
+                      <div className="ok-item list" onClick={() => toggleOpinionRow(op.id)}>
+                        <button className="ok-expand-btn-inline">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                            <path d="m9 18 6-6-6-6"/>
+                          </svg>
+                        </button>
+                        <div className="ok-icon opinion-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <path d="M9 14l2 2 4-4"/>
+                            <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
+                          </svg>
+                        </div>
+                        <div className="ok-info">
+                          <h4>{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</h4>
+                          {/* Phase stepper (compact for list) */}
+                          <div className="phase-stepper compact">
+                            {PHASE_STEPS.map((step, idx) => (
+                              <div key={step.key} className={`phase-step ${op.phase >= step.key ? 'active' : ''} ${op.phase === step.key ? 'current' : ''}`}>
+                                <div className="phase-dot">{step.key}</div>
+                                {idx < PHASE_STEPS.length - 1 && <div className={`phase-line ${op.phase > step.key ? 'active' : ''}`} />}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="phase-label compact-label">
+                            {lang === 'zh' ? PHASE_STEPS.find(s => s.key === op.phase)?.labelCn : PHASE_STEPS.find(s => s.key === op.phase)?.label}
+                          </div>
+                        </div>
+                        <div className="ok-list-extra">
+                          <span className="ok-extra-type">{op.opinionType}</span>
+                          <span className="ok-extra-count">{relatedKcw.length} KCw</span>
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div className="ok-list-expand animate-fade-in">
+                          <div className="ok-expand-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</div>
+                          <div className="ok-expand-tags">
+                            {relatedKcw.map(kf => (
+                              <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                                </svg>
+                                {kf.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {isExpanded && (
-                    <div className="ok-list-expand animate-fade-in">
-                      <div className="ok-expand-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</div>
-                      <div className="ok-expand-tags">
-                        {relatedKcw.map(kf => (
-                          <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                            </svg>
-                            {kf.name}
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Right: KCw File */}
+          <div className="kcw-column">
+            <h3 className="column-title">
+              <i className="fas fa-database"></i> KCw File
+              <span className="column-count">{sortedKcwFiles.length}</span>
+            </h3>
+            {viewMode === 'tile' ? (
+              <div className="kcw-grid">
+                {sortedKcwFiles.map(kf => {
+                  const relatedOps = getOpinionProfilesForKcw(kf)
+                  const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
+                  return (
+                    <div key={kf.id} className="ok-item tile kcw-tile">
+                      <div className="ok-header-row">
+                        <div className="ok-icon kcw-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                            <line x1="12" y1="11" x2="12" y2="17"/>
+                            <line x1="9" y1="14" x2="15" y2="14"/>
+                          </svg>
+                        </div>
+                        <h4 className="ok-title-inline kcw-name" title={kf.name}>{kf.name}</h4>
+                      </div>
+                      <div className="ok-info">
+                        <div className="ok-meta">
+                          {/* Completion Status - clickable badge */}
+                          <span
+                            className="completion-status-badge"
+                            style={{ color: statusInfo.color, background: statusInfo.bgColor }}
+                            onClick={e => { e.stopPropagation(); setCompletionPopupTarget(completionPopupTarget === kf.id ? null : kf.id) }}
+                            title={lang === 'zh' ? '点击查看完成状态详情' : 'Click to view completion status details'}
+                          >
+                            {lang === 'zh' ? '完成状态' : 'Completion Status'}
+                            <i className="fas fa-chevron-right" style={{ fontSize: '9px', marginLeft: '4px' }}></i>
                           </span>
-                        ))}
+                        </div>
+                        {/* Completion Status Popup */}
+                        {completionPopupTarget === kf.id && (
+                          <div className="completion-popup" onClick={e => e.stopPropagation()}>
+                            <div className="popup-header">
+                              <i className="fas fa-tasks"></i>
+                              {lang === 'zh' ? 'KCw 文件完成状态' : 'KCw File Completion Status'}
+                              <button className="popup-close" onClick={() => setCompletionPopupTarget(null)}>
+                                <i className="fas fa-times"></i>
+                              </button>
+                            </div>
+                            <div className="popup-body">
+                              <div className="popup-file-name">{kf.name}</div>
+                              <div className="popup-status-list">
+                                {KCW_STATUS_TYPES.map(st => (
+                                  <div
+                                    key={st.key}
+                                    className={`popup-status-item ${kf.status === st.key ? 'current' : ''}`}
+                                    style={{ borderColor: st.color }}
+                                  >
+                                    <div className="status-dot" style={{ background: st.color }} />
+                                    <span className="status-name">{lang === 'zh' ? st.labelCn : st.label}</span>
+                                    {kf.status === st.key && (
+                                      <span className="current-badge" style={{ background: st.color, color: '#fff' }}>
+                                        {lang === 'zh' ? '当前' : 'Current'}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <div className="ok-related">
+                          <span className="ok-related-label">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</span>
+                          <div className="ok-related-tags">
+                            {relatedOps.map(op => (
+                              <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                                {lang === 'zh' ? op.nameCn : op.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* List + KCw File */}
-        {viewMode === 'list' && dataType === 'kcw' && (
-          <div className="opinion-kcw-content list">
-            {sortedKcwFiles.map(kf => {
-              const relatedOps = getOpinionProfilesForKcw(kf)
-              return (
-                <div key={kf.id} className="ok-item list kcw-list">
-                  <div className="ok-icon kcw-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                      <line x1="12" y1="11" x2="12" y2="17"/>
-                      <line x1="9" y1="14" x2="15" y2="14"/>
-                    </svg>
-                  </div>
-                  <div className="ok-info">
-                    <h4 className="kcw-name" title={kf.name}>{kf.name}</h4>
-                    <div className="ok-meta">
-                      <span className={`ok-status ${kf.status}`}>{kf.status}</span>
-                      <span className="ok-date">{t('lastViewed')}: {kf.lastViewed}</span>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="kcw-list-view">
+                {sortedKcwFiles.map(kf => {
+                  const relatedOps = getOpinionProfilesForKcw(kf)
+                  const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
+                  return (
+                    <div key={kf.id} className="ok-item list kcw-list">
+                      <div className="ok-icon kcw-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                          <line x1="12" y1="11" x2="12" y2="17"/>
+                          <line x1="9" y1="14" x2="15" y2="14"/>
+                        </svg>
+                      </div>
+                      <div className="ok-info">
+                        <h4 className="kcw-name" title={kf.name}>{kf.name}</h4>
+                        <div className="ok-meta">
+                          <span
+                            className="completion-status-badge"
+                            style={{ color: statusInfo.color, background: statusInfo.bgColor }}
+                            onClick={e => { e.stopPropagation(); setCompletionPopupTarget(completionPopupTarget === kf.id ? null : kf.id) }}
+                            title={lang === 'zh' ? '点击查看完成状态详情' : 'Click to view completion status details'}
+                          >
+                            {lang === 'zh' ? '完成状态' : 'Completion Status'}
+                            <i className="fas fa-chevron-right" style={{ fontSize: '9px', marginLeft: '4px' }}></i>
+                          </span>
+                        </div>
+                        {completionPopupTarget === kf.id && (
+                          <div className="completion-popup" onClick={e => e.stopPropagation()}>
+                            <div className="popup-header">
+                              <i className="fas fa-tasks"></i>
+                              {lang === 'zh' ? 'KCw 文件完成状态' : 'KCw File Completion Status'}
+                              <button className="popup-close" onClick={() => setCompletionPopupTarget(null)}>
+                                <i className="fas fa-times"></i>
+                              </button>
+                            </div>
+                            <div className="popup-body">
+                              <div className="popup-file-name">{kf.name}</div>
+                              <div className="popup-status-list">
+                                {KCW_STATUS_TYPES.map(st => (
+                                  <div
+                                    key={st.key}
+                                    className={`popup-status-item ${kf.status === st.key ? 'current' : ''}`}
+                                    style={{ borderColor: st.color }}
+                                  >
+                                    <div className="status-dot" style={{ background: st.color }} />
+                                    <span className="status-name">{lang === 'zh' ? st.labelCn : st.label}</span>
+                                    {kf.status === st.key && (
+                                      <span className="current-badge" style={{ background: st.color, color: '#fff' }}>
+                                        {lang === 'zh' ? '当前' : 'Current'}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="ok-list-extra">
+                        <span className="ok-extra-label">{lang === 'zh' ? '关联 Opinion Profiles' : 'Linked Opinion Profiles'}:</span>
+                        <div className="ok-related-tags horizontal">
+                          {relatedOps.map(op => (
+                            <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                              </svg>
+                              {lang === 'zh' ? op.nameCn : op.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="ok-list-extra">
-                    <span className="ok-extra-label">{lang === 'zh' ? '关联 Opinion Profiles' : 'Linked Opinion Profiles'}:</span>
-                    <div className="ok-related-tags horizontal">
-                      {relatedOps.map(op => (
-                        <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                          </svg>
-                          {lang === 'zh' ? op.nameCn : op.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+                  )
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* 功能模块 Tab 切换 */}
