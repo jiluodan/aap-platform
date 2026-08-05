@@ -1,0 +1,105 @@
+.kyc-page {
+  min-height: 100vh;
+  padding: 40px;
+}
+
+.kyc-header {
+  margin-bottom: 40px;
+}
+
+.kyc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1.5px solid #a7f3d0;
+  cursor: pointer;
+  transition: all 0.25s;
+  margin-bottom: 20px;
+}
+
+.kyc-back-btn:hover {
+  background: #059669;
+  color: white;
+  border-color: transparent;
+  transform: translateX(-3px);
+}
+
+.kyc-title {
+  font-size: 32px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #059669, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.kyc-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.kyc-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.kyc-hero {
+  text-align: center;
+  animation: floatIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.kyc-icon-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 28px;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  color: #059669;
+  box-shadow: 0 16px 40px rgba(5, 150, 105, 0.2);
+}
+
+.kyc-big-text {
+  font-size: 80px;
+  font-weight: 900;
+  letter-spacing: -3px;
+  background: linear-gradient(135deg, #022c22, #059669, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.kyc-sub-main {
+  font-size: 22px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.kyc-desc {
+  font-size: 17px;
+  color: #6b7280;
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.6;
+}

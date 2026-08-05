@@ -9,6 +9,10 @@ import PBCManager from './pages/PBCManager'
 import DataProcessing from './pages/DataProcessing'
 import Dashboard from './pages/Dashboard'
 import Support from './pages/Support'
+import Sentinel from './pages/Sentinel'
+import CEAC from './pages/CEAC'
+import EngagementLetter from './pages/EngagementLetter'
+import KYCRisk from './pages/KYCRisk'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -26,6 +30,10 @@ function App() {
         <Route path="engagement/:clientId/:engagementId/data" element={<DataProcessing />} />
         <Route path="engagement/:clientId/:engagementId/workpapers" element={<WorkPaperStation />} />
         <Route path="opinion/:clientId/:engagementId/:opinionId" element={<OpinionProfile />} />
+        <Route path="sentinel" element={<Sentinel />} />
+        <Route path="ceac" element={<CEAC />} />
+        <Route path="engagement-letter" element={<EngagementLetter />} />
+        <Route path="kyc-risk" element={<KYCRisk />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

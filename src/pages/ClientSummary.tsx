@@ -21,6 +21,7 @@ interface ArmsProfile {
   materiality: string
   dataCollectionStatus: 'complete' | 'in-progress' | 'not-started'
   opinionProfileStatus: 'draft' | 'submitted' | 'approved'
+  budgetOverrun: boolean
 }
 
 interface Client {
@@ -31,6 +32,7 @@ interface Client {
   gaap: string
   market: string
   armsProfiles: ArmsProfile[]
+  kycRiskLevel: 'red' | 'yellow' | 'green'
 }
 
 const clients: Client[] = [
@@ -41,6 +43,7 @@ const clients: Client[] = [
     industry: '工业机器人与智能制造系统集成',
     gaap: '中国企业会计准则',
     market: 'Pre-IPO Growth Company',
+    kycRiskLevel: 'red',
     armsProfiles: [
       {
         id: 'e1', code: 'DEMO-ROBOT-2025', name: '2025年度财务报表审计',
@@ -49,6 +52,7 @@ const clients: Client[] = [
         pbcStatus: 'pending', workPaperCount: 156, procedureCount: 42,
         openExceptions: 8, materiality: 'CNY 4.2M',
         dataCollectionStatus: 'complete', opinionProfileStatus: 'draft',
+        budgetOverrun: true,
       },
       {
         id: 'e2', code: 'DEMO-ROBOT-IPO', name: 'IPO审计',
@@ -57,6 +61,7 @@ const clients: Client[] = [
         pbcStatus: 'overdue', workPaperCount: 89, procedureCount: 28,
         openExceptions: 12, materiality: 'CNY 6.8M',
         dataCollectionStatus: 'in-progress', opinionProfileStatus: 'draft',
+        budgetOverrun: false,
       },
       {
         id: 'e3', code: 'DEMO-ROBOT-IC', name: '内部控制审计',
@@ -65,6 +70,7 @@ const clients: Client[] = [
         pbcStatus: 'complete', workPaperCount: 12, procedureCount: 8,
         openExceptions: 0, materiality: 'CNY 3.5M',
         dataCollectionStatus: 'not-started', opinionProfileStatus: 'draft',
+        budgetOverrun: true,
       },
     ],
   },
@@ -75,6 +81,7 @@ const clients: Client[] = [
     industry: '生物医药研发与制造',
     gaap: '中国企业会计准则',
     market: '科创板上市公司',
+    kycRiskLevel: 'yellow',
     armsProfiles: [
       {
         id: 'e4', code: 'STELLAR-2025', name: '2025年度财务报表审计',
@@ -83,6 +90,7 @@ const clients: Client[] = [
         pbcStatus: 'complete', workPaperCount: 134, procedureCount: 38,
         openExceptions: 3, materiality: 'CNY 2.8M',
         dataCollectionStatus: 'complete', opinionProfileStatus: 'draft',
+        budgetOverrun: false,
       },
     ],
   },
@@ -93,6 +101,7 @@ const clients: Client[] = [
     industry: '新能源发电与储能',
     gaap: '中国企业会计准则',
     market: '主板上市公司',
+    kycRiskLevel: 'green',
     armsProfiles: [
       {
         id: 'e5', code: 'NOVA-2025', name: '2025年度财务报表审计',
@@ -101,6 +110,7 @@ const clients: Client[] = [
         pbcStatus: 'complete', workPaperCount: 198, procedureCount: 51,
         openExceptions: 2, materiality: 'CNY 8.5M',
         dataCollectionStatus: 'complete', opinionProfileStatus: 'submitted',
+        budgetOverrun: false,
       },
       {
         id: 'e6', code: 'NOVA-ESG', name: 'ESG报告鉴证',
@@ -109,6 +119,7 @@ const clients: Client[] = [
         pbcStatus: 'complete', workPaperCount: 5, procedureCount: 3,
         openExceptions: 0, materiality: 'N/A',
         dataCollectionStatus: 'not-started', opinionProfileStatus: 'draft',
+        budgetOverrun: false,
       },
     ],
   },
@@ -119,6 +130,7 @@ const clients: Client[] = [
     industry: '金融科技与数字支付',
     gaap: '中国企业会计准则',
     market: 'Pre-IPO',
+    kycRiskLevel: 'red',
     armsProfiles: [
       {
         id: 'e7', code: 'QUANTUM-2025', name: '2025年度财务报表审计',
@@ -127,6 +139,7 @@ const clients: Client[] = [
         pbcStatus: 'overdue', workPaperCount: 112, procedureCount: 35,
         openExceptions: 15, materiality: 'CNY 1.9M',
         dataCollectionStatus: 'in-progress', opinionProfileStatus: 'draft',
+        budgetOverrun: true,
       },
     ],
   },
@@ -141,15 +154,6 @@ function ClientSummary() {
     setExpandedClient(expandedClient === id ? null : id)
   }
 
-  const getClientSummary = (client: Client) => {
-    const total = client.armsProfiles.length
-    const active = client.armsProfiles.filter(p => p.status === 'active').length
-    const highRisk = client.armsProfiles.filter(p => p.riskLevel === 'high').length
-    const totalExceptions = client.armsProfiles.reduce((sum, p) => sum + p.openExceptions, 0)
-    const avgProgress = Math.round(client.armsProfiles.reduce((sum, p) => sum + p.progress, 0) / total)
-    return { total, active, highRisk, totalExceptions, avgProgress }
-  }
-
   return (
     <div className="client-summary animate-fade-in">
       {/* Page Header */}
@@ -159,62 +163,13 @@ function ClientSummary() {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="summary-stats">
-        <div className="stat-card-wide animate-stagger" style={{ animationDelay: '0s' }}>
-          <div className="stat-icon-bg blue">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-number">{clients.length}</span>
-            <span className="stat-label">{t('activeClients')}</span>
-          </div>
-        </div>
-        <div className="stat-card-wide animate-stagger" style={{ animationDelay: '0.06s' }}>
-          <div className="stat-icon-bg green">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-number">{clients.reduce((sum, c) => sum + c.armsProfiles.filter(e => e.status === 'active').length, 0)}</span>
-            <span className="stat-label">{t('activeProjects')}</span>
-          </div>
-        </div>
-        <div className="stat-card-wide animate-stagger" style={{ animationDelay: '0.12s' }}>
-          <div className="stat-icon-bg amber">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-number">{clients.reduce((sum, c) => sum + c.armsProfiles.filter(e => e.status === 'planning').length, 0)}</span>
-            <span className="stat-label">{t('plannedProjects')}</span>
-          </div>
-        </div>
-        <div className="stat-card-wide animate-stagger" style={{ animationDelay: '0.18s' }}>
-          <div className="stat-icon-bg red">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-number">{clients.reduce((sum, c) => sum + c.armsProfiles.filter(e => e.riskLevel === 'high').length, 0)}</span>
-            <span className="stat-label">{t('highRiskProjects')}</span>
-          </div>
-        </div>
-      </div>
-
       {/* Client Cards List */}
       <div className="clients-list">
         {clients.map((client, index) => {
-          const summary = getClientSummary(client)
           return (
             <div
               key={client.id}
-              className={`client-card ${expandedClient === client.id ? 'expanded' : ''}`}
+              className={`client-card kyc-border-${client.kycRiskLevel} ${expandedClient === client.id ? 'expanded' : ''}`}
               style={{ animationDelay: `${index * 0.08}s` }}
             >
               {/* Client Header */}
@@ -232,46 +187,54 @@ function ClientSummary() {
                   </div>
                 </div>
 
-                {/* ARMS Profile Summary (replaces financials) */}
-                <div className="client-arms-summary">
-                  <div className="arms-sum-item">
-                    <span className="arms-sum-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                {/* Quick Access System Cards (replaces ARMS Summary) */}
+                <div className="quick-access-inline">
+                  <div className="qa-mini-card qa-sentinel" onClick={(e) => { e.stopPropagation(); navigate('/sentinel') }}>
+                    <div className="qa-mini-icon sentinel">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                      </svg>
+                    </div>
+                    <span className="qa-mini-label">Sentinel</span>
+                  </div>
+
+                  <div className="qa-mini-card qa-ceac" onClick={(e) => { e.stopPropagation(); navigate('/ceac') }}>
+                    <div className="qa-mini-icon ceac">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                    </div>
+                    <span className="qa-mini-label">CEAC</span>
+                  </div>
+
+                  <div className="qa-mini-card qa-engagement-letter" onClick={(e) => { e.stopPropagation(); navigate('/engagement-letter') }}>
+                    <div className="qa-mini-icon engagement-letter">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                       </svg>
-                    </span>
-                    <span className="arms-sum-value">{summary.total}</span>
-                    <span className="arms-sum-label">{t('armsProfiles')}</span>
+                    </div>
+                    <span className="qa-mini-label">Engagement Letter</span>
                   </div>
-                  <div className="arms-sum-item">
-                    <span className="arms-sum-icon active">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                      </svg>
-                    </span>
-                    <span className="arms-sum-value">{summary.active}</span>
-                    <span className="arms-sum-label">{t('inProgress')}</span>
-                  </div>
-                  <div className="arms-sum-item">
-                    <span className="arms-sum-icon alert">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
-                      </svg>
-                    </span>
-                    <span className="arms-sum-value">{summary.totalExceptions}</span>
-                    <span className="arms-sum-label">{t('openExceptions')}</span>
-                    {summary.totalExceptions > 5 && (
-                      <span className="alert-pulse-dot"></span>
-                    )}
-                  </div>
-                  <div className="arms-sum-item">
-                    <span className="arms-sum-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                      </svg>
-                    </span>
-                    <span className="arms-sum-value">{summary.avgProgress}%</span>
-                    <span className="arms-sum-label">{t('progress')}</span>
+
+                  <div className={`qa-mini-card qa-kyc-risk ${client.kycRiskLevel}`} onClick={(e) => { e.stopPropagation(); navigate('/kyc-risk') }}>
+                    <div className={`qa-mini-icon kyc-risk ${client.kycRiskLevel}`}>
+                      {client.kycRiskLevel === 'red' && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
+                        </svg>
+                      )}
+                      {client.kycRiskLevel === 'yellow' && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
+                        </svg>
+                      )}
+                      {client.kycRiskLevel === 'green' && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="qa-mini-label">KYC Risk</span>
                   </div>
                 </div>
 
@@ -308,7 +271,7 @@ function ClientSummary() {
                     {client.armsProfiles.map((profile, pi) => (
                       <div
                         key={profile.id}
-                        className={`engagement-card card-lift risk-${profile.riskLevel}`}
+                        className={`engagement-card card-lift`}
                         style={{ animationDelay: `${pi * 0.08}s` }}
                         onClick={() => navigate(`/engagement/${client.id}/${profile.id}`)}
                       >
@@ -339,76 +302,81 @@ function ClientSummary() {
                           <span className="eng-progress-text">{profile.progress}%</span>
                         </div>
 
-                        {/* Second Layer Key Info Icons */}
+                        {/* Financial Info Icons */}
                         <div className="arms-info-row">
-                          {/* Lifecycle Phase */}
-                          <div className="arms-info-icon" title={`${t('lifecyclePhase')}: ${lang === 'zh' ? profile.lifecyclePhase : profile.lifecyclePhaseEn}`}>
-                            <div className="info-icon-bg phase">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                              </svg>
-                            </div>
-                            <span className="info-icon-label">{lang === 'zh' ? profile.lifecyclePhase : profile.lifecyclePhaseEn}</span>
-                          </div>
-
-                          {/* PBC Status */}
-                          <div className={`arms-info-icon ${profile.pbcStatus === 'overdue' ? 'alert' : ''}`} title={`${t('pbcStatus')}: ${profile.pbcStatus}`}>
-                            <div className={`info-icon-bg pbc ${profile.pbcStatus}`}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                              </svg>
-                            </div>
-                            {profile.pbcStatus === 'overdue' && <span className="info-alert-dot"></span>}
-                          </div>
-
-                          {/* Work Papers */}
-                          <div className="arms-info-icon" title={`${t('workPapers')}: ${profile.workPaperCount}`}>
-                            <div className="info-icon-bg papers">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                              </svg>
-                            </div>
-                            <span className="info-icon-count">{profile.workPaperCount}</span>
-                          </div>
-
-                          {/* Procedures */}
-                          <div className="arms-info-icon" title={`${t('auditProcedures')}: ${profile.procedureCount}`}>
-                            <div className="info-icon-bg procedures">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                              </svg>
-                            </div>
-                            <span className="info-icon-count">{profile.procedureCount}</span>
-                          </div>
-
-                          {/* Exceptions */}
-                          <div className={`arms-info-icon ${profile.openExceptions > 5 ? 'alert' : ''}`} title={`${t('openExceptions')}: ${profile.openExceptions}`}>
-                            <div className={`info-icon-bg exceptions ${profile.openExceptions > 5 ? 'alert' : ''}`}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
-                              </svg>
-                            </div>
-                            {profile.openExceptions > 0 && (
-                              <span className="info-icon-count">{profile.openExceptions}</span>
-                            )}
-                          </div>
-
-                          {/* Materiality */}
-                          <div className="arms-info-icon" title={`${t('materiality')}: ${profile.materiality}`}>
-                            <div className="info-icon-bg materiality">
+                          {/* Fee */}
+                          <div className="arms-info-icon" title="Fee">
+                            <div className="info-icon-bg fee">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                               </svg>
                             </div>
-                            <span className="info-icon-label small">{profile.materiality}</span>
+                            <span className="info-icon-label">Fee</span>
+                          </div>
+
+                          {/* FRR% */}
+                          <div className="arms-info-icon" title="FRR%">
+                            <div className="info-icon-bg frr">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+                              </svg>
+                            </div>
+                            <span className="info-icon-label">FRR%</span>
+                          </div>
+
+                          {/* NI (Net Income) */}
+                          <div className="arms-info-icon" title="NI">
+                            <div className="info-icon-bg ni">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                              </svg>
+                            </div>
+                            <span className="info-icon-label">NI</span>
+                          </div>
+
+                          {/* Billing */}
+                          <div className="arms-info-icon" title="Billing">
+                            <div className="info-icon-bg billing">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                              </svg>
+                            </div>
+                            <span className="info-icon-label">Billing</span>
+                          </div>
+
+                          {/* WIP */}
+                          <div className="arms-info-icon" title="WIP">
+                            <div className="info-icon-bg wip">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                              </svg>
+                            </div>
+                            <span className="info-icon-label">WIP</span>
+                          </div>
+
+                          {/* Budget Overrun (是否超支) */}
+                          <div className={`arms-info-icon ${profile.budgetOverrun ? 'alert' : ''}`} title={profile.budgetOverrun ? (lang === 'zh' ? '超支' : 'Over Budget') : (lang === 'zh' ? '正常' : 'Within Budget')}>
+                            <div className={`info-icon-bg overrun ${profile.budgetOverrun ? 'over' : ''}`}>
+                              {profile.budgetOverrun ? (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
+                                </svg>
+                              ) : (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                              )}
+                            </div>
+                            <span className={`info-icon-label ${profile.budgetOverrun ? 'overrun-text' : 'normal-text'}`}>
+                              {profile.budgetOverrun
+                                ? (lang === 'zh' ? '超支' : 'Over')
+                                : (lang === 'zh' ? '正常' : 'OK')}
+                            </span>
                           </div>
                         </div>
 
-                        {/* Risk Level */}
+                        {/* Footer - only arrow */}
                         <div className="eng-footer">
-                          <span className={`eng-risk ${profile.riskLevel}`}>
-                            {profile.riskLevel === 'high' ? t('highRisk') : profile.riskLevel === 'medium' ? t('mediumRisk') : t('lowRisk')}
-                          </span>
                           <span className="eng-arrow">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <path d="m9 18 6-6-6-6"/>

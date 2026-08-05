@@ -1,0 +1,7 @@
+Add Quick Access system cards (Sentinel/CEAC/Engagement Letter/KYC Risk) on Overview
+
+- Add 4 clickable system cards in client card header (replaces ARMS summary)
+- KYC Risk color fixed per client (red/yellow/green risk levels)
+- Client card left border colored by KYC risk level
+- Engagement cards: remove risk border, rename icons to Fee/FRR%/NI/Billing/WIP/overrun, add budget overrun status (red=over/green=normal) with i18n
+- Add Sentinel, CEAC, EngagementLetter, KYCRisk sub-pages

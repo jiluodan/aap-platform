@@ -161,6 +161,111 @@
   font-weight: 500;
 }
 
+/* Quick Access Mini Cards - Inline in Client Header (replaces ARMS Summary) */
+.quick-access-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qa-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.qa-mini-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2.5px;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.qa-mini-card:hover::before { opacity: 1; }
+
+.qa-mini-card:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-color: transparent;
+}
+
+.qa-mini-card:active {
+  transform: translateY(-1px) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* Sentinel - Blue */
+.qa-mini-sentinel { --qa-c: #4f46e5; --qa-bg: #eef2ff; }
+.qa-mini-sentinel::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+.qa-mini-sentinel:hover { box-shadow: 0 8px 20px rgba(79, 70, 229, 0.2); }
+
+/* CEAC - Teal */
+.qa-mini-ceac { --qa-c: #0d9488; --qa-bg: #f0fdfa; }
+.qa-mini-ceac::before { background: linear-gradient(90deg, #14b8a6, #2dd4bf); }
+.qa-mini-ceac:hover { box-shadow: 0 8px 20px rgba(13, 148, 136, 0.2); }
+
+/* Engagement Letter - Violet */
+.qa-mini-engagement-letter { --qa-c: #7c3aed; --qa-bg: #f5f3ff; }
+.qa-mini-engagement-letter::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.qa-mini-engagement-letter:hover { box-shadow: 0 8px 20px rgba(124, 58, 237, 0.2); }
+
+/* KYC Risk - Dynamic */
+.qa-mini-kyc-risk.red { --qa-c: #dc2626; --qa-bg: #fef2f2; }
+.qa-mini-kyc-risk.red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+.qa-mini-kyc-risk.red:hover { box-shadow: 0 8px 20px rgba(220, 38, 38, 0.2); }
+
+.qa-mini-kyc-risk.yellow { --qa-c: #d97706; --qa-bg: #fffbeb; }
+.qa-mini-kyc-risk.yellow::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.qa-mini-kyc-risk.yellow:hover { box-shadow: 0 8px 20px rgba(217, 119, 6, 0.2); }
+
+.qa-mini-kyc-risk.green { --qa-c: #059669; --qa-bg: #ecfdf5; }
+.qa-mini-kyc-risk.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.qa-mini-kyc-risk.green:hover { box-shadow: 0 8px 20px rgba(5, 150, 105, 0.2); }
+
+/* Mini icon */
+.qa-mini-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.qa-mini-card:hover .qa-mini-icon {
+  transform: scale(1.15) rotate(-8deg);
+}
+
+.qa-mini-icon.sentinel { background: linear-gradient(135deg, #eef2ff, #ddd6fe); color: #4f46e5; }
+.qa-mini-icon.ceac { background: linear-gradient(135deg, #f0fdfa, #ccfbf1); color: #0d9488; }
+.qa-mini-icon.engagement-letter { background: linear-gradient(135deg, #f5f3ff, #ede9fe); color: #7c3aed; }
+.qa-mini-icon.kyc-risk.red { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #dc2626; }
+.qa-mini-icon.kyc-risk.yellow { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #d97706; }
+.qa-mini-icon.kyc-risk.green { background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #059669; }
+
+.qa-mini-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
 /* Client Cards */
 .clients-list {
   display: flex;
@@ -175,7 +280,19 @@
   overflow: hidden;
   transition: all var(--transition-base);
   border: 1px solid var(--border-light);
+  border-left: 4px solid #3b82f6;
   animation: staggerIn 0.5s ease-out both;
+}
+
+/* KYC Risk left border colors */
+.client-card.kyc-border-red {
+  border-left-color: #ef4444;
+}
+.client-card.kyc-border-yellow {
+  border-left-color: #f59e0b;
+}
+.client-card.kyc-border-green {
+  border-left-color: #10b981;
 }
 
 .client-card:hover {
@@ -502,16 +619,8 @@
   opacity: 1;
 }
 
-.engagement-card.risk-high::before {
-  background: linear-gradient(90deg, var(--coral-400), var(--coral-300));
-}
-
-.engagement-card.risk-medium::before {
-  background: linear-gradient(90deg, var(--amber-400), var(--amber-300));
-}
-
-.engagement-card.risk-low::before {
-  background: linear-gradient(90deg, var(--teal-400), var(--teal-300));
+.engagement-card::before {
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
 }
 
 .engagement-card:hover {
@@ -520,16 +629,52 @@
   box-shadow: var(--shadow-lg);
 }
 
-.engagement-card.risk-high {
-  border-left: 3px solid var(--coral-400);
+/* Financial info icon colors */
+.info-icon-bg.fee {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #d97706;
 }
-
-.engagement-card.risk-medium {
-  border-left: 3px solid var(--amber-400);
+.info-icon-bg.frr {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #2563eb;
 }
-
-.engagement-card.risk-low {
-  border-left: 3px solid var(--teal-400);
+.info-icon-bg.ni {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  color: #4f46e5;
+}
+.info-icon-bg.billing {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+  color: #7c3aed;
+}
+.info-icon-bg.wip {
+  background: linear-gradient(135deg, #ccfbf1, #99f6e4);
+  color: #0d9488;
+}
+.info-icon-bg.overrun {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #059669;
+}
+/* Over budget - full red */
+.info-icon-bg.overrun.over {
+  background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+  color: #dc2626 !important;
+  animation: pulseRed 2s ease-in-out infinite;
+}
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+}
+/* Over budget text - red */
+.overrun-text {
+  color: #dc2626 !important;
+  font-weight: 700;
+  font-size: 10px;
+}
+/* Within budget text - green */
+.normal-text {
+  color: #059669 !important;
+  font-weight: 600;
+  font-size: 10px;
 }
 
 .eng-card-header {
