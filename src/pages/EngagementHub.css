@@ -439,6 +439,15 @@
   background: linear-gradient(90deg, var(--amber-400), var(--amber-300));
 }
 
+.module-icon-bg.rose {
+  background: linear-gradient(135deg, #fce7f3, #fff1f2);
+  color: #e11d48;
+}
+
+.module-icon-bg.rose::before {
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
+}
+
 .module-content {
   flex: 1;
   min-width: 0;
