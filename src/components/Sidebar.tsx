@@ -203,8 +203,7 @@ function Sidebar() {
               <div className="user-avatar">ER</div>
             </div>
             <div className="user-info">
-              <span className="user-name">Eric Ren</span>
-              <span className="user-role">Senior Audit Manager</span>
+              <span className="user-name">RJ</span>
             </div>
             <div className="user-status online"></div>
           </div>

@@ -27,7 +27,7 @@ function TopNav() {
             </span>
             <div className="welcome-text">
               <span className="welcome-label">{t('welcome')},</span>
-              <span className="welcome-name">Eric</span>
+              <span className="welcome-name">RJ</span>
             </div>
           </div>
         )}
@@ -80,8 +80,7 @@ function TopNav() {
         <div className="nav-user" onClick={() => setShowUserMenu(!showUserMenu)}>
           <div className="user-avatar-mini">ER</div>
           <div className="user-info-mini">
-            <span className="user-name-mini">Eric Ren</span>
-            <span className="user-role-mini">Senior Audit Manager</span>
+            <span className="user-name-mini">RJ</span>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="m6 9 6 6 6-6"/>
