@@ -282,6 +282,8 @@
   border: 1px solid var(--border-light);
   border-left: 4px solid #3b82f6;
   animation: staggerIn 0.5s ease-out both;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* KYC Risk left border colors */
@@ -298,22 +300,45 @@
 .client-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--border);
+  /* Keep KYC left border color on hover */
+}
+.client-card.kyc-border-red:hover {
+  border-left-color: #ef4444;
+}
+.client-card.kyc-border-yellow:hover {
+  border-left-color: #f59e0b;
+}
+.client-card.kyc-border-green:hover {
+  border-left-color: #10b981;
 }
 
 .client-card.expanded {
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-200);
 }
+.client-card.kyc-border-red.expanded {
+  border-left-color: #ef4444;
+}
+.client-card.kyc-border-yellow.expanded {
+  border-left-color: #f59e0b;
+}
+.client-card.kyc-border-green.expanded {
+  border-left-color: #10b981;
+}
+}
 
-/* Client Header */
+/* Client Header - left + right distributed */
 .client-card-header {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 10px 16px;
   cursor: pointer;
   transition: background var(--transition-fast);
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .client-card-header:hover {
@@ -343,6 +368,30 @@
   gap: 10px;
   flex: 1;
   min-width: 0;
+  max-width: 50%;
+  overflow: hidden;
+}
+
+/* Right-side container: mini cards + roll forward + expand - all in one row */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  margin-left: auto !important;
+}
+
+/* Force right positioning if flex doesn't work */
+.client-card-header {
+  position: relative;
+}
+
+.header-right {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .client-avatar-large {

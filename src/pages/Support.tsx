@@ -74,7 +74,7 @@ const mockEnquiries: Enquiry[] = [
   {
     id: '3',
     ticketNo: 'SUP-2025-0845',
-    title: 'Request access to new engagement DEMO-ROBOT-2025',
+    title: 'Request access to new engagement 1668465',
     type: 'access',
     priority: 'medium',
     status: 'resolved',

@@ -46,7 +46,7 @@ const clients: Client[] = [
     kycRiskLevel: 'red',
     armsProfiles: [
       {
-        id: 'e1', code: 'DEMO-ROBOT-2025', name: '2025 Aurora Robotics SH annual audit_1668465',
+        id: 'e1', code: '1668465', name: '2025 Aurora Robotics SH annual audit',
         period: '2025.01-2025.12', status: 'active', progress: 68, riskLevel: 'high',
         lifecyclePhase: '执行阶段', lifecyclePhaseEn: 'Execution',
         pbcStatus: 'pending', workPaperCount: 156, procedureCount: 42,
@@ -55,7 +55,7 @@ const clients: Client[] = [
         budgetOverrun: true,
       },
       {
-        id: 'e2', code: 'DEMO-ROBOT-IPO', name: '2025 Aurora Robotics BJ annual audit_1659011',
+        id: 'e2', code: '1659011', name: '2025 Aurora Robotics BJ annual audit',
         period: '2024.01-2025.12', status: 'active', progress: 35, riskLevel: 'high',
         lifecyclePhase: '计划阶段', lifecyclePhaseEn: 'Planning',
         pbcStatus: 'overdue', workPaperCount: 89, procedureCount: 28,
@@ -64,7 +64,7 @@ const clients: Client[] = [
         budgetOverrun: false,
       },
       {
-        id: 'e3', code: 'DEMO-ROBOT-IC', name: '2025 Aurora Robotics HK annual audit_1605824',
+        id: 'e3', code: '1605824', name: '2025 Aurora Robotics HK annual audit',
         period: '2025.01-2025.12', status: 'planning', progress: 10, riskLevel: 'medium',
         lifecyclePhase: '风险评估', lifecyclePhaseEn: 'Risk Assessment',
         pbcStatus: 'complete', workPaperCount: 12, procedureCount: 8,
@@ -84,7 +84,7 @@ const clients: Client[] = [
     kycRiskLevel: 'yellow',
     armsProfiles: [
       {
-        id: 'e4', code: 'STELLAR-2025', name: '2025 Stellar Pharma annual audit_1668779',
+        id: 'e4', code: '1668779', name: '2025 Stellar Pharma annual audit',
         period: '2025.01-2025.12', status: 'active', progress: 45, riskLevel: 'medium',
         lifecyclePhase: '执行阶段', lifecyclePhaseEn: 'Execution',
         pbcStatus: 'complete', workPaperCount: 134, procedureCount: 38,
@@ -104,7 +104,7 @@ const clients: Client[] = [
     kycRiskLevel: 'green',
     armsProfiles: [
       {
-        id: 'e5', code: 'NOVA-2025', name: 'Nova Energy - health check_1549770',
+        id: 'e5', code: '1549770', name: 'Nova Energy - health check',
         period: '2025.01-2025.12', status: 'active', progress: 72, riskLevel: 'medium',
         lifecyclePhase: '报告阶段', lifecyclePhaseEn: 'Reporting',
         pbcStatus: 'complete', workPaperCount: 198, procedureCount: 51,
@@ -113,7 +113,7 @@ const clients: Client[] = [
         budgetOverrun: false,
       },
       {
-        id: 'e6', code: 'NOVA-ESG', name: 'Nova Energy Holdings IPO 2023-2025_1684752',
+        id: 'e6', code: '1684752', name: 'Nova Energy Holdings IPO 2023-2025',
         period: '2025.01-2025.12', status: 'planning', progress: 5, riskLevel: 'low',
         lifecyclePhase: '项目启动', lifecyclePhaseEn: 'Initiation',
         pbcStatus: 'complete', workPaperCount: 5, procedureCount: 3,
@@ -133,7 +133,7 @@ const clients: Client[] = [
     kycRiskLevel: 'red',
     armsProfiles: [
       {
-        id: 'e7', code: 'QUANTUM-2025', name: '2025 Quantum Finance annual audit_16538418',
+        id: 'e7', code: '16538418', name: '2025 Quantum Finance annual audit',
         period: '2025.01-2025.12', status: 'active', progress: 55, riskLevel: 'high',
         lifecyclePhase: '执行阶段', lifecyclePhaseEn: 'Execution',
         pbcStatus: 'overdue', workPaperCount: 112, procedureCount: 35,
@@ -187,8 +187,10 @@ function ClientSummary() {
                   </div>
                 </div>
 
-                {/* Quick Access System Cards (replaces ARMS Summary) */}
-                <div className="quick-access-inline">
+                {/* Right side: mini cards + roll forward + expand */}
+                <div className="header-right">
+                  {/* Quick Access System Cards */}
+                  <div className="quick-access-inline">
                   <div className="qa-mini-card qa-sentinel" onClick={(e) => { e.stopPropagation() }}>
                     <div className="qa-mini-icon sentinel">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -227,27 +229,28 @@ function ClientSummary() {
                     </div>
                     <span className="qa-mini-label">KYC Risk</span>
                   </div>
-                </div>
+                  </div>
 
-                {/* Roll Forward Button */}
-                <button
-                  className="roll-forward-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    alert(`Roll Forward Opinion Profile for ${client.name}`)
-                  }}
-                  title={t('rollForward')}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                  </svg>
-                  <span>{t('rollForwardShort')}</span>
-                </button>
+                  {/* Roll Forward Button */}
+                  <button
+                    className="roll-forward-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      alert(`Roll Forward Opinion Profile for ${client.name}`)
+                    }}
+                    title={t('rollForward')}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                    <span>{t('rollForwardShort')}</span>
+                  </button>
 
-                <div className="client-expand-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d={expandedClient === client.id ? 'm18 15-6-6-6 6' : 'm6 9 6 6 6-6'}/>
-                  </svg>
+                  <div className="client-expand-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d={expandedClient === client.id ? 'm18 15-6-6-6 6' : 'm6 9 6 6 6-6'}/>
+                    </svg>
+                  </div>
                 </div>
               </div>
 
@@ -256,7 +259,6 @@ function ClientSummary() {
                 <div className="engagements-section animate-fade-in">
                   <div className="engagements-header">
                     <h4>{t('engagementCodes')}</h4>
-                    <span className="engagements-count">{lang === 'zh' ? '项目' : 'Engagement'}</span>
                   </div>
                   <div className="engagements-grid">
                     {client.armsProfiles.map((profile, pi) => (
@@ -268,30 +270,12 @@ function ClientSummary() {
                       >
                         <div className="eng-card-header">
                           <span className="eng-code">{profile.code}</span>
-                          <span className={`eng-status ${profile.status}`}>
-                            {profile.status === 'active' ? t('statusActive') : profile.status === 'planning' ? t('statusPlanning') : t('statusCompleted')}
-                          </span>
                         </div>
 
                         {/* ARMS Profile Name */}
                         <h5 className="eng-name">
                           <span className="arms-name-text">{profile.name}</span>
                         </h5>
-
-                        <p className="eng-period">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                          </svg>
-                          {profile.period}
-                        </p>
-
-                        {/* Progress */}
-                        <div className="eng-progress">
-                          <div className="eng-progress-bar">
-                            <div className="eng-progress-fill" style={{ width: `${profile.progress}%` }}></div>
-                          </div>
-                          <span className="eng-progress-text">{profile.progress}%</span>
-                        </div>
 
                         {/* Financial Info Icons */}
                         <div className="arms-info-row">

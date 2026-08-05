@@ -4,9 +4,9 @@ import { useLanguage } from '../contexts/LanguageContext'
 import './EngagementHub.css'
 
 const engagementData = {
-  clientName: 'Aurora Robotics Systems Inc.',
-  engagementCode: 'DEMO-ROBOT-2025',
-  engagementName: '2025年度财务报表审计',
+  clientName: 'Aurora Robotics Systems Group.',
+  engagementCode: '1668465',
+  engagementName: '2025 Aurora Robotics SH annual audit',
   period: '2025.01.01 - 2025.12.31',
   materiality: 'CNY 12.6m',
   materialityPct: '5.8% of profit before tax',
