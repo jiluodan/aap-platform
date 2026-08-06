@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import './OpinionProfile.css'
 
 interface Phase {
@@ -18,55 +19,176 @@ const opinionPhases: Phase[] = [
 ]
 
 const opinionData = {
-  entityNameEn: 'Demo-1',
-  entityNameCn: 'Demo1',
+  entityNameEn: 'Model electronics limited',
+  reportType: 'Financial statement audit only',
+  armsReportId: 'D000001234',
+  rId: 'R00000863522',
   periodEnd: '2024-12-31',
   signingFirm: 'Dummy Audit Firm LLP',
-  reportType: 'Audit of financial information',
   reportDate: '2026-06-18',
   serialNumber: 'BJSHG2600002',
   currentPhase: 3,
 }
 
+// Other actions data
+interface ActionItem {
+  id: string
+  icon: string
+  iconColor: string
+  title: string
+  desc: string
+}
+
+// Icon components
+const FileTextIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <polyline points="10 9 9 9 8 9"/>
+  </svg>
+)
+
+const FileCheckIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <polyline points="9 15 12 18 17 11"/>
+  </svg>
+)
+
+const FilePlusIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="12" y1="18" x2="12" y2="12"/>
+    <line x1="9" y1="15" x2="15" y2="15"/>
+  </svg>
+)
+
+const FolderIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  </svg>
+)
+
+const DatabaseIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+  </svg>
+)
+
+const WarningIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+)
+
+const DownloadIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+)
+
+const UsersIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
+
+const FileIcon = ({ size = 12 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+  </svg>
+)
+
+interface ActionItem {
+  id: string
+  icon: ReactNode
+  iconColor: string
+  title: string
+  desc: string
+}
+
+const otherActions: ActionItem[] = [
+  {
+    id: 'kdc-fs',
+    icon: <FileTextIcon size={22} />,
+    iconColor: 'amber',
+    title: 'KDC FS word processing and checking service',
+    desc: '',
+  },
+  {
+    id: 'self-service',
+    icon: <FileCheckIcon size={22} />,
+    iconColor: 'blue',
+    title: 'Self-service FS checking in FSC',
+    desc: '',
+  },
+  {
+    id: 'add-kcw',
+    icon: <FilePlusIcon size={22} />,
+    iconColor: 'red',
+    title: 'Add additional KCw file to this opinion profile',
+    desc: '',
+  },
+  {
+    id: 'documents',
+    icon: <FolderIcon size={22} />,
+    iconColor: 'indigo',
+    title: 'Access documents folder',
+    desc: '',
+  },
+  {
+    id: 'hardcopy',
+    icon: <DatabaseIcon size={22} />,
+    iconColor: 'purple',
+    title: 'Hardcopy file assembly',
+    desc: '',
+  },
+]
+
+// Related KCW files data
+interface KcwFileItem {
+  id: string
+  name: string
+  isPrimary: boolean
+}
+
+const relatedKcwFiles: KcwFileItem[] = [
+  { id: 'KC001', name: '241231_Stat_RF_sample2_FSA_ISA_single', isPrimary: true },
+  { id: 'KC002', name: '241231_Stat_RF_sample2_FSA_ISA_single', isPrimary: false },
+]
+
 function OpinionProfile() {
   const { clientId, engagementId } = useParams()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('basic')
-  const [fsDropdownOpen, setFsDropdownOpen] = useState(false)
-  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false)
 
   const currentPhase = opinionPhases.find(p => p.status === 'active')
 
   return (
     <div className="opinion-profile animate-fade-in">
-      {/* 面包屑 */}
-      <div className="op-breadcrumb">
-        <button className="breadcrumb-back" onClick={() => navigate('/')}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="m15 18-6-6-6-6"/>
-          </svg>
-          客户总览
-        </button>
-        <span className="breadcrumb-sep">/</span>
-        <button className="breadcrumb-back" onClick={() => navigate(`/engagement/${clientId}/${engagementId}`)}>
-          1668465
-        </button>
-        <span className="breadcrumb-sep">/</span>
-        <span className="breadcrumb-current">Opinion Profile</span>
+      {/* Page Title Row */}
+      <div className="op-title-row animate-slide-in">
+        <h1 className="op-page-title">
+          {opinionData.entityNameEn} - {opinionData.reportType}{' '}
+          <span className="op-id-text">(ARMS report ID: {opinionData.armsReportId})</span>{' '}
+          ID: {opinionData.rId}
+        </h1>
       </div>
 
-      {/* 页面标题 */}
-      <div className="op-header animate-slide-in">
-        <div>
-          <h1 className="op-title gradient-text">Opinion Profile</h1>
-          <p className="op-subtitle">审计意见配置与报告出具管理</p>
-        </div>
-        <div className="op-badge animate-pulse-glow">
-          <span className="op-phase-indicator">Phase {opinionData.currentPhase} of 4</span>
-        </div>
-      </div>
-
-      {/* Current Phase 进度指示器 */}
+      {/* Current Phase Progress */}
       <div className="op-phase-card animate-fade-in-scale">
         <div className="op-phase-header">
           <h3 className="op-phase-title">
@@ -102,7 +224,7 @@ function OpinionProfile() {
         </div>
       </div>
 
-      {/* 待处理操作 - Arrow shape */}
+      {/* Pending Action Bar */}
       <div className="op-action-bar animate-slide-in">
         <div className="op-action-info">
           <span className="op-action-label">
@@ -119,202 +241,68 @@ function OpinionProfile() {
         </button>
       </div>
 
-      {/* 标签页内容 */}
-      <div className="op-tabs animate-fade-in">
-        <button className={activeTab === 'basic' ? 'active' : ''} onClick={() => setActiveTab('basic')}>基本信息</button>
-        <button className={activeTab === 'reporting' ? 'active' : ''} onClick={() => setActiveTab('reporting')}>报告信息</button>
-        <button className={activeTab === 'templates' ? 'active' : ''} onClick={() => setActiveTab('templates')}>报告模板</button>
-        <button className={activeTab === 'assembly' ? 'active' : ''} onClick={() => setActiveTab('assembly')}>文件组装</button>
-      </div>
-
-      {activeTab === 'basic' && (
-        <div className="op-content animate-fade-in">
-          <div className="op-section glass-card">
-            <h3 className="op-section-title">
-              <span className="op-section-icon blue">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
-                </svg>
-              </span>
-              Basic Information
-            </h3>
-            <div className="op-form-grid">
-              <div className="op-form-item">
-                <label>Entity name in English</label>
-                <div className="op-form-value">{opinionData.entityNameEn}</div>
+      {/* Bottom Section: Other actions + Related KCW files */}
+      <div className="op-bottom-grid animate-fade-in">
+        {/* Left: Other Actions */}
+        <div className="op-other-panel glass-card">
+          <div className="op-panel-header">
+            <span className="op-panel-badge">Other actions</span>
+          </div>
+          <div className="op-actions-grid">
+            {otherActions.map(action => (
+              <div key={action.id} className={`op-action-card ${action.iconColor}`}>
+                <div className={`op-action-icon-wrap ${action.iconColor}`}>
+                  {action.icon}
+                </div>
+                <span className="op-action-card-title">{action.title}</span>
               </div>
-              <div className="op-form-item">
-                <label>Entity name in Chinese</label>
-                <div className="op-form-value">{opinionData.entityNameCn}</div>
-              </div>
-              <div className="op-form-item">
-                <label>Financial period end date</label>
-                <div className="op-form-value">{opinionData.periodEnd}</div>
-              </div>
-              <div className="op-form-item">
-                <label>Current phase</label>
-                <div className="op-form-value highlight">{currentPhase?.title}</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-      )}
 
-      {activeTab === 'reporting' && (
-        <div className="op-content animate-fade-in">
-          <div className="op-section glass-card">
-            <h3 className="op-section-title">
-              <span className="op-section-icon purple">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                </svg>
-              </span>
-              Reporting Information
-            </h3>
-            <div className="op-form-grid">
-              <div className="op-form-item">
-                <label>Signing firm</label>
-                <div className="op-form-value">{opinionData.signingFirm}</div>
-              </div>
-              <div className="op-form-item">
-                <label>Report type</label>
-                <div className="op-form-value">{opinionData.reportType}</div>
-              </div>
-              <div className="op-form-item">
-                <label>Report date</label>
-                <div className="op-form-value">{opinionData.reportDate}</div>
-              </div>
-              <div className="op-form-item">
-                <label>Serial number</label>
-                <div className="op-form-value highlight serial">{opinionData.serialNumber}</div>
-              </div>
-            </div>
+        {/* Right: Related KCW files */}
+        <div className="op-kcw-panel glass-card">
+          <div className="op-panel-header">
+            <span className="op-panel-badge blue">Related KCw files</span>
           </div>
-        </div>
-      )}
 
-      {activeTab === 'templates' && (
-        <div className="op-content animate-fade-in">
-          <div className="op-section glass-card">
-            <h3 className="op-section-title">
-              <span className="op-section-icon teal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                </svg>
-              </span>
-              Standard Report Templates
-            </h3>
-            <div className="template-list">
-              <div className="template-card card-lift">
-                <div className="template-icon-wrap blue">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                  </svg>
+          <div className="op-kcw-list">
+            <div className="op-kcw-group-label">Primary file</div>
+            {relatedKcwFiles.filter(f => f.isPrimary).map(file => (
+              <div key={file.id} className="op-kcw-file-row">
+                <div className="op-kcw-file-badge">
+                  <FileIcon size={12} /> {file.name}
                 </div>
-                <div className="template-info">
-                  <h4>Standard Unqualified Opinion</h4>
-                  <p>标准无保留意见审计报告模板</p>
+                <div className="op-kcw-file-actions">
+                  <button className="op-kcw-action-btn warning" title="Warning">
+                    <WarningIcon size={14} />
+                  </button>
+                  <button className="op-kcw-action-btn amber" title="Download">
+                    <DownloadIcon size={14} />
+                  </button>
+                  <button className="op-kcw-action-btn blue" title="Users">
+                    <UsersIcon size={14} />
+                  </button>
                 </div>
-                <button className="template-btn">使用</button>
               </div>
-              <div className="template-card card-lift">
-                <div className="template-icon-wrap purple">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                  </svg>
-                </div>
-                <div className="template-info">
-                  <h4>Qualified Opinion - Scope Limitation</h4>
-                  <p>保留意见审计报告模板（范围受限）</p>
-                </div>
-                <button className="template-btn">使用</button>
-              </div>
-              <div className="template-card card-lift">
-                <div className="template-icon-wrap amber">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                  </svg>
-                </div>
-                <div className="template-info">
-                  <h4>Emphasis of Matter Paragraph</h4>
-                  <p>强调事项段审计报告模板</p>
-                </div>
-                <button className="template-btn">使用</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            ))}
 
-      {activeTab === 'assembly' && (
-        <div className="op-content animate-fade-in">
-          <div className="op-section glass-card">
-            <h3 className="op-section-title">
-              <span className="op-section-icon amber">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
-              </span>
-              Hardcopy File Assembly
-            </h3>
-            <div className="assembly-card">
-              <div className="assembly-icon-wrap">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
-              </div>
-              <div className="assembly-info">
-                <h4>Manage for current opinion profile</h4>
-                <p>管理当前意见档案的纸质文件组装清单</p>
-              </div>
-              <button className="assembly-btn">管理文件</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Other 区域 */}
-      <div className="op-other-section animate-fade-in">
-        <h3 className="op-other-title">Other</h3>
-        <div className="op-other-grid">
-          <div className="op-other-card glass-card">
-            <h4>Financial statements (FS) typing and checking</h4>
-            <p className="op-other-desc">Request for KDC FS services</p>
-            <p className="op-other-guide">User guide: <span className="guide-link">CN</span> | <span className="guide-link">EN</span></p>
-            <div className="op-other-dropdown">
-              <button className="op-dropdown-btn" onClick={() => setFsDropdownOpen(!fsDropdownOpen)}>
-                Select
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </button>
-              {fsDropdownOpen && (
-                <div className="op-dropdown-menu animate-fade-in-scale">
-                  <div className="op-dropdown-item">Request typing service</div>
-                  <div className="op-dropdown-item">Request checking service</div>
-                  <div className="op-dropdown-item">View status</div>
+            <div className="op-kcw-group-label">Additional file</div>
+            {relatedKcwFiles.filter(f => !f.isPrimary).map(file => (
+              <div key={file.id} className="op-kcw-file-row">
+                <div className="op-kcw-file-badge">
+                  <FileIcon size={12} /> {file.name}
                 </div>
-              )}
-            </div>
-          </div>
-          <div className="op-other-card glass-card">
-            <h4>More actions</h4>
-            <p className="op-other-desc">Access optional actions</p>
-            <div className="op-other-dropdown">
-              <button className="op-dropdown-btn" onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}>
-                Select
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </button>
-              {moreDropdownOpen && (
-                <div className="op-dropdown-menu animate-fade-in-scale">
-                  <div className="op-dropdown-item">Export opinion profile</div>
-                  <div className="op-dropdown-item">Clone profile</div>
-                  <div className="op-dropdown-item">View history</div>
+                <div className="op-kcw-file-actions">
+                  <button className="op-kcw-action-btn amber" title="Download">
+                    <DownloadIcon size={14} />
+                  </button>
+                  <button className="op-kcw-action-btn blue" title="Users">
+                    <UsersIcon size={14} />
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

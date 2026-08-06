@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import './EngagementHub.css'
 
@@ -39,6 +40,9 @@ interface OpinionProfile {
   entityNameEn: string
   entityNameCn: string
   opinionType: string
+  opinionTypeCn: string
+  reportType: string
+  reportTypeCn: string
   kcwFileIds: string[]
   phase: number // 1=Submit opinion profile, 2=Apply serial number, 3=Submit Final declaration, 4=Close out
 }
@@ -48,46 +52,68 @@ const opinionProfiles: OpinionProfile[] = [
     id: 'OP001', name: 'Standard Unqualified', nameCn: '标准无保留意见', status: 'active',
     lastViewed: '2025-01-25', progress: 85,
     entityNameEn: 'Aurora Technology Group Co., Ltd.', entityNameCn: ' Aurora 科技集团有限公司',
-    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC002'], phase: 3
+    opinionType: 'Financial statement audit', reportType: 'Annual Audit',
+    opinionTypeCn: '财务报表审计', reportTypeCn: '年度审计',
+    kcwFileIds: ['KC001', 'KC002'], phase: 3
   },
   {
     id: 'OP002', name: 'Emphasis of Matter', nameCn: '强调事项段', status: 'draft',
     lastViewed: '2025-01-20', progress: 45,
     entityNameEn: 'Golden Horizon Investment Holdings', entityNameCn: '金地平线投资控股有限公司',
-    opinionType: 'Assurance', kcwFileIds: ['KC001', 'KC003'], phase: 2
+    opinionType: 'Component reporting', reportType: 'Review of financial information',
+    opinionTypeCn: '组成部分报告', reportTypeCn: '财务信息审阅',
+    kcwFileIds: ['KC003', 'KC004'], phase: 2
   },
   {
     id: 'OP003', name: 'Qualified - Scope', nameCn: '保留意见（范围受限）', status: 'pending',
     lastViewed: '2025-01-18', progress: 20,
     entityNameEn: 'Pacific Star Real Estate Development Co., Ltd.', entityNameCn: '太平洋星房地产开发有限公司',
-    opinionType: 'Others', kcwFileIds: ['KC001'], phase: 1
+    opinionType: 'Others', reportType: 'Annual Audit',
+    opinionTypeCn: '其他', reportTypeCn: '年度审计',
+    kcwFileIds: ['KC005'], phase: 1
   },
 ]
 
 const kcwFiles: KCwFile[] = [
   {
-    id: 'KC001', name: '241231_Stat_RF_sample2_FSA_ISA_single', nameCn: '241231_统计_RF_样本2_FSA_ISA_单一',
+    id: 'KC001', name: '241231_Stat_RF_Aurora_Planning', nameCn: '241231_统计_RF_Aurora_计划',
     status: 'completed', lastViewed: '2025-01-24', type: 'Planning',
-    workbookOpinionName: '241231_Stat_RF_sample2_FSA_ISA_single',
+    workbookOpinionName: '241231_Stat_RF_Aurora_Planning',
     lastYearSerialNumber: 'Dummy Firm Cert No.2600020 / R0000012667(06)',
     currentYearAapId: 'R000001267106',
-    opinionProfileIds: ['OP001', 'OP002', 'OP003']
+    opinionProfileIds: ['OP001']
   },
   {
-    id: 'KC002', name: '241231_Stat_RF_sample2_FSA_ISA_single', nameCn: '241231_统计_RF_样本2_FSA_ISA_单一',
+    id: 'KC002', name: '241231_Stat_RF_Aurora_Risk', nameCn: '241231_统计_RF_Aurora_风险',
     status: 'in-progress', lastViewed: '2025-01-22', type: 'Risk',
-    workbookOpinionName: '241231_Stat_RF_sample2_FSA_ISA_single',
+    workbookOpinionName: '241231_Stat_RF_Aurora_Risk',
     lastYearSerialNumber: 'Dummy Firm Cert No.2600093 / R000001267076(06)',
     currentYearAapId: 'R000001258885',
     opinionProfileIds: ['OP001']
   },
   {
-    id: 'KC003', name: '241231_Stat_RF_sample2_FSA_ISA_single', nameCn: '241231_统计_RF_样本2_FSA_ISA_单一',
-    status: 'pending', lastViewed: '2025-01-15', type: 'Fraud',
-    workbookOpinionName: '241231_Stat_RF_sample2_FSA_ISA_single',
+    id: 'KC003', name: '241231_Stat_RF_GoldenHorizon_Planning', nameCn: '241231_统计_RF_金地平线_计划',
+    status: 'pending', lastViewed: '2025-01-15', type: 'Planning',
+    workbookOpinionName: '241231_Stat_RF_GoldenHorizon_Planning',
     lastYearSerialNumber: 'Dummy Firm Cert No.2600104 / R000001267079(06)',
     currentYearAapId: 'R000001258895',
     opinionProfileIds: ['OP002']
+  },
+  {
+    id: 'KC004', name: '241231_Stat_RF_GoldenHorizon_Fraud', nameCn: '241231_统计_RF_金地平线_舞弊',
+    status: 'not-started', lastViewed: '2025-01-10', type: 'Fraud',
+    workbookOpinionName: '241231_Stat_RF_GoldenHorizon_Fraud',
+    lastYearSerialNumber: 'Dummy Firm Cert No.2600115 / R000001267082(06)',
+    currentYearAapId: 'R000001258906',
+    opinionProfileIds: ['OP002']
+  },
+  {
+    id: 'KC005', name: '241231_Stat_RF_PacificStar_Single', nameCn: '241231_统计_RF_太平洋星_单一',
+    status: 'on-hold', lastViewed: '2025-01-08', type: 'Risk',
+    workbookOpinionName: '241231_Stat_RF_PacificStar_Single',
+    lastYearSerialNumber: 'Dummy Firm Cert No.2600128 / R000001267095(06)',
+    currentYearAapId: 'R000001258917',
+    opinionProfileIds: ['OP003']
   },
 ]
 
@@ -108,6 +134,15 @@ const KCW_STATUS_TYPES = [
   { key: 'on-hold', label: 'On Hold', labelCn: '暂停', color: '#ef4444', bgColor: '#fee2e2' },
 ]
 
+// Completion status phases for popup detail view
+const COMPLETION_PHASES = [
+  { key: 'preliminary', label: 'Preliminary Activities', labelCn: '初步活动', value: '85%' },
+  { key: 'planning', label: 'Planning', labelCn: '计划', value: '72%' },
+  { key: 'intiem', label: 'Inteim response', labelCn: '中期回应', value: '45%' },
+  { key: 'final', label: 'Final response', labelCn: '最终回应', value: '20%' },
+  { key: 'completion', label: 'Completion', labelCn: '完成', value: '0%' },
+]
+
 function EngagementHub() {
   const { clientId, engagementId } = useParams()
   const navigate = useNavigate()
@@ -117,7 +152,32 @@ function EngagementHub() {
   const [sortBy, setSortBy] = useState('lastViewed')
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile')
   const [listTab, setListTab] = useState<'opinion' | 'kcw'>('opinion')
-  const [completionPopupTarget, setCompletionPopupTarget] = useState<string | null>(null) // which KCw file's popup to show
+  // Completion status popup: store the active KCw file + its badge screen position
+  const [completionPopup, setCompletionPopup] = useState<{ kf: any; left: number; top: number } | null>(null)
+
+  // Calculate popup position (flip upward if near bottom of viewport)
+  const calcPopupPos = (badgeEl: HTMLElement) => {
+    const rect = badgeEl.getBoundingClientRect()
+    const POPUP_HEIGHT_ESTIMATE = 220 // approximate height in px
+    const GAP = 4
+    const spaceBelow = window.innerHeight - rect.bottom - GAP
+    if (spaceBelow < POPUP_HEIGHT_ESTIMATE) {
+      // Not enough space below → pop up above the badge
+      return { left: rect.left, top: rect.top - POPUP_HEIGHT_ESTIMATE - GAP }
+    }
+    // Default: pop down below the badge
+    return { left: rect.left, top: rect.bottom + GAP }
+  }
+
+  // Lock body scroll while popup is open
+  useEffect(() => {
+    if (completionPopup) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [completionPopup])
 
   const budgetPct = Math.round((engagementData.budget.used / engagementData.budget.total) * 100)
   const budgetOver = budgetPct > 100
@@ -147,6 +207,11 @@ function EngagementHub() {
   const getOpinionProfilesForKcw = (kf: KCwFile) => {
     return opinionProfiles.filter(op => kf.opinionProfileIds.includes(op.id))
   }
+
+  // Unique KCW File count across all Opinion Profiles (deduplicated)
+  const uniqueLinkedKcwCount = new Set(
+    opinionProfiles.flatMap(op => op.kcwFileIds)
+  ).size
 
   const filteredOpinions = opinionProfiles.filter(op => {
     const name = lang === 'zh' ? op.nameCn : op.name
@@ -265,6 +330,15 @@ function EngagementHub() {
                 <i className="fas fa-list"></i>
                 <span>{t('listView')}</span>
               </button>
+              {viewMode === 'list' && listTab === 'opinion' && (
+                <button
+                  className="add-opinion-btn"
+                  onClick={() => {}}
+                  title={lang === 'zh' ? '新增 Opinion Profile' : 'Add Opinion Profile'}
+                >
+                  <i className="fas fa-plus"></i> New Opinion Profile
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -332,7 +406,7 @@ function EngagementHub() {
             <div className="kcw-column">
               <h3 className="column-title">
                 <i className="fas fa-database"></i> KCw File
-                <span className="column-count">{sortedKcwFiles.length}</span>
+                <span className="column-count">{uniqueLinkedKcwCount}</span>
               </h3>
               <div className="kcw-grid">
                 {sortedKcwFiles.map(kf => {
@@ -356,45 +430,21 @@ function EngagementHub() {
                           <span
                             className="completion-status-badge"
                             style={{ color: statusInfo.color, background: statusInfo.bgColor }}
-                            onClick={e => { e.stopPropagation(); setCompletionPopupTarget(completionPopupTarget === kf.id ? null : kf.id) }}
+                            onClick={e => {
+                              e.stopPropagation()
+                              if (completionPopup?.kf.id === kf.id) {
+                                setCompletionPopup(null)
+                              } else {
+                                const pos = calcPopupPos(e.currentTarget as HTMLElement)
+                                setCompletionPopup({ kf, ...pos })
+                              }
+                            }}
                             title={lang === 'zh' ? '点击查看完成状态详情' : 'Click to view completion status details'}
                           >
                             {lang === 'zh' ? '完成状态' : 'Completion Status'}
                             <i className="fas fa-chevron-right" style={{ fontSize: '9px', marginLeft: '4px' }}></i>
                           </span>
                         </div>
-                        {/* Completion Status Popup */}
-                        {completionPopupTarget === kf.id && (
-                          <div className="completion-popup" onClick={e => e.stopPropagation()}>
-                            <div className="popup-header">
-                              <i className="fas fa-tasks"></i>
-                              {lang === 'zh' ? 'KCw 文件完成状态' : 'KCw File Completion Status'}
-                              <button className="popup-close" onClick={() => setCompletionPopupTarget(null)}>
-                                <i className="fas fa-times"></i>
-                              </button>
-                            </div>
-                            <div className="popup-body">
-                              <div className="popup-file-name">{kf.name}</div>
-                              <div className="popup-status-list">
-                                {KCW_STATUS_TYPES.map(st => (
-                                  <div
-                                    key={st.key}
-                                    className={`popup-status-item ${kf.status === st.key ? 'current' : ''}`}
-                                    style={{ borderColor: st.color }}
-                                  >
-                                    <div className="status-dot" style={{ background: st.color }} />
-                                    <span className="status-name">{lang === 'zh' ? st.labelCn : st.label}</span>
-                                    {kf.status === st.key && (
-                                      <span className="current-badge" style={{ background: st.color, color: '#fff' }}>
-                                        {lang === 'zh' ? '当前' : 'Current'}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
                         <div className="ok-related">
                           <span className="ok-related-label">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</span>
                           <div className="ok-related-tags">
@@ -403,7 +453,7 @@ function EngagementHub() {
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                                 </svg>
-                                {lang === 'zh' ? op.nameCn : op.name}
+                                {lang === 'zh' ? op.entityNameCn : op.entityNameEn}
                               </span>
                             ))}
                           </div>
@@ -434,7 +484,7 @@ function EngagementHub() {
               >
                 <span className="tab-dot kcw-dot"></span>
                 KCw File
-                <span className="tab-count">{sortedKcwFiles.length}</span>
+                <span className="tab-count">{uniqueLinkedKcwCount}</span>
               </button>
             </div>
 
@@ -447,8 +497,8 @@ function EngagementHub() {
                     <tr>
                       <th className="col-aap-id">AAP ID</th>
                       <th className="col-entity">{lang === 'zh' ? 'Entity name' : 'Entity name'}</th>
-                      <th className="col-opinion-type">{lang === 'zh' ? 'Opinion type' : 'Opinion type'}</th>
-                      <th className="col-report-type">{lang === 'zh' ? 'Report type' : 'Report type'}</th>
+                      <th className="col-opinion-type">{lang === 'zh' ? '意见类型' : 'Opinion Type'}</th>
+                      <th className="col-report-type">{lang === 'zh' ? '报告类型' : 'Report Type'}</th>
                       <th className="col-period">{lang === 'zh' ? 'Financial period end' : 'Financial period end'}</th>
                       <th className="col-report-date">{lang === 'zh' ? 'Report date' : 'Report date'}</th>
                       <th className="col-phase">Phase 1</th>
@@ -464,8 +514,8 @@ function EngagementHub() {
                         <td className="col-entity">
                           <div>{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</div>
                         </td>
-                        <td className="col-opinion-type"><span className="type-badge">{op.opinionType}</span></td>
-                        <td className="col-report-type">{lang === 'zh' ? '年度审计' : 'Annual Audit'}</td>
+                        <td className="col-opinion-type">{lang === 'zh' ? op.opinionTypeCn : op.opinionType}</td>
+                        <td className="col-report-type">{lang === 'zh' ? op.reportTypeCn : op.reportType}</td>
                         <td className="col-period">2025-12-31</td>
                         <td className="col-report-date">2026-04-30</td>
                         {[1, 2, 3, 4].map(phaseNum => (
@@ -476,11 +526,11 @@ function EngagementHub() {
                               </span>
                             ) : op.phase === phaseNum ? (
                               <span className="phase-check current" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6"><circle cx="12" cy="12" r="6"/></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="6"/><path d="M12 8v4"/></svg>
                               </span>
                             ) : (
                               <span className="phase-check pending" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2"><circle cx="12" cy="12" r="6"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="#ef4444"><circle cx="12" cy="12" r="10"/><rect x="11" y="7" width="2" height="8" rx="1" fill="white"/><circle cx="12" cy="18.5" r="1.5" fill="white"/></svg>
                               </span>
                             )}
                           </td>
@@ -516,41 +566,18 @@ function EngagementHub() {
                             <span
                               className="status-badge"
                               style={{ color: statusInfo.color, background: statusInfo.bgColor }}
-                              onClick={e => { e.stopPropagation(); setCompletionPopupTarget(completionPopupTarget === kf.id ? null : kf.id) }}
+                              onClick={e => {
+                                e.stopPropagation()
+                                if (completionPopup?.kf.id === kf.id) {
+                                  setCompletionPopup(null)
+                                } else {
+                                  const pos = calcPopupPos(e.currentTarget as HTMLElement)
+                                  setCompletionPopup({ kf, ...pos })
+                                }
+                              }}
                             >
                               {lang === 'zh' ? statusInfo.labelCn : statusInfo.label}
                             </span>
-                            {completionPopupTarget === kf.id && (
-                              <div className="completion-popup table-popup" onClick={e => e.stopPropagation()}>
-                                <div className="popup-header">
-                                  <i className="fas fa-tasks"></i>
-                                  {lang === 'zh' ? 'KCw 文件完成状态' : 'KCw File Completion Status'}
-                                  <button className="popup-close" onClick={() => setCompletionPopupTarget(null)}>
-                                    <i className="fas fa-times"></i>
-                                  </button>
-                                </div>
-                                <div className="popup-body">
-                                  <div className="popup-file-name">{kf.name}</div>
-                                  <div className="popup-status-list">
-                                    {KCW_STATUS_TYPES.map(st => (
-                                      <div
-                                        key={st.key}
-                                        className={`popup-status-item ${kf.status === st.key ? 'current' : ''}`}
-                                        style={{ borderColor: st.color }}
-                                      >
-                                        <div className="status-dot" style={{ background: st.color }} />
-                                        <span className="status-name">{lang === 'zh' ? st.labelCn : st.label}</span>
-                                        {kf.status === st.key && (
-                                          <span className="current-badge" style={{ background: st.color, color: '#fff' }}>
-                                            {lang === 'zh' ? '当前' : 'Current'}
-                                          </span>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
                           </td>
                           <td className="col-workbook" title={kf.workbookOpinionName}>{kf.workbookOpinionName}</td>
                           <td className="col-serial" title={kf.lastYearSerialNumber}>{kf.lastYearSerialNumber}</td>
@@ -561,7 +588,7 @@ function EngagementHub() {
                                   key={op.id}
                                   className="linked-tag"
                                 >
-                                  {lang === 'zh' ? op.nameCn : op.name}
+                                  {lang === 'zh' ? op.entityNameCn : op.entityNameEn}
                                 </span>
                               ))}
                             </div>
@@ -658,6 +685,31 @@ function EngagementHub() {
           </div>
         </div>
       </div>
+      {completionPopup && createPortal(
+        <div className="popup-overlay" onClick={() => setCompletionPopup(null)}>
+          <div
+            className="completion-popup"
+            style={{ position: 'fixed', left: completionPopup.left, top: completionPopup.top }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="popup-header">
+              <span>{lang === 'zh' ? '完成状态' : 'Completion status'}</span>
+              <button className="popup-close" onClick={() => setCompletionPopup(null)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="popup-body popup-phase-body">
+              {COMPLETION_PHASES.map(phase => (
+                <div key={phase.key} className="popup-phase-row">
+                  <span className="phase-label-text">{lang === 'zh' ? phase.labelCn : phase.label}</span>
+                  <span className="phase-value-na">{phase.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }
