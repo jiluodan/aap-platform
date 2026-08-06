@@ -509,7 +509,7 @@ function EngagementHub() {
                   </thead>
                   <tbody>
                     {sortedOpinions.map(op => (
-                      <tr key={op.id}>
+                      <tr key={op.id} className="clickable-row" onClick={() => handleOpinionClick(op.id)}>
                         <td className="col-aap-id"><span className="aap-id-link">{op.id}</span></td>
                         <td className="col-entity">
                           <div>{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</div>
@@ -522,15 +522,25 @@ function EngagementHub() {
                           <td key={phaseNum} className="col-phase">
                             {op.phase > phaseNum ? (
                               <span className="phase-check done" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                  <circle cx="12" cy="12" r="11" fill="#10b981" fillOpacity="0.15"/>
+                                  <path d="M8 12l3 3 5-6" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
                               </span>
                             ) : op.phase === phaseNum ? (
                               <span className="phase-check current" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="6"/><path d="M12 8v4"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                  <circle cx="12" cy="12" r="11" fill="#f59e0b" fillOpacity="0.15"/>
+                                  <circle cx="12" cy="12" r="4.5" fill="#f59e0b"/>
+                                </svg>
                               </span>
                             ) : (
                               <span className="phase-check pending" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="#ef4444"><circle cx="12" cy="12" r="10"/><rect x="11" y="7" width="2" height="8" rx="1" fill="white"/><circle cx="12" cy="18.5" r="1.5" fill="white"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                  <circle cx="12" cy="12" r="11" fill="#ef4444" fillOpacity="0.15"/>
+                                  <path d="M12 7v6" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/>
+                                  <circle cx="12" cy="17" r="1.5" fill="#ef4444"/>
+                                </svg>
                               </span>
                             )}
                           </td>
@@ -544,55 +554,50 @@ function EngagementHub() {
                 <table className="data-table kcw-table">
                   <thead>
                     <tr>
-                      <th className="col-aap-id">AAP ID</th>
-                      <th className="col-filename">{lang === 'zh' ? 'File name' : 'File name'}</th>
-                      <th className="col-type">{lang === 'zh' ? 'Type' : 'Type'}</th>
-                      <th className="col-completion">{lang === 'zh' ? 'Completion status' : 'Completion status'}</th>
-                      <th className="col-workbook">{lang === 'zh' ? 'Workbook opinion name' : 'Workbook opinion name'}</th>
-                      <th className="col-serial">{lang === 'zh' ? 'Last year serial number' : 'Last year serial number'}</th>
-                      <th className="col-linked">{lang === 'zh' ? 'Linked Opinion Profiles' : 'Linked Opinion Profiles'}</th>
+                      <th className="col-kcw-name">{lang === 'zh' ? 'KCw file name' : 'KCw file name'}</th>
+                      <th className="col-kcw-workflow">{lang === 'zh' ? 'Workflow' : 'Workflow'}</th>
+                      <th className="col-kcw-rate">{lang === 'zh' ? 'COMPLETION RATE' : 'COMPLETION RATE'}</th>
+                      <th className="col-kcw-actions">{lang === 'zh' ? 'Manage KCw file' : 'Manage KCw file'}</th>
+                      <th className="col-kcw-linked-count">{lang === 'zh' ? 'Numbers of linked opinion profile' : 'Numbers of linked opinion profile'}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedKcwFiles.map(kf => {
                       const relatedOps = getOpinionProfilesForKcw(kf)
                       const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
+                      // Workflow label mapping: type -> display name
+                      const workflowMap: Record<string, string> = {
+                        'Planning': 'Enhanced',
+                        'Risk': 'Standard',
+                        'Fraud': 'Generic',
+                      }
+                      const workflowLabel = workflowMap[kf.type] || kf.type
+                      // Completion rate mapping: status key -> percentage
+                      const rateMap: Record<string, string> = {
+                        'completed': '100%',
+                        'in-progress': '78.5%',
+                        'pending': '2%',
+                        'not-started': '0%',
+                        'on-hold': '12%',
+                      }
                       return (
                         <tr key={kf.id}>
-                          <td className="col-aap-id"><span className="aap-id-link">{kf.currentYearAapId}</span></td>
-                          <td className="col-filename" title={kf.name}>{kf.name}</td>
-                          <td className="col-type"><span className="type-badge">{kf.type}</span></td>
-                          <td className="col-completion">
-                            <span
-                              className="status-badge"
-                              style={{ color: statusInfo.color, background: statusInfo.bgColor }}
-                              onClick={e => {
-                                e.stopPropagation()
-                                if (completionPopup?.kf.id === kf.id) {
-                                  setCompletionPopup(null)
-                                } else {
-                                  const pos = calcPopupPos(e.currentTarget as HTMLElement)
-                                  setCompletionPopup({ kf, ...pos })
-                                }
-                              }}
-                            >
-                              {lang === 'zh' ? statusInfo.labelCn : statusInfo.label}
-                            </span>
+                          <td className="col-kcw-name" title={kf.name}>{kf.name}</td>
+                          <td className="col-kcw-workflow">
+                            <span className={`workflow-badge ${workflowLabel.toLowerCase()}`}>{workflowLabel}</span>
                           </td>
-                          <td className="col-workbook" title={kf.workbookOpinionName}>{kf.workbookOpinionName}</td>
-                          <td className="col-serial" title={kf.lastYearSerialNumber}>{kf.lastYearSerialNumber}</td>
-                          <td className="col-linked">
-                            <div className="linked-tags">
-                              {relatedOps.map(op => (
-                                <span
-                                  key={op.id}
-                                  className="linked-tag"
-                                >
-                                  {lang === 'zh' ? op.entityNameCn : op.entityNameEn}
-                                </span>
-                              ))}
+                          <td className="col-kcw-rate">
+                            <span className="completion-rate" style={{ color: statusInfo.color }}>{rateMap[kf.status] || '0%'}</span>
+                          </td>
+                          <td className="col-kcw-actions">
+                            <div className="kcw-action-group">
+                              <button className="kcw-action-btn team" title={lang === 'zh' ? 'Team member' : 'Team member'}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0b6e99" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                {lang === 'zh' ? 'Team member' : 'Team member'}
+                              </button>
                             </div>
                           </td>
+                          <td className="col-kcw-linked-count">{relatedOps.length}</td>
                         </tr>
                       )
                     })}
@@ -612,7 +617,7 @@ function EngagementHub() {
         <div className="modules-tabs-content">
           <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/pbc`)}>
             <div className="module-icon-bg amber">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
               </svg>
             </div>
@@ -621,7 +626,7 @@ function EngagementHub() {
               <p>{lang === 'zh' ? '客户资料收集与管理中心，追踪PBC清单状态及跟进事项' : 'Client-provided document collection and management center, tracking PBC list status and follow-ups'}</p>
             </div>
             <div className="module-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
             </div>
@@ -629,7 +634,7 @@ function EngagementHub() {
 
           <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/data`)}>
             <div className="module-icon-bg purple">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
               </svg>
             </div>
@@ -638,7 +643,7 @@ function EngagementHub() {
               <p>{lang === 'zh' ? '财务数据采集、清洗、转换与分析处理中心，支持多数据源接入' : 'Financial data collection, cleaning, transformation and analysis center, supporting multi-source data access'}</p>
             </div>
             <div className="module-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
             </div>
@@ -646,7 +651,7 @@ function EngagementHub() {
 
           <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/procedures`)}>
             <div className="module-icon-bg blue">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
               </svg>
             </div>
@@ -655,7 +660,7 @@ function EngagementHub() {
               <p>{lang === 'zh' ? '审计程序执行中心，包含Vouching、JE Testing、Credit Review等核心审计程序' : 'Audit procedure execution center, including Vouching, JE Testing, Credit Review and other core audit procedures'}</p>
             </div>
             <div className="module-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
             </div>
@@ -663,7 +668,7 @@ function EngagementHub() {
 
           <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/workpapers`)}>
             <div className="module-icon-bg rose">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/>
@@ -678,7 +683,7 @@ function EngagementHub() {
               <p>Template management center for audit work papers, maintaining standardized templates for all engagement procedures</p>
             </div>
             <div className="module-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
             </div>
