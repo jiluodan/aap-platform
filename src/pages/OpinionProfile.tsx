@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useParams } from 'react-router-dom'
 import './OpinionProfile.css'
 
 interface Phase {
@@ -114,35 +115,35 @@ interface ActionItem {
 const otherActions: ActionItem[] = [
   {
     id: 'kdc-fs',
-    icon: <FileTextIcon size={22} />,
+    icon: <FileTextIcon size={18} />,
     iconColor: 'amber',
     title: 'KDC FS word processing and checking service',
     desc: '',
   },
   {
     id: 'self-service',
-    icon: <FileCheckIcon size={22} />,
+    icon: <FileCheckIcon size={18} />,
     iconColor: 'blue',
     title: 'Self-service FS checking in FSC',
     desc: '',
   },
   {
     id: 'add-kcw',
-    icon: <FilePlusIcon size={22} />,
+    icon: <FilePlusIcon size={18} />,
     iconColor: 'red',
     title: 'Add additional KCw file to this opinion profile',
     desc: '',
   },
   {
     id: 'documents',
-    icon: <FolderIcon size={22} />,
+    icon: <FolderIcon size={18} />,
     iconColor: 'indigo',
     title: 'Access documents folder',
     desc: '',
   },
   {
     id: 'hardcopy',
-    icon: <DatabaseIcon size={22} />,
+    icon: <DatabaseIcon size={18} />,
     iconColor: 'purple',
     title: 'Hardcopy file assembly',
     desc: '',
@@ -162,15 +163,24 @@ const relatedKcwFiles: KcwFileItem[] = [
 ]
 
 function OpinionProfile() {
+  const { opName } = useParams<{ opName?: string }>()
+  const displayName = opName ? decodeURIComponent(opName) : 'Opinion Profile'
+
   return (
     <div className="opinion-profile animate-fade-in">
-      {/* Page Title Row */}
-      <div className="op-title-row animate-slide-in">
-        <h1 className="op-page-title">
-          {opinionData.entityNameEn} - {opinionData.reportType}{' '}
-          <span className="op-id-text">(ARMS report ID: {opinionData.armsReportId})</span>{' '}
-          ID: {opinionData.rId}
-        </h1>
+      {/* Blue Header Info Card */}
+      <div className="op-header-card animate-slide-in">
+        <h1 className="op-header-title">{displayName}</h1>
+        <div className="op-header-grid">
+          <div className="op-info-row-inline"><span className="op-info-key">Opinion type</span><span className="op-info-val">{opinionData.reportType}</span></div>
+          <div className="op-info-row-inline"><span className="op-info-key">Report type</span><span className="op-info-val">Annual statutory audit</span></div>
+          <div className="op-info-row-inline"><span className="op-info-key">Signing firm</span><span className="op-info-val">{opinionData.signingFirm}</span></div>
+          <div className="op-info-row-inline"><span className="op-info-key">Financial period end</span><span className="op-info-val mono">{opinionData.periodEnd}</span></div>
+          <div className="op-info-row-inline"><span className="op-info-key">ARMS report ID</span><span className="op-info-val mono">{opinionData.armsReportId}</span></div>
+          <div className="op-info-row-inline"><span className="op-info-key">Report date</span><span className="op-info-val mono">{opinionData.reportDate}</span></div>
+          <div className="op-info-row-inline"><span className="op-info-key">Serial number</span><span className="op-info-val mono">{opinionData.serialNumber}</span></div>
+          <div className="op-info-row-inline"><span className="op-info-key">File assembly date</span><span className="op-info-val mono">2025-05-02</span></div>
+        </div>
       </div>
 
       {/* Current Phase Progress */}
@@ -260,13 +270,13 @@ function OpinionProfile() {
                 </div>
                 <div className="op-kcw-file-actions">
                   <button className="op-kcw-action-btn warning" title="Warning">
-                    <WarningIcon size={14} />
+                    <WarningIcon size={12} />
                   </button>
                   <button className="op-kcw-action-btn amber" title="Download">
-                    <DownloadIcon size={14} />
+                    <DownloadIcon size={12} />
                   </button>
                   <button className="op-kcw-action-btn blue" title="Users">
-                    <UsersIcon size={14} />
+                    <UsersIcon size={12} />
                   </button>
                 </div>
               </div>
@@ -280,10 +290,10 @@ function OpinionProfile() {
                 </div>
                 <div className="op-kcw-file-actions">
                   <button className="op-kcw-action-btn amber" title="Download">
-                    <DownloadIcon size={14} />
+                    <DownloadIcon size={12} />
                   </button>
                   <button className="op-kcw-action-btn blue" title="Users">
-                    <UsersIcon size={14} />
+                    <UsersIcon size={12} />
                   </button>
                 </div>
               </div>

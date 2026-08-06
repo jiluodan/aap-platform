@@ -282,8 +282,8 @@ function EngagementHub() {
     return 0
   })
 
-  const handleOpinionClick = (opinionId: string) => {
-    navigate(`/opinion/${clientId}/${engagementId}/${opinionId}`)
+  const handleOpinionClick = (opinionId: string, opinionEntityName: string) => {
+    navigate(`/opinion/${clientId}/${engagementId}/${opinionId}/${encodeURIComponent(opinionEntityName)}`)
   }
 
   const handleKcwClick = (kcwId: string) => {
@@ -411,7 +411,7 @@ function EngagementHub() {
                 {sortedOpinions.map(op => {
                   const relatedKcw = getKcwFilesForOpinion(op)
                   return (
-                    <div key={op.id} className="ok-item tile opinion-tile" onClick={() => handleOpinionClick(op.id)}>
+                    <div key={op.id} className="ok-item tile opinion-tile" onClick={() => handleOpinionClick(op.id, op.entityNameEn)}>
                       <div className="ok-tile-top">
                         <div className="ok-icon opinion-icon">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -511,7 +511,7 @@ function EngagementHub() {
                             <div className="ok-kcw-panel-title">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</div>
                             <div className="ok-kcw-list">
                               {relatedOps.map(op => (
-                                <div key={op.id} className="ok-kcw-item opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                                <div key={op.id} className="ok-kcw-item opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id, op.entityNameEn) }}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                                   </svg>
@@ -572,7 +572,7 @@ function EngagementHub() {
                   </thead>
                   <tbody>
                     {sortedOpinions.map(op => (
-                      <tr key={op.id} className="clickable-row" onClick={() => handleOpinionClick(op.id)}>
+                      <tr key={op.id} className="clickable-row" onClick={() => handleOpinionClick(op.id, op.entityNameEn)}>
                         <td className="col-aap-id"><span className="aap-id-link">{op.id}</span></td>
                         <td className="col-entity">
                           <div>{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</div>

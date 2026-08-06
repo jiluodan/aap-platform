@@ -30,7 +30,7 @@ function App() {
         <Route path="engagement/:clientId/:engagementId/pbc" element={<PBCManager />} />
         <Route path="engagement/:clientId/:engagementId/data" element={<DataProcessing />} />
         <Route path="engagement/:clientId/:engagementId/workpapers" element={<WorkPaperStation />} />
-        <Route path="opinion/:clientId/:engagementId/:opinionId" element={<OpinionProfile />} />
+        <Route path="opinion/:clientId/:engagementId/:opinionId/:opName?" element={<OpinionProfile />} />
         <Route path="kcw/:clientId/:engagementId/:kcwId" element={<KcwFileDetail />} />
         <Route path="sentinel" element={<Sentinel />} />
         <Route path="ceac" element={<CEAC />} />
