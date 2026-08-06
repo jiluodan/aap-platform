@@ -43,6 +43,7 @@ interface OpinionProfile {
   opinionTypeCn: string
   reportType: string
   reportTypeCn: string
+  armsReportId: string
   kcwFileIds: string[]
   phase: number // 1=Submit opinion profile, 2=Apply serial number, 3=Submit Final declaration, 4=Close out
 }
@@ -54,7 +55,7 @@ const opinionProfiles: OpinionProfile[] = [
     entityNameEn: 'Aurora Technology Group Co., Ltd.', entityNameCn: ' Aurora 科技集团有限公司',
     opinionType: 'Financial statement audit', reportType: 'Annual Audit',
     opinionTypeCn: '财务报表审计', reportTypeCn: '年度审计',
-    kcwFileIds: ['KC001', 'KC002'], phase: 3
+    armsReportId: 'R00001051234', kcwFileIds: ['KC001', 'KC002'], phase: 3
   },
   {
     id: 'OP002', name: 'Emphasis of Matter', nameCn: '强调事项段', status: 'draft',
@@ -62,7 +63,7 @@ const opinionProfiles: OpinionProfile[] = [
     entityNameEn: 'Golden Horizon Investment Holdings', entityNameCn: '金地平线投资控股有限公司',
     opinionType: 'Component reporting', reportType: 'Review of financial information',
     opinionTypeCn: '组成部分报告', reportTypeCn: '财务信息审阅',
-    kcwFileIds: ['KC003', 'KC004'], phase: 2
+    armsReportId: 'R00001057271', kcwFileIds: ['KC003', 'KC004'], phase: 2
   },
   {
     id: 'OP003', name: 'Qualified - Scope', nameCn: '保留意见（范围受限）', status: 'pending',
@@ -70,9 +71,36 @@ const opinionProfiles: OpinionProfile[] = [
     entityNameEn: 'Pacific Star Real Estate Development Co., Ltd.', entityNameCn: '太平洋星房地产开发有限公司',
     opinionType: 'Others', reportType: 'Annual Audit',
     opinionTypeCn: '其他', reportTypeCn: '年度审计',
-    kcwFileIds: ['KC005'], phase: 1
+    armsReportId: 'R00001058233', kcwFileIds: ['KC005'], phase: 1
   },
 ]
+
+// Phase icon for tile cards (matches list-view style)
+const PhaseIcon = ({ status, size = 14 }: { status: 'done' | 'current' | 'pending'; size?: number }) => {
+  if (status === 'done') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="phase-icon-done">
+        <circle cx="8" cy="8" r="7" fill="#10B981" fillOpacity="0.15" stroke="#10B981" strokeWidth="1.2" />
+        <path d="M5 8l2 2 4-4" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (status === 'current') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="phase-icon-current">
+        <circle cx="8" cy="8" r="7" fill="#F59E0B" fillOpacity="0.18" stroke="#F59E0B" strokeWidth="1.2" />
+        <circle cx="8" cy="8" r="3.5" fill="#F59E0B" />
+      </svg>
+    )
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" className="phase-icon-pending">
+      <circle cx="7" cy="7" r="6" fill="#EF4444" fillOpacity="0.15" stroke="#EF4444" strokeWidth="1.2" />
+      <line x1="7" y1="3.5" x2="7" y2="8" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="7" cy="10.5" r="0.9" fill="#EF4444" />
+    </svg>
+  )
+}
 
 const kcwFiles: KCwFile[] = [
   {
@@ -155,18 +183,27 @@ function EngagementHub() {
   // Completion status popup: store the active KCw file + its badge screen position
   const [completionPopup, setCompletionPopup] = useState<{ kf: any; left: number; top: number } | null>(null)
 
-  // Calculate popup position (flip upward if near bottom of viewport)
+  // Calculate popup position with boundary clamping
   const calcPopupPos = (badgeEl: HTMLElement) => {
     const rect = badgeEl.getBoundingClientRect()
-    const POPUP_HEIGHT_ESTIMATE = 220 // approximate height in px
+    const POPUP_WIDTH = 220
+    const POPUP_HEIGHT_ESTIMATE = 260
     const GAP = 4
     const spaceBelow = window.innerHeight - rect.bottom - GAP
+    let top: number
     if (spaceBelow < POPUP_HEIGHT_ESTIMATE) {
       // Not enough space below → pop up above the badge
-      return { left: rect.left, top: rect.top - POPUP_HEIGHT_ESTIMATE - GAP }
+      top = Math.max(8, rect.top - POPUP_HEIGHT_ESTIMATE - GAP)
+    } else {
+      top = rect.bottom + GAP
     }
-    // Default: pop down below the badge
-    return { left: rect.left, top: rect.bottom + GAP }
+    // Clamp left to stay within viewport
+    let left = rect.left
+    if (left + POPUP_WIDTH > window.innerWidth) {
+      left = window.innerWidth - POPUP_WIDTH - 12
+    }
+    if (left < 8) left = 8
+    return { left, top }
   }
 
   // Lock body scroll while popup is open
@@ -251,6 +288,19 @@ function EngagementHub() {
 
   const handleKcwClick = (kcwId: string) => {
     navigate(`/kcw/${clientId}/${engagementId}/${kcwId}`)
+  }
+
+  // Workflow & rate maps (shared between tile and list views)
+  const workflowMap: Record<string, string> = {
+    'Planning': 'Enhanced',
+    'Risk': 'Standard',
+    'Fraud': 'Generic',
+  }
+  const rateMap: Record<string, string> = {
+    'completed': '100%',
+    'in-progress': '78.5%',
+    'pending': '2%',
+    'not-started': '0%',
   }
 
   return (
@@ -361,43 +411,46 @@ function EngagementHub() {
                 {sortedOpinions.map(op => {
                   const relatedKcw = getKcwFilesForOpinion(op)
                   return (
-                    <div key={op.id} className="ok-item tile" onClick={() => handleOpinionClick(op.id)}>
-                      <div className="ok-header-row">
+                    <div key={op.id} className="ok-item tile opinion-tile" onClick={() => handleOpinionClick(op.id)}>
+                      <div className="ok-tile-top">
                         <div className="ok-icon opinion-icon">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                             <polyline points="14 2 14 8 20 8"/>
                             <path d="M9 14l2 2 4-4"/>
-                            <circle cx="16" cy="16" r="5" fill="var(--primary-100)" stroke="var(--primary-500)" strokeWidth="1.5"/>
                           </svg>
                         </div>
-                        <h4 className="ok-title-inline">{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</h4>
-                      </div>
-                      <div className="ok-info">
-                        {/* Phase stepper */}
-                        <div className="phase-stepper">
-                          {PHASE_STEPS.map((step, idx) => (
-                            <div key={step.key} className={`phase-step ${op.phase >= step.key ? 'active' : ''} ${op.phase === step.key ? 'current' : ''}`}>
-                              <div className="phase-dot">{step.key}</div>
-                              {idx < PHASE_STEPS.length - 1 && <div className={`phase-line ${op.phase > step.key ? 'active' : ''}`} />}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="phase-label">
-                          {lang === 'zh' ? PHASE_STEPS.find(s => s.key === op.phase)?.labelCn : PHASE_STEPS.find(s => s.key === op.phase)?.label}
+                        <h4 className="ok-tile-name">{lang === 'zh' ? op.entityNameCn : op.entityNameEn}</h4>
+                        <div className={`ok-phase-badge phase-${op.phase === 4 ? 'done' : op.phase === 1 ? 'pending' : 'current'}`}>
+                          <PhaseIcon status={op.phase === 4 ? 'done' : op.phase === 1 ? 'pending' : 'current'} size={13} />
+                          <span>Phase {op.phase}</span>
                         </div>
                       </div>
-                      <div className="ok-related">
-                        <span className="ok-related-label">{lang === 'zh' ? '关联 KCw Files' : 'Linked KCw Files'}:</span>
-                        <div className="ok-related-tags">
-                          {relatedKcw.map(kf => (
-                            <span key={kf.id} className="ok-link-tag kcw-link" onClick={e => e.stopPropagation()}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                              </svg>
-                              {kf.name}
-                            </span>
-                          ))}
+                      <div className="ok-tile-main">
+                        <div className="ok-tile-body">
+                          <div className="ok-tile-row">
+                            <span className="ok-tile-key">{lang === 'zh' ? '意见类型' : 'Opinion Type'}</span>
+                            <span className="ok-tile-val">{op.opinionType}</span>
+                          </div>
+                          <div className="ok-tile-row">
+                            <span className="ok-tile-key">{lang === 'zh' ? 'ARMS 报告编号' : 'ARMS report ID'}</span>
+                            <span className="ok-tile-val mono">{op.armsReportId}</span>
+                          </div>
+                        </div>
+                        <div className="ok-kcw-panel">
+                          <div className="ok-kcw-panel-title">{lang === 'zh' ? '关联 KCw 文件' : 'Linked KCw File'}</div>
+                          <div className="ok-kcw-list">
+                            {relatedKcw.length > 0 ? relatedKcw.map(kf => (
+                              <div key={kf.id} className="ok-kcw-item kcw-link" onClick={e => e.stopPropagation()}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                                </svg>
+                                {kf.name}
+                              </div>
+                            )) : (
+                              <span className="ok-kcw-empty">—</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -418,50 +471,56 @@ function EngagementHub() {
                   const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
                   return (
                     <div key={kf.id} className="ok-item tile kcw-tile" onClick={() => handleKcwClick(kf.id)}>
-                      <div className="ok-header-row">
+                      <div className="ok-tile-top">
                         <div className="ok-icon kcw-icon">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                            <line x1="12" y1="11" x2="12" y2="17"/>
-                            <line x1="9" y1="14" x2="15" y2="14"/>
                           </svg>
                         </div>
-                        <h4 className="ok-title-inline kcw-name" title={kf.name}>{kf.name}</h4>
+                        <h4 className="ok-tile-name kcw-name" title={kf.name}>{kf.name}</h4>
+                        <span
+                          className={`completion-status-badge compact ${kf.status}`}
+                          style={{ color: statusInfo.color, background: statusInfo.bgColor }}
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (completionPopup?.kf.id === kf.id) {
+                              setCompletionPopup(null)
+                            } else {
+                              const pos = calcPopupPos(e.currentTarget as HTMLElement)
+                              setCompletionPopup({ kf, ...pos })
+                            }
+                          }}
+                          title={lang === 'zh' ? '点击查看完成状态详情' : 'Click to view completion status details'}
+                        >
+                          {lang === 'zh' ? '完成状态' : 'Status'}
+                        </span>
                       </div>
-                      <div className="ok-info">
-                        <div className="ok-meta">
-                          {/* Completion Status - clickable badge */}
-                          <span
-                            className="completion-status-badge"
-                            style={{ color: statusInfo.color, background: statusInfo.bgColor }}
-                            onClick={e => {
-                              e.stopPropagation()
-                              if (completionPopup?.kf.id === kf.id) {
-                                setCompletionPopup(null)
-                              } else {
-                                const pos = calcPopupPos(e.currentTarget as HTMLElement)
-                                setCompletionPopup({ kf, ...pos })
-                              }
-                            }}
-                            title={lang === 'zh' ? '点击查看完成状态详情' : 'Click to view completion status details'}
-                          >
-                            {lang === 'zh' ? '完成状态' : 'Completion Status'}
-                            <i className="fas fa-chevron-right" style={{ fontSize: '9px', marginLeft: '4px' }}></i>
-                          </span>
-                        </div>
-                        <div className="ok-related">
-                          <span className="ok-related-label">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</span>
-                          <div className="ok-related-tags">
-                            {relatedOps.map(op => (
-                              <span key={op.id} className="ok-link-tag opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                                </svg>
-                                {lang === 'zh' ? op.entityNameCn : op.entityNameEn}
-                              </span>
-                            ))}
+                      <div className="ok-tile-main">
+                        <div className="ok-tile-body">
+                          <div className="ok-tile-row">
+                            <span className="ok-tile-key">{lang === 'zh' ? '工作流类型' : 'Workflow'}</span>
+                            <span className="ok-tile-val">{workflowMap[kf.type] || kf.type}</span>
+                          </div>
+                          <div className="ok-tile-row">
+                            <span className="ok-tile-key">{lang === 'zh' ? '完成率' : 'Completion Rate'}</span>
+                            <span className="ok-tile-val mono">{rateMap[kf.status] || kf.status}</span>
                           </div>
                         </div>
+                        {relatedOps.length > 0 && (
+                          <div className="ok-kcw-panel">
+                            <div className="ok-kcw-panel-title">{lang === 'zh' ? '关联意见档案' : 'Linked Opinion Profiles'}:</div>
+                            <div className="ok-kcw-list">
+                              {relatedOps.map(op => (
+                                <div key={op.id} className="ok-kcw-item opinion-link" onClick={e => { e.stopPropagation(); handleOpinionClick(op.id) }}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                                  </svg>
+                                  {lang === 'zh' ? op.entityNameCn : op.entityNameEn}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
@@ -569,26 +628,11 @@ function EngagementHub() {
                     {sortedKcwFiles.map(kf => {
                       const relatedOps = getOpinionProfilesForKcw(kf)
                       const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
-                      // Workflow label mapping: type -> display name
-                      const workflowMap: Record<string, string> = {
-                        'Planning': 'Enhanced',
-                        'Risk': 'Standard',
-                        'Fraud': 'Generic',
-                      }
-                      const workflowLabel = workflowMap[kf.type] || kf.type
-                      // Completion rate mapping: status key -> percentage
-                      const rateMap: Record<string, string> = {
-                        'completed': '100%',
-                        'in-progress': '78.5%',
-                        'pending': '2%',
-                        'not-started': '0%',
-                        'on-hold': '12%',
-                      }
                       return (
                         <tr key={kf.id} className="clickable-row" onClick={() => handleKcwClick(kf.id)}>
                           <td className="col-kcw-name" title={kf.name}>{kf.name}</td>
                           <td className="col-kcw-workflow">
-                            <span className={`workflow-badge ${workflowLabel.toLowerCase()}`}>{workflowLabel}</span>
+                            <span className={`workflow-badge ${(workflowMap[kf.type] || kf.type).toLowerCase()}`}>{workflowMap[kf.type] || kf.type}</span>
                           </td>
                           <td className="col-kcw-rate">
                             <span className="completion-rate" style={{ color: statusInfo.color }}>{rateMap[kf.status] || '0%'}</span>

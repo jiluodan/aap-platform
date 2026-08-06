@@ -146,14 +146,13 @@
 /* Mini Bar Chart inside Hero - enhanced visibility */
 .hero-mini-chart {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: flex-end;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  padding: 14px 18px;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  padding: 11px 14px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 91, 184, 0.08);
   position: relative;
   z-index: 1;
   flex-shrink: 0;
@@ -163,52 +162,52 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  width: 52px;
+  gap: 3px;
+  width: 50px;
 }
 
+/* Label — small, muted, secondary info */
 .mini-bar-label {
   font-size: 9px;
-  color: #475569;
+  color: #94a3b8;
   text-align: center;
   white-space: nowrap;
-  font-weight: 600;
-  max-width: 56px;
+  font-weight: 400;
+  max-width: 54px;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: 0.2px;
+  letter-spacing: -0.05px;
 }
 
 .mini-bar-track {
-  width: 28px;
-  height: 60px;
-  background: #f1f5f9;
-  border-radius: 5px;
+  width: 20px;
+  height: 42px;
+  background: linear-gradient(to top, #f1f5f9 0%, #eef2f7 100%);
+  border-radius: 3px 3px 0 0;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: none;
   position: relative;
 }
 
 .mini-bar-fill {
   width: 100%;
-  border-radius: 4px 4px 0 0;
-  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  min-height: 6px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.5s ease-out;
+  min-height: 5px;
   position: relative;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .mini-bar-fill:hover {
-  filter: brightness(1.08);
-  transform: scaleX(1.05);
+  filter: brightness(1.06);
 }
 
+/* Value — bold, primary color, the focal point */
 .mini-bar-value {
-  font-size: 11px;
-  font-weight: 800;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .hub-metrics {
@@ -905,41 +904,178 @@
 }
 
 .ok-item.tile {
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* Icon + Title in same row for tile mode */
-.ok-header-row {
+/* Opinion Profile tile — compact, prominent border, phase badge top-right */
+.opinion-tile {
+  border: 1.5px solid var(--primary-300);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.04), rgba(59, 130, 246, 0.03));
+  position: relative;
+}
+
+.opinion-tile:hover {
+  border-color: var(--primary-500);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.18);
+  transform: translateY(-2px);
+}
+
+.ok-tile-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.ok-header-row .ok-icon {
-  width: 32px;
-  height: 32px;
+.ok-tile-top .ok-icon {
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
-.ok-header-row .ok-icon svg {
-  width: 16px;
-  height: 16px;
+.ok-tile-top .ok-icon svg {
+  width: 13px;
+  height: 13px;
 }
 
-.ok-title-inline {
-  font-size: 12px;
+.ok-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.ok-phase-badge.phase-done {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.ok-phase-badge.phase-current {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+}
+
+.ok-phase-badge.phase-pending {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.ok-phase-badge svg {
+  display: block;
+}
+
+.ok-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ok-tile-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ok-tile-key {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.ok-tile-val {
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ok-tile-val.mono {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 10.5px;
+  letter-spacing: -0.2px;
+}
+
+/* Opinion Profile name in tile top row */
+.ok-tile-name {
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
   min-width: 0;
+}
+
+/* Main content row: info left + KCw panel right (side-by-side like reference image) */
+.ok-tile-main {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* Right-side Linked KCw panel — no border, clean inline style */
+.ok-kcw-panel {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px 0;
+}
+
+.ok-kcw-panel-title {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.ok-kcw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ok-kcw-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1.35;
+}
+
+.ok-kcw-item:hover {
+  color: var(--primary-700);
+  text-decoration: underline;
+}
+
+.ok-kcw-item svg {
+  flex-shrink: 0;
+}
+
+.ok-kcw-empty {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
 .ok-item.list {
@@ -976,6 +1112,13 @@
   color: #ffffff;
   box-shadow: 0 3px 10px rgba(13, 148, 136, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.12);
+  width: 24px;
+  height: 24px;
+}
+
+.ok-icon.kcw-icon svg {
+  width: 13px;
+  height: 13px;
 }
 
 .ok-item.list .ok-icon {
@@ -1450,13 +1593,40 @@
 
 /* ===== KCw Name Ellipsis ===== */
 .kcw-name {
-  font-size: 14px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+
+/* KCW tile — symmetric with opinion-tile (border, compact) */
+.kcw-tile {
+  border: 1.5px solid var(--primary-300);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.04), rgba(20, 184, 166, 0.03));
+}
+
+.kcw-tile:hover {
+  border-color: var(--teal-500);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18);
+  transform: translateY(-2px);
+}
+
+/* Compact completion status badge in kcw tile top row */
+.completion-status-badge.compact {
+  font-size: 10px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.completion-status-badge.compact:hover {
+  filter: brightness(0.95);
+  transform: scale(1.02);
 }
 
 /* ===== List Expand ===== */
