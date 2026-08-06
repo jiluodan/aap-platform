@@ -1,5 +1,3 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import type { ReactNode } from 'react'
 import './OpinionProfile.css'
 
@@ -31,14 +29,6 @@ const opinionData = {
 }
 
 // Other actions data
-interface ActionItem {
-  id: string
-  icon: string
-  iconColor: string
-  title: string
-  desc: string
-}
-
 // Icon components
 const FileTextIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -172,11 +162,6 @@ const relatedKcwFiles: KcwFileItem[] = [
 ]
 
 function OpinionProfile() {
-  const { clientId, engagementId } = useParams()
-  const navigate = useNavigate()
-
-  const currentPhase = opinionPhases.find(p => p.status === 'active')
-
   return (
     <div className="opinion-profile animate-fade-in">
       {/* Page Title Row */}

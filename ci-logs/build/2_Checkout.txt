@@ -1,0 +1,74 @@
+﻿2026-08-06T04:17:41.0516942Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-06T04:17:41.0524822Z ##[group]Run actions/checkout@v4
+2026-08-06T04:17:41.0525362Z with:
+2026-08-06T04:17:41.0525639Z   repository: jiluodan/aap-platform
+2026-08-06T04:17:41.0528537Z   token: ***
+2026-08-06T04:17:41.0528802Z   ssh-strict: true
+2026-08-06T04:17:41.0529050Z   ssh-user: git
+2026-08-06T04:17:41.0529309Z   persist-credentials: true
+2026-08-06T04:17:41.0529585Z   clean: true
+2026-08-06T04:17:41.0529836Z   sparse-checkout-cone-mode: true
+2026-08-06T04:17:41.0530158Z   fetch-depth: 1
+2026-08-06T04:17:41.0530399Z   fetch-tags: false
+2026-08-06T04:17:41.0530642Z   show-progress: true
+2026-08-06T04:17:41.0530915Z   lfs: false
+2026-08-06T04:17:41.0531145Z   submodules: false
+2026-08-06T04:17:41.0531433Z   set-safe-directory: true
+2026-08-06T04:17:41.0531719Z   allow-unsafe-pr-checkout: false
+2026-08-06T04:17:41.0532282Z ##[endgroup]
+2026-08-06T04:17:41.1534245Z Syncing repository: jiluodan/aap-platform
+2026-08-06T04:17:41.1536314Z ##[group]Getting Git version info
+2026-08-06T04:17:41.1537702Z Working directory is '/home/runner/work/aap-platform/aap-platform'
+2026-08-06T04:17:41.1538935Z [command]/usr/bin/git version
+2026-08-06T04:17:41.1683330Z git version 2.54.0
+2026-08-06T04:17:41.1706559Z ##[endgroup]
+2026-08-06T04:17:41.1722136Z Temporarily overriding HOME='/home/runner/work/_temp/8164c067-f4ed-40a4-9afa-20fd77926ed4' before making global git config changes
+2026-08-06T04:17:41.1723552Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-06T04:17:41.1728910Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aap-platform/aap-platform
+2026-08-06T04:17:41.1786937Z Deleting the contents of '/home/runner/work/aap-platform/aap-platform'
+2026-08-06T04:17:41.1794957Z ##[group]Initializing the repository
+2026-08-06T04:17:41.1798590Z [command]/usr/bin/git init /home/runner/work/aap-platform/aap-platform
+2026-08-06T04:17:41.1932055Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-06T04:17:41.1933130Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-06T04:17:41.1934077Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-06T04:17:41.1935106Z hint: call:
+2026-08-06T04:17:41.1935492Z hint:
+2026-08-06T04:17:41.1936010Z hint: 	git config --global init.defaultBranch <name>
+2026-08-06T04:17:41.1936640Z hint:
+2026-08-06T04:17:41.1937430Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-06T04:17:41.1938403Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-06T04:17:41.1939119Z hint:
+2026-08-06T04:17:41.1939533Z hint: 	git branch -m <name>
+2026-08-06T04:17:41.1939990Z hint:
+2026-08-06T04:17:41.1940580Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-06T04:17:41.1941632Z Initialized empty Git repository in /home/runner/work/aap-platform/aap-platform/.git/
+2026-08-06T04:17:41.1958512Z [command]/usr/bin/git remote add origin https://github.com/jiluodan/aap-platform
+2026-08-06T04:17:41.2005482Z ##[endgroup]
+2026-08-06T04:17:41.2006240Z ##[group]Disabling automatic garbage collection
+2026-08-06T04:17:41.2010219Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-06T04:17:41.2048683Z ##[endgroup]
+2026-08-06T04:17:41.2049349Z ##[group]Setting up auth
+2026-08-06T04:17:41.2057680Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-06T04:17:41.2101729Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-06T04:17:41.2532525Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-06T04:17:41.2576417Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-06T04:17:41.2833549Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-06T04:17:41.2879136Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-06T04:17:41.3173144Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-06T04:17:41.3212049Z ##[endgroup]
+2026-08-06T04:17:41.3213053Z ##[group]Fetching the repository
+2026-08-06T04:17:41.3222771Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +19c473efe612a4c667edeed0d8818f34cb971ba4:refs/remotes/origin/main
+2026-08-06T04:17:41.7447505Z From https://github.com/jiluodan/aap-platform
+2026-08-06T04:17:41.7448864Z  * [new ref]         19c473efe612a4c667edeed0d8818f34cb971ba4 -> origin/main
+2026-08-06T04:17:41.7488839Z ##[endgroup]
+2026-08-06T04:17:41.7489640Z ##[group]Determining the checkout info
+2026-08-06T04:17:41.7493154Z ##[endgroup]
+2026-08-06T04:17:41.7500111Z [command]/usr/bin/git sparse-checkout disable
+2026-08-06T04:17:41.7557348Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-06T04:17:41.7594027Z ##[group]Checking out the ref
+2026-08-06T04:17:41.7600562Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-08-06T04:17:41.7705488Z Switched to a new branch 'main'
+2026-08-06T04:17:41.7709082Z branch 'main' set up to track 'origin/main'.
+2026-08-06T04:17:41.7716017Z ##[endgroup]
+2026-08-06T04:17:41.7766505Z [command]/usr/bin/git log -1 --format=%H
+2026-08-06T04:17:41.7795984Z 19c473efe612a4c667edeed0d8818f34cb971ba4

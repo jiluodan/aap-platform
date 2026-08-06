@@ -1,4 +1,3 @@
-import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import './WorkPaperStation.css'
 
@@ -51,8 +50,6 @@ const kcwFileOptions = [
 ]
 
 function WorkPaperStation() {
-  const { clientId, engagementId } = useParams()
-  const navigate = useNavigate()
   const [selectedKcw, setSelectedKcw] = useState(kcwFileOptions[0]?.value || '')
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     'std-other': true,
