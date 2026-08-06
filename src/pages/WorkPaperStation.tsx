@@ -2,192 +2,343 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import './WorkPaperStation.css'
 
-interface WorkPaper {
+// ===== Data Types =====
+interface WpRow {
   id: string
-  code: string
-  title: string
-  procedure: string
-  procedureCode: string
-  preparer: string
-  reviewer: string
-  status: 'draft' | 'pending_review' | 'reviewed' | 'approved'
-  risk: 'high' | 'medium' | 'low'
-  lastModified: string
-  findings: number
+  name: string
+  requiredType: 'Required' | 'Highly Rec.'
+  linkedKcwActivity: string
+  wpTemplates: string[]
+  status: 'Not Selected' | 'Selected'
 }
 
-const workPapers: WorkPaper[] = [
-  { id: '1', code: 'WP-001', title: 'Vouching Test - Revenue', procedure: 'Vouching', procedureCode: 'AP-001', preparer: '张三', reviewer: '张经理', status: 'approved', risk: 'high', lastModified: '2026-07-28', findings: 0 },
-  { id: '2', code: 'WP-002', title: 'JE Testing - Unusual Entries', procedure: 'JE Testing', procedureCode: 'AP-002', preparer: '李四', reviewer: '张经理', status: 'pending_review', risk: 'high', lastModified: '2026-07-27', findings: 3 },
-  { id: '3', code: 'WP-003', title: 'Credit Review - AR Aging', procedure: 'Credit Review', procedureCode: 'AP-003', preparer: '王五', reviewer: '李经理', status: 'draft', risk: 'high', lastModified: '2026-07-26', findings: 0 },
-  { id: '4', code: 'WP-004', title: 'Inventory Count Observation', procedure: 'Inventory Observation', procedureCode: 'AP-004', preparer: '赵六', reviewer: '李经理', status: 'reviewed', risk: 'medium', lastModified: '2026-07-25', findings: 1 },
-  { id: '5', code: 'WP-005', title: 'Bank Confirmation Summary', procedure: 'Bank Confirmation', procedureCode: 'AP-005', preparer: '钱七', reviewer: '赵经理', status: 'approved', risk: 'medium', lastModified: '2026-07-24', findings: 0 },
-  { id: '6', code: 'WP-006', title: 'Analytical Review - Revenue', procedure: 'Analytical Review', procedureCode: 'AP-006', preparer: '孙八', reviewer: '张经理', status: 'draft', risk: 'medium', lastModified: '2026-07-23', findings: 0 },
+interface SubstWpRow {
+  id: string
+  name: string
+  procedureId: string
+  subType: string
+  rmId: string
+  mesp: string
+  required: boolean
+  kcwActivity: string
+  wpTemplates: string[]
+  status: 'Not Selected' | 'Selected'
+}
+
+// ===== Demo Data =====
+const standardWpRows: WpRow[] = [
+  { id: 's1', name: 'D&A Routine Output', requiredType: 'Required', linkedKcwActivity: 'kcw_act_778095', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 's2', name: 'Independent Workpaper on Fees-related Requirements', requiredType: 'Required', linkedKcwActivity: 'kcw_act_82144d', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 's3', name: 'Tax Provision Review – Specialist WP', requiredType: 'Required', linkedKcwActivity: 'kcw_act_599xe5', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
 ]
 
-const statusMap = {
-  draft: { label: '草稿', color: '#718096', bg: '#F7FAFC' },
-  pending_review: { label: '待复核', color: '#D69E2E', bg: '#FFFBEB' },
-  reviewed: { label: '已复核', color: '#3182CE', bg: '#EBF4FF' },
-  approved: { label: '已批准', color: '#00A3A1', bg: '#E6FFFA' },
-}
+const optionalWpRows: WpRow[] = [
+  { id: 'o1', name: 'Other Payables – Vouching', requiredType: 'Highly Rec.', linkedKcwActivity: 'kcw_act_cfdtbo', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+]
+
+const substWpRows: SubstWpRow[] = [
+  { id: 'sub1', name: 'Additional Personal Independence Requirements for CSA Audit Engagements', procedureId: 'PROC_e56af2', subType: 'General Purpose', rmId: 'RM_e56af2', mesp: '', required: true, kcwActivity: 'kcw_act_342b0', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 'sub2', name: 'Group Audit Instructions – Component Auditors', procedureId: 'PROC_c6633b', subType: 'General Purpose', rmId: 'RM_c6633b', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_4c38e', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 'sub3', name: 'Independent Workpaper on Fees-related Requirements', procedureId: 'PROC_89bf72', subType: 'General Purpose', rmId: 'RM_89bf72', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_82144d', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 'sub4', name: 'Inventory Work Paper – Existence & Valuation', procedureId: 'PROC_44159f', subType: 'General Purpose', rmId: 'RM_44159f', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_47000', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 'sub5', name: 'Tax Provision Review – Specialist WP', procedureId: 'PROC_21f971', subType: 'General Purpose', rmId: 'RM_21f971', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_599xe5', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 'sub6', name: 'Trade Receivables – Circularisation', procedureId: 'PROC_c73f0e5', subType: 'General Purpose', rmId: 'RM_c73f0e5', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_63e9e9', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 'sub7', name: 'wendy001', procedureId: 'PROC_e86a28', subType: 'General Purpose', rmId: 'RM_e86a38', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_3bH60', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+]
+
+const kcwFileOptions = [
+  { value: 'pf_001', label: 'General Purpose WP Profile (pf. 001 2025-03-15)' },
+]
 
 function WorkPaperStation() {
   const { clientId, engagementId } = useParams()
   const navigate = useNavigate()
-  const [filter, setFilter] = useState('all')
-  const [selectedWP, setSelectedWP] = useState<WorkPaper | null>(null)
+  const [selectedKcw, setSelectedKcw] = useState(kcwFileOptions[0]?.value || '')
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    'std-other': true,
+    'std-indep': true,
+    'std-spec': true,
+    'opt-general': true,
+  })
 
-  const filtered = filter === 'all'
-    ? workPapers
-    : workPapers.filter(wp => wp.status === filter)
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
   return (
-    <div className="workpaper-station animate-fade-in">
-      {/* 面包屑 */}
-      <div className="wp-breadcrumb">
-        <button className="breadcrumb-back" onClick={() => navigate('/')}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="m15 18-6-6-6-6"/>
-          </svg>
-          客户总览
-        </button>
-        <span className="breadcrumb-sep">/</span>
-        <button className="breadcrumb-back" onClick={() => navigate(`/engagement/${clientId}/${engagementId}`)}>
-          1668465
-        </button>
-        <span className="breadcrumb-sep">/</span>
-        <span className="breadcrumb-current">Work Paper Station</span>
+    <div className="wps-page animate-fade-in">
+      {/* Title Row */}
+      <div className="wps-title-row">
+        <h1 className="wps-title">Work Paper Station</h1>
+        <span className="wps-view-tag">Project Team View</span>
       </div>
 
-      {/* 页面标题 */}
-      <div className="wp-header">
-        <div>
-          <h1 className="wp-title">Work Paper Station</h1>
-          <p className="wp-subtitle">审计底稿管理工作站 — 关联各Audit Procedure生成的底稿</p>
-        </div>
-        <button className="wp-new-btn">➕ 新建底稿</button>
+      {/* Info Bar */}
+      <div className="wps-info-bar">
+        <span className="wps-info-label">Audit Team Member</span>
+        <span className="wps-info-desc">本视图展示项目组可见的全部场景（M1F3 • M1F4 • M1F5）</span>
+        <span className="wps-info-right">Engagement: 1299419 · Client: AAP Demo Co., Ltd.</span>
       </div>
 
-      {/* 统计 */}
-      <div className="wp-stats">
-        <div className="wp-stat">
-          <span className="wp-stat-num">{workPapers.length}</span>
-          <span className="wp-stat-label">底稿总数</span>
+      {/* Stats Cards */}
+      <div className="wps-stats-row">
+        <div className="wps-stat-card">
+          <div className="wps-stat-label">Work Paper Templates (Transferred / Total)</div>
+          <div className="wps-stat-num">4<span className="wps-stat-unit">WP</span></div>
+          <div className="wps-stat-sub">Standard WP Templates · 自动按 Engagement 属性过滤</div>
         </div>
-        <div className="wp-stat">
-          <span className="wp-stat-num">{workPapers.filter(wp => wp.status === 'approved').length}</span>
-          <span className="wp-stat-label">已批准</span>
+        <div className="wps-stat-card">
+          <div className="wps-stat-label">Work Paper from Procedures (Matched)</div>
+          <div className="wps-stat-num">7<span className="wps-stat-unit">WP</span></div>
+          <div className="wps-stat-sub">RM → Procedure 匹配 → 子系统列表</div>
         </div>
-        <div className="wp-stat">
-          <span className="wp-stat-num">{workPapers.filter(wp => wp.status === 'pending_review').length}</span>
-          <span className="wp-stat-label">待复核</span>
-        </div>
-        <div className="wp-stat">
-          <span className="wp-stat-num">{workPapers.reduce((sum, wp) => sum + wp.findings, 0)}</span>
-          <span className="wp-stat-label">发现事项</span>
+        <div className="wps-stat-card">
+          <div className="wps-stat-label">Total Progress (Synced)</div>
+          <div className="wps-stat-num">5<span className="wps-stat-unit">WP</span></div>
+          <div className="wps-stat-sub">子案例同步估计</div>
         </div>
       </div>
 
-      {/* 过滤器 */}
-      <div className="wp-filters">
-        <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>全部</button>
-        <button className={filter === 'draft' ? 'active' : ''} onClick={() => setFilter('draft')}>草稿</button>
-        <button className={filter === 'pending_review' ? 'active' : ''} onClick={() => setFilter('pending_review')}>待复核</button>
-        <button className={filter === 'reviewed' ? 'active' : ''} onClick={() => setFilter('reviewed')}>已复核</button>
-        <button className={filter === 'approved' ? 'active' : ''} onClick={() => setFilter('approved')}>已批准</button>
-      </div>
-
-      {/* 底稿列表 */}
-      <div className="wp-layout">
-        <div className={`wp-list ${selectedWP ? 'narrow' : ''}`}>
-          {filtered.map(wp => (
-            <div
-              key={wp.id}
-              className={`wp-item ${selectedWP?.id === wp.id ? 'selected' : ''}`}
-              onClick={() => setSelectedWP(wp)}
-            >
-              <div className="wp-item-header">
-                <span className="wp-item-code">{wp.code}</span>
-                <span className="wp-item-status" style={{ background: statusMap[wp.status].bg, color: statusMap[wp.status].color }}>
-                  {statusMap[wp.status].label}
-                </span>
-              </div>
-              <h4 className="wp-item-title">{wp.title}</h4>
-              <div className="wp-item-procedure">
-                <span className="proc-tag">{wp.procedureCode}</span>
-                <span>{wp.procedure}</span>
-              </div>
-              <div className="wp-item-meta">
-                <span>👤 {wp.preparer}</span>
-                <span>📅 {wp.lastModified}</span>
-                {wp.findings > 0 && <span className="findings-badge">⚠️ {wp.findings} 发现</span>}
-              </div>
-            </div>
-          ))}
+      {/* Section 1: Standard Work Paper Templates */}
+      <div className="wps-section">
+        <div className="wps-section-header">
+          <h2 className="wps-section-title">
+            <span className="wps-section-num">1</span> Standard Work Paper Templates
+            <span className="wps-section-meta">(M1F3 - Filter by Engagement Nature)</span>
+          </h2>
+          <button className="wps-run-btn" onClick={() => {}}>
+            <i className="fas fa-play"></i> Run Match
+          </button>
         </div>
 
-        {/* 底稿详情 */}
-        {selectedWP && (
-          <div className="wp-detail animate-slide-in">
-            <div className="wp-detail-header">
-              <h3>{selectedWP.title}</h3>
-              <button className="wp-detail-close" onClick={() => setSelectedWP(null)}>✕</button>
-            </div>
-            <div className="wp-detail-info">
-              <div className="wp-info-row">
-                <span className="wp-info-label">底稿编号</span>
-                <span className="wp-info-value">{selectedWP.code}</span>
-              </div>
-              <div className="wp-info-row">
-                <span className="wp-info-label">关联程序</span>
-                <span className="wp-info-value">{selectedWP.procedureCode} - {selectedWP.procedure}</span>
-              </div>
-              <div className="wp-info-row">
-                <span className="wp-info-label">编制人</span>
-                <span className="wp-info-value">{selectedWP.preparer}</span>
-              </div>
-              <div className="wp-info-row">
-                <span className="wp-info-label">复核人</span>
-                <span className="wp-info-value">{selectedWP.reviewer}</span>
-              </div>
-              <div className="wp-info-row">
-                <span className="wp-info-label">风险等级</span>
-                <span className={`wp-info-value risk-${selectedWP.risk}`}>
-                  {selectedWP.risk === 'high' ? '高风险' : selectedWP.risk === 'medium' ? '中风险' : '低风险'}
-                </span>
-              </div>
-            </div>
-            <div className="wp-detail-preview">
-              <h4>底稿预览</h4>
-              <div className="wp-preview-content">
-                <div className="preview-section">
-                  <h5>审计目标</h5>
-                  <p>验证{selectedWP.procedure}相关认定的准确性和完整性。</p>
-                </div>
-                <div className="preview-section">
-                  <h5>执行程序</h5>
-                  <ol>
-                    <li>获取相关明细账和总账数据</li>
-                    <li>执行{selectedWP.procedure}测试</li>
-                    <li>检查支持性文件和原始凭证</li>
-                    <li>记录测试结果和异常情况</li>
-                  </ol>
-                </div>
-                <div className="preview-section">
-                  <h5>审计结论</h5>
-                  <p>经测试，未发现重大异常，相关认定在所有重大方面公允反映。</p>
-                </div>
-              </div>
-            </div>
-            <div className="wp-detail-actions">
-              <button className="wp-btn primary">编辑底稿</button>
-              <button className="wp-btn">提交复核</button>
-              <button className="wp-btn">导出PDF</button>
-            </div>
+        {/* Select KCW file row */}
+        <div className="wps-kcw-select-row">
+          <label>*Select the KCw file:</label>
+          <select className="wps-kcw-dropdown" value={selectedKcw} onChange={e => setSelectedKcw(e.target.value)}>
+            {kcwFileOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <span className="wps-opinion-link">
+            属于当前 Opinion Profile 图标：HKSA Enhanced - Listed - MB
+          </span>
+        </div>
+
+        {/* Info note */}
+        <div className="wps-info-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          系统将筛选出 Kcw Opinion Profile 中适用的审计计准则 / 工作底稿 / 实体类型/是否那个逻辑，与您管理范围的 Engagement 属性匹配则展示关联匹配。
+        </div>
+
+        {/* REQUIRED Group */}
+        <div className="wps-group">
+          <div className="wps-group-header">
+            <span className="wps-group-badge required">REQUIRED</span>
+            <span className="wps-group-desc">Required Work Papers · 3 条</span>
           </div>
-        )}
+
+          {/* 1. Other */}
+          <div className="wps-subgroup">
+            <div className="wps-subgroup-header" onClick={() => toggleGroup('std-other')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ transform: expandedGroups['std-other'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span className="wps-subgroup-title">1. Other</span>
+              <span className="wps-subgroup-count">{standardWpRows.filter(r => r.id.startsWith('s')).length} / 1</span>
+            </div>
+            {expandedGroups['std-other'] && (
+              <table className="wps-table">
+                <thead>
+                  <tr>
+                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {standardWpRows.filter(r => r.id === 's1').map(row => (
+                    <tr key={row.id}>
+                      <td className="wp-name-cell">{row.name}</td>
+                      <td><span className={`req-badge ${row.requiredType === 'Required' ? 'required' : 'highly-rec'}`}>{row.requiredType}</span></td>
+                      <td>{row.linkedKcwActivity}</td>
+                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
+                      <td><span className="status-dot not-selected"></span> Not Selected</td>
+                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* 2. Independent Work Papers */}
+          <div className="wps-subgroup">
+            <div className="wps-subgroup-header" onClick={() => toggleGroup('std-indep')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ transform: expandedGroups['std-indep'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span className="wps-subgroup-title">2.2. Independent Work Papers</span>
+              <span className="wps-subgroup-count">{standardWpRows.filter(r => r.id === 's2').length} / 1</span>
+            </div>
+            {expandedGroups['std-indep'] && (
+              <table className="wps-table">
+                <thead>
+                  <tr>
+                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {standardWpRows.filter(r => r.id === 's2').map(row => (
+                    <tr key={row.id}>
+                      <td className="wp-name-cell">{row.name}</td>
+                      <td><span className="req-badge required">Required</span></td>
+                      <td>{row.linkedKcwActivity}</td>
+                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
+                      <td><span className="status-dot not-selected"></span> Not Selected</td>
+                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* 3. Specialists */}
+          <div className="wps-subgroup">
+            <div className="wps-subgroup-header" onClick={() => toggleGroup('std-spec')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ transform: expandedGroups['std-spec'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span className="wps-subgroup-title">3.3. Specialists and Specific Team Members</span>
+              <span className="wps-subgroup-count">{standardWpRows.filter(r => r.id === 's3').length} / 1</span>
+            </div>
+            {expandedGroups['std-spec'] && (
+              <table className="wps-table">
+                <thead>
+                  <tr>
+                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {standardWpRows.filter(r => r.id === 's3').map(row => (
+                    <tr key={row.id}>
+                      <td className="wp-name-cell">{row.name}</td>
+                      <td><span className="req-badge required">Required</span></td>
+                      <td>{row.linkedKcwActivity}</td>
+                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
+                      <td><span className="status-dot not-selected"></span> Not Selected</td>
+                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* OPTIONAL Group */}
+        <div className="wps-group">
+          <div className="wps-group-header">
+            <span className="wps-group-badge optional">OPTIONAL</span>
+            <span className="wps-group-desc">Optional Work Papers · Highly Recommended · Optional 1 条</span>
+          </div>
+
+          <div className="wps-subgroup">
+            <div className="wps-subgroup-header" onClick={() => toggleGroup('opt-general')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ transform: expandedGroups['opt-general'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span className="wps-subgroup-title">1.1. General Purpose Work Papers</span>
+              <span className="wps-subgroup-count">{optionalWpRows.length} / 1</span>
+            </div>
+            {expandedGroups['opt-general'] && (
+              <table className="wps-table">
+                <thead>
+                  <tr>
+                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {optionalWpRows.map(row => (
+                    <tr key={row.id}>
+                      <td className="wp-name-cell">{row.name}</td>
+                      <td><span className="req-badge highly-rec">Highly Rec.</span></td>
+                      <td>{row.linkedKcwActivity}</td>
+                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
+                      <td><span className="status-dot not-selected"></span> Not Selected</td>
+                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Section 2: Substantive Procedure Work Papers */}
+      <div className="wps-section">
+        <div className="wps-section-header">
+          <h2 className="wps-section-title">
+            <span className="wps-section-num">2</span> Substantive Procedure Work Papers
+            <span className="wps-section-meta">(M1F4 - Match WP Templates to Substantive Procedures)</span>
+          </h2>
+          <button className="wps-run-btn" onClick={() => {}}>
+            <i className="fas fa-play"></i> Run Match
+          </button>
+        </div>
+
+        <div className="wps-info-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          系统解析用户上传的 RAAR Report，提取给 Engagement 下已计划的 RM 及对应的 Substantive Procedure，遍历管理链配置的实属性程序定义模板规则。
+        </div>
+
+        <div className="wps-group">
+          <div className="wps-group-header">
+            <span className="wps-group-badge required">REQUIRED</span>
+            <span className="wps-group-desc">Required · 7 条</span>
+          </div>
+
+          <div className="wps-subgroup">
+            <div className="wps-subgroup-header" onClick={() => toggleGroup('subst')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ transform: expandedGroups['subst'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span className="wps-subgroup-title">Substantive Procedure Work Papers</span>
+              <span className="wps-subgroup-count">{substWpRows.length} / 7</span>
+            </div>
+            {expandedGroups['subst'] && (
+              <table className="wps-table subst-table">
+                <thead>
+                  <tr>
+                    <th>底稿名称</th><th>Procedure ID</th><th>子类型</th><th>RM ID</th><th>MESP</th><th>必要级别</th><th>KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {substWpRows.map(row => (
+                    <tr key={row.id}>
+                      <td className="wp-name-cell">{row.name}</td>
+                      <td>{row.procedureId}</td>
+                      <td>{row.subType}</td>
+                      <td>{row.rmId}</td>
+                      <td>{row.mesp || '-'}</td>
+                      <td><span className="req-badge required">Required</span></td>
+                      <td>{row.kcwActivity}</td>
+                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
+                      <td><span className="status-dot not-selected"></span> Not Selected</td>
+                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+
     </div>
   )
 }
