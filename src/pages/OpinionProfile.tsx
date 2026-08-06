@@ -115,35 +115,35 @@ interface ActionItem {
 const otherActions: ActionItem[] = [
   {
     id: 'kdc-fs',
-    icon: <FileTextIcon size={18} />,
+    icon: <FileTextIcon size={14} />,
     iconColor: 'amber',
     title: 'KDC FS word processing and checking service',
     desc: '',
   },
   {
     id: 'self-service',
-    icon: <FileCheckIcon size={18} />,
+    icon: <FileCheckIcon size={14} />,
     iconColor: 'blue',
     title: 'Self-service FS checking in FSC',
     desc: '',
   },
   {
     id: 'add-kcw',
-    icon: <FilePlusIcon size={18} />,
+    icon: <FilePlusIcon size={14} />,
     iconColor: 'red',
     title: 'Add additional KCw file to this opinion profile',
     desc: '',
   },
   {
     id: 'documents',
-    icon: <FolderIcon size={18} />,
+    icon: <FolderIcon size={14} />,
     iconColor: 'indigo',
     title: 'Access documents folder',
     desc: '',
   },
   {
     id: 'hardcopy',
-    icon: <DatabaseIcon size={18} />,
+    icon: <DatabaseIcon size={14} />,
     iconColor: 'purple',
     title: 'Hardcopy file assembly',
     desc: '',
@@ -270,13 +270,13 @@ function OpinionProfile() {
                 </div>
                 <div className="op-kcw-file-actions">
                   <button className="op-kcw-action-btn warning" title="Warning">
-                    <WarningIcon size={12} />
+                    <WarningIcon size={10} />
                   </button>
                   <button className="op-kcw-action-btn amber" title="Download">
-                    <DownloadIcon size={12} />
+                    <DownloadIcon size={10} />
                   </button>
                   <button className="op-kcw-action-btn blue" title="Users">
-                    <UsersIcon size={12} />
+                    <UsersIcon size={10} />
                   </button>
                 </div>
               </div>

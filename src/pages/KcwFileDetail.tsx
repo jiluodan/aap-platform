@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom'
 import './KcwFileDetail.css'
 
 // Phase icon component - consistent with EngagementHub
-const PhaseIcon = ({ status, size = 14 }: { status: 'done' | 'current' | 'pending'; size?: number }) => {
+const PhaseIcon = ({ status, size = 12 }: { status: 'done' | 'current' | 'pending'; size?: number }) => {
   if (status === 'done') {
     return (
       <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="phase-icon-done">
@@ -121,12 +121,11 @@ const wpsTemplates: WpsTemplate[] = [
 
 // Completion data for the chart
 const completionData = [
-  { label: 'Planning', value: 100, color: '#22c55e' },
-  { label: 'Risk', value: 85, color: '#22c55e' },
-  { label: 'Fieldwork', value: 70, color: '#22c55e' },
-  { label: 'Reporting', value: 45, color: '#22c55e' },
-  { label: 'Review', value: 20, color: '#22c55e' },
-  { label: 'Finalization', value: 5, color: '#22c55e' },
+  { label: 'Preliminary Activities', value: 85 },
+  { label: 'Planning', value: 72 },
+  { label: 'Inteim response', value: 45 },
+  { label: 'Final response', value: 20 },
+  { label: 'Completion', value: 0 },
 ]
 
 function KcwFileDetail() {
@@ -148,32 +147,29 @@ function KcwFileDetail() {
         <div className="kcw-header-left">
           <h1 className="kcw-title">2025 Aurora Robotics SH annual audit</h1>
           <p className="kcw-subtitle">Aurora Robotics Systems Group.</p>
-          <div className="kcw-guid">
-            <span className="kcw-guid-icon">&#128196;</span> GUID: b50e79fc-135c-44f7-a9dd-23b02d175acd3
+          <div className="kcw-header-meta">
+            <div className="kcw-guid">
+              <span className="kcw-guid-icon">&#128196;</span> GUID: b50e79fc-135c-44f7-a9dd-23b02d175acd3
+            </div>
+            <button className="kcw-manage-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              Manage team member
+            </button>
           </div>
-          <button className="kcw-manage-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Manage team member
-          </button>
         </div>
         <div className="kcw-header-right">
           <div className="kcw-completion-card">
-            <div className="kcw-comp-title">Completion #data</div>
-            <div className="kcw-comp-chart">
+            <div className="kcw-comp-title">Completion status</div>
+            <div className="kcw-comp-list">
               {completionData.map((item, idx) => (
-                <div key={idx} className="kcw-comp-row">
-                  <span className="kcw-comp-label">{item.label}</span>
-                  <div className="kcw-comp-bar-wrap">
-                    <div
-                      className="kcw-comp-bar"
-                      style={{ width: `${item.value}%`, backgroundColor: item.color }}
-                    />
-                  </div>
+                <div key={idx} className="kcw-comp-item">
+                  <span className="kcw-comp-item-label">{item.label}</span>
+                  <span className="kcw-comp-item-value">{item.value}%</span>
                 </div>
               ))}
             </div>
