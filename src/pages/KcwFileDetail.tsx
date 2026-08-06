@@ -130,7 +130,7 @@ const completionData = [
 ]
 
 function KcwFileDetail() {
-  const { clientId, engagementId, kcwId } = useParams<{ clientId: string; engagementId: string; kcwId: string }>()
+  const { clientId, kcwId } = useParams<{ clientId: string; engagementId: string; kcwId: string }>()
 
   return (
     <div className="kcw-detail">
