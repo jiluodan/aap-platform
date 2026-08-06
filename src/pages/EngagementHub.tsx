@@ -249,6 +249,10 @@ function EngagementHub() {
     navigate(`/opinion/${clientId}/${engagementId}/${opinionId}`)
   }
 
+  const handleKcwClick = (kcwId: string) => {
+    navigate(`/kcw/${clientId}/${engagementId}/${kcwId}`)
+  }
+
   return (
     <div className="engagement-hub animate-fade-in">
       {/* 面包屑 */}
@@ -413,7 +417,7 @@ function EngagementHub() {
                   const relatedOps = getOpinionProfilesForKcw(kf)
                   const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
                   return (
-                    <div key={kf.id} className="ok-item tile kcw-tile">
+                    <div key={kf.id} className="ok-item tile kcw-tile" onClick={() => handleKcwClick(kf.id)}>
                       <div className="ok-header-row">
                         <div className="ok-icon kcw-icon">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -522,21 +526,21 @@ function EngagementHub() {
                           <td key={phaseNum} className="col-phase">
                             {op.phase > phaseNum ? (
                               <span className="phase-check done" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                   <circle cx="12" cy="12" r="11" fill="#10b981" fillOpacity="0.15"/>
                                   <path d="M8 12l3 3 5-6" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                               </span>
                             ) : op.phase === phaseNum ? (
                               <span className="phase-check current" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                   <circle cx="12" cy="12" r="11" fill="#f59e0b" fillOpacity="0.15"/>
                                   <circle cx="12" cy="12" r="4.5" fill="#f59e0b"/>
                                 </svg>
                               </span>
                             ) : (
                               <span className="phase-check pending" title={lang === 'zh' ? PHASE_STEPS[phaseNum - 1].labelCn : PHASE_STEPS[phaseNum - 1].label}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                   <circle cx="12" cy="12" r="11" fill="#ef4444" fillOpacity="0.15"/>
                                   <path d="M12 7v6" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/>
                                   <circle cx="12" cy="17" r="1.5" fill="#ef4444"/>
@@ -581,7 +585,7 @@ function EngagementHub() {
                         'on-hold': '12%',
                       }
                       return (
-                        <tr key={kf.id}>
+                        <tr key={kf.id} className="clickable-row" onClick={() => handleKcwClick(kf.id)}>
                           <td className="col-kcw-name" title={kf.name}>{kf.name}</td>
                           <td className="col-kcw-workflow">
                             <span className={`workflow-badge ${workflowLabel.toLowerCase()}`}>{workflowLabel}</span>

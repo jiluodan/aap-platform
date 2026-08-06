@@ -13,6 +13,7 @@ import Sentinel from './pages/Sentinel'
 import CEAC from './pages/CEAC'
 import EngagementLetter from './pages/EngagementLetter'
 import KYCRisk from './pages/KYCRisk'
+import KcwFileDetail from './pages/KcwFileDetail'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route path="engagement/:clientId/:engagementId/data" element={<DataProcessing />} />
         <Route path="engagement/:clientId/:engagementId/workpapers" element={<WorkPaperStation />} />
         <Route path="opinion/:clientId/:engagementId/:opinionId" element={<OpinionProfile />} />
+        <Route path="kcw/:clientId/:engagementId/:kcwId" element={<KcwFileDetail />} />
         <Route path="sentinel" element={<Sentinel />} />
         <Route path="ceac" element={<CEAC />} />
         <Route path="engagement-letter" element={<EngagementLetter />} />

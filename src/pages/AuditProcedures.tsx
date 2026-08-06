@@ -149,10 +149,41 @@ const riskConfig = {
   low:    { label: '低风险', color: '#00A3A1', bg: '#E6FFFA' },
 }
 
+// ===== Filter Categories (from image) =====
+const filterCategories = [
+  { key: 'all', label: '全部', color: '#00338D' },
+  { key: 'fsr', label: 'Financial statement', color: '#00338D' },
+  { key: 'treasury', label: 'Treasury', color: '#0091DA' },
+  { key: 'kdc', label: 'KDC', color: '#00A3A1' },
+  { key: 'credit-review', label: 'Credit Review', color: '#805AD5' },
+  { key: 'da', label: 'D&A', color: '#E4002B' },
+  { key: 'je-testing', label: 'JE', color: '#D69E2E' },
+  { key: 'lease-recalc', label: 'Lease', color: '#38A169' },
+  { key: 'group-audit', label: 'Group Reporting', color: '#DD6B20' },
+  { key: 'inventory-obs', label: 'Inventory', color: '#319795' },
+  { key: 'vouching', label: 'Vouching', color: '#B83280' },
+]
+
+// Map filter category key to procedure type keys
+const categoryTypeMap: Record<string, string[]> = {
+  'all': [],
+  'fsr': ['fsr'],
+  'treasury': ['kdc-cash'],
+  'kdc': ['kdc-confirm'],
+  'credit-review': ['credit-review'],
+  'da': ['alteryx'],
+  'je-testing': ['je-testing'],
+  'lease-recalc': ['lease-recalc'],
+  'group-audit': ['group-audit'],
+  'inventory-obs': ['inventory-obs', 'physical-attn'],
+  'vouching': ['vouching'],
+}
+
 function AuditProcedures() {
   const { clientId, engagementId } = useParams()
   const navigate = useNavigate()
   const [expandedType, setExpandedType] = useState<string | null>(null)
+  const [activeFilter, setActiveFilter] = useState('all')
 
   // Stats from all visible types
   const totalProcedures = visibleTypes.reduce((sum, t) => sum + t.items.length, 0)
@@ -160,6 +191,11 @@ function AuditProcedures() {
     sum + t.items.filter(i => i.status === 'in-progress').length, 0)
   const completedCount = visibleTypes.reduce((sum, t) =>
     sum + t.items.filter(i => i.status === 'completed' || i.status === 'reviewed').length, 0)
+
+  // Filter logic
+  const filteredTypes = activeFilter === 'all'
+    ? visibleTypes
+    : visibleTypes.filter(t => (categoryTypeMap[activeFilter] || []).includes(t.key))
 
   const handleCardClick = (typeId: string) => {
     setExpandedType(expandedType === typeId ? null : typeId)
@@ -222,9 +258,34 @@ function AuditProcedures() {
       {/* Section Title */}
       <h2 className="ap-section-title">Procedure Types</h2>
 
+      {/* Filter Tags */}
+      <div className="ap-filter-bar">
+        {filterCategories.map(cat => {
+          const typeKeys = categoryTypeMap[cat.key] || []
+          const count = cat.key === 'all'
+            ? visibleTypes.length
+            : visibleTypes.filter(t => typeKeys.includes(t.key)).length
+          if (cat.key !== 'all' && count === 0) return null
+          return (
+            <button
+              key={cat.key}
+              className={`ap-filter-tag ${activeFilter === cat.key ? 'tag-active' : ''}`}
+              style={{
+                borderColor: activeFilter === cat.key ? cat.color : 'transparent',
+                color: activeFilter === cat.key ? cat.color : '#64748b',
+                background: activeFilter === cat.key ? `${cat.color}0D` : 'transparent',
+              }}
+              onClick={() => setActiveFilter(cat.key)}
+            >
+              {cat.label}
+            </button>
+          )
+        })}
+      </div>
+
       {/* Cards Grid */}
       <div className={`ap-types-grid ${expandedType ? 'grid-dimmed' : ''}`}>
-        {visibleTypes.map(type => {
+        {filteredTypes.map(type => {
           const isExpanded = expandedType === type.id
           const completedItems = type.items.filter(i => i.status === 'completed' || i.status === 'reviewed').length
           const progressPct = type.items.length > 0 ? Math.round((completedItems / type.items.length) * 100) : 0

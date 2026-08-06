@@ -1934,10 +1934,8 @@
 /* Data table base */
 .data-table {
   width: 100%;
-  min-width: 900px;
   border-collapse: collapse;
-  font-size: 13px;
-  white-space: nowrap;
+  font-size: 12px;
 }
 
 .data-table thead th {
@@ -1945,7 +1943,7 @@
   top: 0;
   z-index: 10;
   background: linear-gradient(135deg, #f1f5f9, #e8eef5);
-  padding: 10px 14px;
+  padding: 7px 8px;
   text-align: left;
   font-weight: 700;
   color: var(--text-secondary);
@@ -1957,7 +1955,7 @@
 }
 
 .data-table tbody td {
-  padding: 10px 14px;
+  padding: 7px 8px;
   border-bottom: 1px solid var(--border-lighter, #f1f5f9);
   color: var(--text-primary);
   vertical-align: middle;
@@ -1979,13 +1977,13 @@
 }
 
 /* Column widths */
-.col-aap-id { width: 80px; }
-.col-entity { min-width: 180px; }
-.col-opinion-type { width: 110px; }
-.col-report-type { width: 100px; }
-.col-period { width: 120px; }
-.col-report-date { width: 100px; }
-.col-phase { width: 60px; text-align: center !important; }
+.col-aap-id { width: 65px; }
+.col-entity { min-width: 150px; max-width: 200px; }
+.col-opinion-type { width: 95px; }
+.col-report-type { width: 90px; }
+.col-period { width: 100px; }
+.col-report-date { width: 90px; }
+.col-phase { width: 50px; text-align: center !important; }
 /* KCw File table columns */
 .col-kcw-name { min-width: 220px; }
 .col-kcw-workflow { width: 100px; }
