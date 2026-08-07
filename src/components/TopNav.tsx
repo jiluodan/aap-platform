@@ -11,6 +11,64 @@ function TopNav() {
 
   const isHome = location.pathname === '/'
 
+  // Resolve page hierarchy breadcrumb (structural labels only)
+  const getBreadcrumbTrail = (): { label: string; path?: string; active?: boolean }[] => {
+    const trail: { label: string; path?: string; active?: boolean }[] = [
+      { label: t('home'), path: '/' },
+    ]
+
+    if (isHome) return [{ label: t('home'), active: true }]
+
+    // Engagement detail page (and its sub-pages)
+    if (location.pathname.includes('/engagement/') || location.pathname.includes('/opinion/')) {
+      // Sub-pages under Engagement
+      const subPage = location.pathname.match(/\/engagement\/[^/]+\/[^/]+\/([^/?]+)/)?.[1]
+      if (subPage) {
+        trail.push({ label: 'Engagement' })
+        const labelMap: Record<string, string> = {
+          pbc: 'PBC Management',
+          data: 'Data Processing',
+          procedures: 'Audit Procedures',
+          workpapers: 'Work Paper Station',
+        }
+        trail.push({ label: labelMap[subPage] || subPage, active: true })
+      } else if (location.pathname.includes('/opinion/')) {
+        trail.push({ label: 'Engagement' })
+        trail.push({ label: 'Opinion Profile', active: true })
+      } else {
+        // Engagement page itself - only one level
+        trail.push({ label: 'Engagement', active: true })
+      }
+      return trail
+    }
+
+    // KCW File detail page
+    if (location.pathname.includes('/kcw/')) {
+      trail.push({ label: 'Engagement' })
+      trail.push({ label: 'KCW File', active: true })
+      return trail
+    }
+
+    // Work Paper Station
+    if (location.pathname.includes('/work-paper')) {
+      trail.push({ label: 'Engagement' })
+      trail.push({ label: 'Work Paper Station', active: true })
+      return trail
+    }
+
+    // Dashboard
+    if (location.pathname.includes('/dashboard')) {
+      trail.push({ label: 'Dashboard', active: true })
+      return trail
+    }
+
+    // Default fallback
+    trail.push({ label: 'Page', active: true })
+    return trail
+  }
+
+  const breadcrumbTrail = getBreadcrumbTrail()
+
   return (
     <header className="top-nav glass">
       <div className="nav-left">
@@ -42,15 +100,16 @@ function TopNav() {
         )}
 
         <nav className="nav-breadcrumb">
-          <span className="bc-item" onClick={() => navigate('/')}>{t('home')}</span>
-          {!isHome && (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="bc-sep">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-              <span className="bc-item active">{location.pathname.split('/').pop() || 'Current'}</span>
-            </>
-          )}
+          {breadcrumbTrail.map((item, idx) => (
+            <span key={idx} className={item.active ? 'bc-item active' : 'bc-item'} onClick={() => item.path && navigate(item.path)}>
+              {idx > 0 && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="bc-sep">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              )}
+              {item.label}
+            </span>
+          ))}
         </nav>
       </div>
 
@@ -78,9 +137,9 @@ function TopNav() {
         </button>
 
         <div className="nav-user" onClick={() => setShowUserMenu(!showUserMenu)}>
-          <div className="user-avatar-mini">ER</div>
+          <div className="user-avatar-mini">RJ</div>
           <div className="user-info-mini">
-            <span className="user-name-mini">RJ</span>
+            <span className="user-name-mini" style={{ visibility: 'hidden' }}>RJ</span>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="m6 9 6 6 6-6"/>

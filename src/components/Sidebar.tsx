@@ -200,10 +200,10 @@ function Sidebar() {
         {!collapsed && (
           <div className="sidebar-user">
             <div className="user-avatar-ring">
-              <div className="user-avatar">ER</div>
+              <div className="user-avatar">RJ</div>
             </div>
             <div className="user-info">
-              <span className="user-name">RJ</span>
+              <span className="user-name" style={{ visibility: 'hidden' }}>RJ</span>
             </div>
             <div className="user-status online"></div>
           </div>

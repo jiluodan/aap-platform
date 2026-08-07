@@ -4,17 +4,87 @@ import { createPortal } from 'react-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import './EngagementHub.css'
 
-const engagementData = {
-  clientName: 'Aurora Robotics Systems Group.',
-  engagementCode: '1668465',
-  engagementName: '2025 Aurora Robotics SH annual audit',
-  period: '2025.01.01 - 2025.12.31',
-  materiality: 'CNY 12.6m',
-  materialityPct: '5.8% of profit before tax',
-  materialityPctCn: '税前利润的5.8%',
-  progress: 68.5,
-  alerts: { total: 28, closed: 20 },
-  budget: { total: 800000, used: 650000 },
+// Demo data: clients with their engagements (mirrors ClientSummary.tsx)
+interface DemoEngagement {
+  id: string
+  code: string
+  name: string
+  period: string
+  status: string
+  progress: number
+  riskLevel: string
+  industry: string
+  materiality: string
+}
+
+interface DemoClient {
+  id: string
+  name: string
+  lob: string          // Line of Business (IGH, GFS, E&Y, etc.)
+  sector: string        // Sector/Industry category
+  armsProfileCode: string
+  clientType: string    // State owned enterprise, Private enterprise, etc.
+  engagements: DemoEngagement[]
+}
+
+const DEMO_CLIENTS: DemoClient[] = [
+  {
+    id: '1', name: 'Aurora Robotics Systems Group.',
+    lob: 'IGH', sector: 'Real Estate and Building Construction',
+    armsProfileCode: '2025-00479-01', clientType: 'State owned enterprise',
+    engagements: [
+      { id: 'e1', code: '1668465', name: '2025 Aurora Robotics SH annual audit', period: '2025.01-2025.12', status: 'active', progress: 68, riskLevel: 'high', industry: '工业机器人与智能制造系统集成', materiality: 'CNY 4.2M' },
+      { id: 'e2', code: '1659011', name: '2025 Aurora Robotics BJ annual audit', period: '2024.01-2025.12', status: 'active', progress: 35, riskLevel: 'high', industry: '工业机器人与智能制造系统集成', materiality: 'CNY 6.8M' },
+      { id: 'e3', code: '1605824', name: '2025 Aurora Robotics HK annual audit', period: '2025.01-2025.12', status: 'planning', progress: 10, riskLevel: 'medium', industry: '工业机器人与智能制造系统集成', materiality: 'CNY 3.5M' },
+    ],
+  },
+  {
+    id: '2', name: 'Stellar Pharma Inc.',
+    lob: 'GFS', sector: 'Pharmaceuticals and Biotechnology',
+    armsProfileCode: '2025-00382-15', clientType: 'Private enterprise',
+    engagements: [
+      { id: 'e4', code: '1668779', name: '2025 Stellar Pharma annual audit', period: '2025.01-2025.12', status: 'active', progress: 45, riskLevel: 'medium', industry: '生物医药研发与制造', materiality: 'CNY 2.8M' },
+    ],
+  },
+  {
+    id: '3', name: 'Nova Energy Holdings',
+    lob: 'E&Y', sector: 'Energy and Utilities',
+    armsProfileCode: '2025-00156-08', clientType: 'Listed company',
+    engagements: [
+      { id: 'e5', code: '1549770', name: 'Nova Energy - health check', period: '2025.01-2025.12', status: 'active', progress: 72, riskLevel: 'medium', industry: '新能源发电与储能', materiality: 'CNY 8.5M' },
+      { id: 'e6', code: '1684752', name: 'Nova Energy Holdings IPO 2023-2025', period: '2025.01-2025.12', status: 'planning', progress: 5, riskLevel: 'low', industry: '新能源发电与储能', materiality: 'N/A' },
+    ],
+  },
+  {
+    id: '4', name: 'Quantum Finance Corporation',
+    lob: 'Consumer,Retail&Leis', sector: 'Consumer Goods',
+    armsProfileCode: '2025-00621-03', clientType: 'Multinational companies',
+    engagements: [
+      { id: 'e7', code: '16538418', name: '2025 Quantum Finance annual audit', period: '2025.01-2025.12', status: 'active', progress: 55, riskLevel: 'high', industry: '金融科技与数字支付', materiality: 'CNY 6.1M' },
+    ],
+  },
+]
+
+// Resolve dynamic engagement data from route params
+function getEngagementData(clientId?: string, engagementId?: string) {
+  const client = DEMO_CLIENTS.find(c => c.id === clientId) || DEMO_CLIENTS[0]
+  const eng = client?.engagements.find(e => e.id === engagementId) || client?.engagements[0] || DEMO_CLIENTS[0].engagements[0]
+  return {
+    clientName: client.name,
+    engagementCode: eng.code,
+    engagementName: eng.name,
+    period: eng.period || '2025.01.01 - 2025.12.31',
+    materiality: eng.materiality || 'CNY 12.6m',
+    materialityPct: '5.8% of profit before tax',
+    materialityPctCn: '税前利润的5.8%',
+    progress: eng.progress || 68.5,
+    alerts: { total: 28, closed: 20 },
+    budget: { total: 800000, used: 650000 },
+    lob: client.lob,
+    sector: client.sector,
+    armsProfileCode: client.armsProfileCode,
+    clientType: client.clientType,
+  }
 }
 
 interface KCwFile {
@@ -176,6 +246,9 @@ function EngagementHub() {
   const navigate = useNavigate()
   const { lang, t } = useLanguage()
 
+  // Dynamic data based on route params
+  const engagementData = getEngagementData(clientId, engagementId)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('lastViewed')
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile')
@@ -305,26 +378,15 @@ function EngagementHub() {
 
   return (
     <div className="engagement-hub animate-fade-in">
-      {/* 面包屑 */}
-      <div className="hub-breadcrumb">
-        <button className="breadcrumb-back" onClick={() => navigate('/')}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="m15 18-6-6 6-6"/>
-          </svg>
-          {t('backToOverview')}
-        </button>
-        <span className="breadcrumb-sep">/</span>
-        <span className="breadcrumb-current">{engagementData.engagementName}</span>
-      </div>
-
       {/* 项目头部信息 + 迷你柱状图 */}
       <div className="engagement-hero">
         <div className="hero-main">
           <h1 className="hero-title">{engagementData.clientName}</h1>
           <p className="hero-subtitle">{engagementData.engagementName}</p>
           <div className="hero-tags">
-            <span className="hero-tag">Industry: 工业机器人与智能制造系统集成</span>
-            <span className="hero-tag code">Engagement Code: {engagementData.engagementCode}</span>
+            <span className="hero-tag">{engagementData.clientType || 'State owned enterprise'}</span>
+            <span className="hero-tag">{engagementData.lob || 'IGH'}</span>
+            <span className="hero-tag">{engagementData.sector || 'Real Estate and Building Construction'}</span>
           </div>
         </div>
         {/* Mini Bar Chart in Hero Right */}

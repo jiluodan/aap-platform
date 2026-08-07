@@ -29,7 +29,7 @@
 }
 
 .nav-welcome:hover {
-  box-shadow: 0 4px 12px rgba(0, 91, 184, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 184, 245, 0.1);
   border-color: var(--primary-200);
 }
 
@@ -43,7 +43,7 @@
   justify-content: center;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 91, 184, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 184, 245, 0.2);
 }
 
 .welcome-text {
@@ -82,7 +82,7 @@
 
 .lang-toggle:hover {
   border-color: var(--primary-300);
-  box-shadow: 0 0 0 3px rgba(0, 91, 184, 0.06);
+  box-shadow: 0 0 0 3px rgba(0, 184, 245, 0.06);
 }
 
 .lang-flag {
@@ -94,7 +94,7 @@
 .lang-flag.active {
   color: white;
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  box-shadow: 0 2px 6px rgba(0, 91, 184, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 184, 245, 0.2);
 }
 
 .lang-sep {
@@ -172,7 +172,7 @@
 .nav-search:hover,
 .nav-search:focus-within {
   border-color: var(--primary-300);
-  box-shadow: 0 0 0 3px rgba(0, 91, 184, 0.06);
+  box-shadow: 0 0 0 3px rgba(0, 184, 245, 0.06);
 }
 
 .nav-search svg {
@@ -221,8 +221,8 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--coral-500);
-  box-shadow: 0 0 6px rgba(232, 93, 78, 0.5);
+  background: var(--danger);
+  box-shadow: 0 0 6px rgba(237, 33, 36, 0.5);
 }
 
 .nav-user {
@@ -314,7 +314,7 @@
 }
 
 .dropdown-item.danger {
-  color: var(--coral-500);
+  color: var(--danger);
 }
 
 .dropdown-item.danger:hover {

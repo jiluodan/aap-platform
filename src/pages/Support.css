@@ -52,13 +52,13 @@
 
 .support-tabs button:hover {
   color: var(--text-secondary);
-  background: rgba(0, 91, 184, 0.04);
+  background: rgba(0, 184, 245, 0.04);
 }
 
 .support-tabs button.active {
   color: var(--text-inverse);
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  box-shadow: 0 4px 12px rgba(0, 91, 184, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 184, 245, 0.25);
 }
 
 /* Stats */
@@ -94,7 +94,7 @@
 
 .support-stat-card.active {
   border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px rgba(0, 91, 184, 0.08);
+  box-shadow: 0 0 0 3px rgba(0, 184, 245, 0.08);
 }
 
 .stat-number {
@@ -104,7 +104,7 @@
 }
 
 .stat-all { color: var(--primary-600); }
-.stat-open { color: var(--coral-500); }
+.stat-open { color: var(--danger); }
 .stat-in-progress { color: var(--primary-500); }
 .stat-resolved { color: var(--teal-500); }
 .stat-closed { color: var(--text-muted); }
@@ -189,7 +189,7 @@
 }
 
 .list-priority.urgent {
-  color: var(--coral-500);
+  color: var(--danger);
   background: var(--coral-50);
 }
 
@@ -231,7 +231,7 @@
 }
 
 .list-status.open {
-  color: var(--coral-500);
+  color: var(--danger);
   background: var(--coral-50);
 }
 
@@ -307,7 +307,7 @@
 }
 
 .detail-badge.priority-urgent {
-  color: var(--coral-500);
+  color: var(--danger);
   background: var(--coral-50);
 }
 
@@ -327,7 +327,7 @@
 }
 
 .detail-badge.status-open {
-  color: var(--coral-500);
+  color: var(--danger);
   background: var(--coral-50);
 }
 
@@ -411,12 +411,12 @@
 .detail-btn.primary {
   color: white;
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  box-shadow: 0 4px 12px rgba(0, 91, 184, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 184, 245, 0.25);
 }
 
 .detail-btn.primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 91, 184, 0.35);
+  box-shadow: 0 6px 16px rgba(0, 184, 245, 0.35);
 }
 
 .detail-btn.secondary {
@@ -500,7 +500,7 @@
 }
 
 .form-group .required {
-  color: var(--coral-500);
+  color: var(--danger);
 }
 
 .form-group input,
@@ -522,7 +522,7 @@
   outline: none;
   border-color: var(--primary-400);
   background: var(--bg-card);
-  box-shadow: 0 0 0 3px rgba(0, 91, 184, 0.08);
+  box-shadow: 0 0 0 3px rgba(0, 184, 245, 0.08);
 }
 
 .form-group textarea {
@@ -560,7 +560,7 @@
 }
 
 .priority-btn.urgent.selected {
-  background: linear-gradient(135deg, var(--coral-500), var(--coral-400));
+  background: linear-gradient(135deg, var(--danger), var(--coral-400));
   border-color: var(--coral-400);
 }
 
@@ -602,12 +602,12 @@
 .form-btn.primary {
   color: white;
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  box-shadow: 0 4px 12px rgba(0, 91, 184, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 184, 245, 0.25);
 }
 
 .form-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 91, 184, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 184, 245, 0.35);
 }
 
 .form-btn.secondary {

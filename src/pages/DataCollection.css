@@ -139,11 +139,11 @@
 }
 
 .source-card.syncing {
-  border-left-color: var(--warning-color);
+  border-left-color: var(--warning);
 }
 
 .source-card.disconnected {
-  border-left-color: var(--danger-color);
+  border-left-color: var(--danger);
 }
 
 .source-header {
@@ -171,12 +171,12 @@
 
 .source-status.syncing {
   background: #fffaf0;
-  color: var(--warning-color);
+  color: var(--warning);
 }
 
 .source-status.disconnected {
   background: #fff5f5;
-  color: var(--danger-color);
+  color: var(--danger);
 }
 
 .source-name {

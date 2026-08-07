@@ -35,7 +35,7 @@
   transform: translate(-50%, -50%);
   width: 80px;
   height: 80px;
-  background: radial-gradient(circle, rgba(0, 145, 218, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 184, 245, 0.15) 0%, transparent 70%);
   opacity: 0;
   transition: opacity var(--transition-base);
   pointer-events: none;
@@ -52,12 +52,12 @@
 }
 
 .logo-icon-wrap svg {
-  filter: drop-shadow(0 0 8px rgba(0, 145, 218, 0.3));
+  filter: drop-shadow(0 0 8px rgba(0, 184, 245, 0.3));
   transition: filter var(--transition-base), transform var(--transition-base);
 }
 
 .sidebar-logo:hover .logo-icon-wrap svg {
-  filter: drop-shadow(0 0 16px rgba(0, 145, 218, 0.5));
+  filter: drop-shadow(0 0 16px rgba(0, 184, 245, 0.5));
   transform: scale(1.05);
 }
 
@@ -98,7 +98,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(0, 145, 218, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 184, 245, 0.5), transparent);
   animation: lineGlow 4s ease-in-out infinite;
 }
 
@@ -126,7 +126,7 @@
   width: 3px;
   background: linear-gradient(180deg, var(--accent-500), var(--primary-500));
   border-radius: 0 4px 4px 0;
-  box-shadow: 0 0 12px rgba(0, 145, 218, 0.4);
+  box-shadow: 0 0 12px rgba(0, 184, 245, 0.4);
 }
 
 .nav-item {
@@ -145,7 +145,7 @@
 .nav-item-glow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(0, 145, 218, 0.08) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 184, 245, 0.08) 50%, transparent 100%);
   background-size: 200% 100%;
   opacity: 0;
   transition: opacity var(--transition-base);
@@ -168,7 +168,7 @@
 
 .nav-item.active .nav-item-glow {
   opacity: 1;
-  background: linear-gradient(90deg, rgba(0, 145, 218, 0.15), rgba(0, 91, 184, 0.1));
+  background: linear-gradient(90deg, rgba(0, 184, 245, 0.15), rgba(0, 184, 245, 0.1));
 }
 
 .nav-icon {
@@ -224,7 +224,7 @@
   height: 6px;
   border-radius: 50%;
   background: var(--accent-400);
-  box-shadow: 0 0 8px rgba(0, 145, 218, 0.6);
+  box-shadow: 0 0 8px rgba(0, 184, 245, 0.6);
   flex-shrink: 0;
 }
 
@@ -237,7 +237,7 @@
   height: 6px;
   border-radius: 50%;
   background: var(--accent-400);
-  box-shadow: 0 0 8px rgba(0, 145, 218, 0.6);
+  box-shadow: 0 0 8px rgba(0, 184, 245, 0.6);
 }
 
 /* ========== Submenu ========== */
@@ -266,7 +266,7 @@
 .submenu-glow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(0, 145, 218, 0.06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 184, 245, 0.06), transparent);
   opacity: 0;
   transition: opacity var(--transition-base);
 }
@@ -282,7 +282,7 @@
 
 .submenu-item.active {
   color: var(--accent-300);
-  background: rgba(0, 145, 218, 0.08);
+  background: rgba(0, 184, 245, 0.08);
 }
 
 .submenu-dot {
@@ -299,7 +299,7 @@
 .submenu-item.active .submenu-dot {
   background: var(--accent-400);
   opacity: 1;
-  box-shadow: 0 0 6px rgba(0, 145, 218, 0.4);
+  box-shadow: 0 0 6px rgba(0, 184, 245, 0.4);
 }
 
 .submenu-active-line {

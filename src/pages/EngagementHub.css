@@ -152,7 +152,7 @@
   backdrop-filter: blur(8px);
   padding: 11px 14px 8px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(0, 91, 184, 0.08);
+  border: 1px solid rgba(0, 184, 245, 0.08);
   position: relative;
   z-index: 1;
   flex-shrink: 0;
@@ -353,7 +353,7 @@
 .lifecycle-dot.active {
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
   color: white;
-  box-shadow: 0 0 0 4px rgba(0, 91, 184, 0.15);
+  box-shadow: 0 0 0 4px rgba(0, 184, 245, 0.15);
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
@@ -560,7 +560,7 @@
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
   color: white;
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(0, 91, 184, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 184, 245, 0.2);
   transform: translateX(2px);
 }
 
@@ -685,7 +685,7 @@
 .view-toggle-inline .view-btn.active {
   background: var(--primary-500);
   color: white;
-  box-shadow: 0 2px 8px rgba(0, 91, 184, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 184, 245, 0.25);
 }
 
 .expand-all-btn {
@@ -746,7 +746,7 @@
 .view-toggle button.active {
   background: var(--primary-500);
   color: white;
-  box-shadow: 0 2px 8px rgba(0, 91, 184, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 184, 245, 0.25);
 }
 
 /* Two-column layout: Left Opinion + Right KCw */
@@ -1523,7 +1523,7 @@
 .ok-related-tag:hover {
   background: linear-gradient(135deg, var(--primary-200), var(--primary-100));
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 91, 184, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 184, 245, 0.1);
 }
 
 /* ===== Link Tags (KCw / Opinion) ===== */
@@ -1577,7 +1577,7 @@
 .ok-link-tag.opinion-link:hover {
   background: linear-gradient(135deg, var(--primary-200), var(--primary-100));
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 91, 184, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 184, 245, 0.15);
 }
 
 .ok-link-tag svg {
@@ -1725,7 +1725,7 @@
 .budget-alert {
   font-size: 11px;
   font-weight: 700;
-  color: var(--coral-500);
+  color: var(--danger);
   margin-top: 4px;
 }
 
@@ -1958,12 +1958,12 @@
   font-size: 13px;
   font-weight: 600;
   transition: all var(--transition-fast);
-  box-shadow: 0 2px 8px rgba(0, 91, 184, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 184, 245, 0.2);
 }
 
 .ok-table-continue:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 91, 184, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 184, 245, 0.3);
 }
 
 /* ===== LIST VIEW: Tab + Table Layout ===== */
@@ -2325,7 +2325,7 @@
 .linked-tag:hover {
   background: linear-gradient(135deg, var(--primary-200), var(--primary-100));
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 91, 184, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 184, 245, 0.1);
 }
 
 /* Completion popup inside table cell */

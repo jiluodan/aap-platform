@@ -55,13 +55,13 @@
 
 .dashboard-tabs button:hover {
   color: var(--text-secondary);
-  background: rgba(0, 91, 184, 0.04);
+  background: rgba(0, 184, 245, 0.04);
 }
 
 .dashboard-tabs button.active {
   color: var(--text-inverse);
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  box-shadow: 0 4px 12px rgba(0, 91, 184, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 184, 245, 0.25);
 }
 
 .tab-dot {
@@ -157,7 +157,7 @@
 }
 
 .metric-coral .metric-card-icon {
-  background: linear-gradient(135deg, var(--coral-500), var(--coral-400));
+  background: linear-gradient(135deg, var(--danger), var(--coral-400));
   box-shadow: 0 4px 12px rgba(196, 62, 48, 0.25);
 }
 
@@ -184,7 +184,7 @@
 }
 
 .metric-change.negative {
-  color: var(--coral-500);
+  color: var(--danger);
   background: var(--coral-50);
 }
 
@@ -418,7 +418,7 @@
 }
 
 .recent-risk.high {
-  color: var(--coral-500);
+  color: var(--danger);
   background: var(--coral-50);
 }
 
