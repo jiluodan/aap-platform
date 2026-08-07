@@ -104,22 +104,6 @@ const linkedOpinions: LinkedOpinion[] = [
   },
 ]
 
-// Mock data for Work Paper Station templates
-interface WpsTemplate {
-  id: string
-  templateName: string
-  category: string
-  lastModified: string
-  status: 'completed' | 'in-progress' | 'not-started'
-}
-
-const wpsTemplates: WpsTemplate[] = [
-  { id: 'wps-001', templateName: 'FSR Template v6.4 - Lead Schedule', category: 'FSR', lastModified: '2026-07-28 14:30', status: 'completed' },
-  { id: 'wps-002', templateName: 'Treasury Confirmation Letter', category: 'Treasury', lastModified: '2026-07-29 10:15', status: 'in-progress' },
-  { id: 'wps-003', templateName: 'KDC Cash Count Sheet', category: 'KDC', lastModified: '2026-07-27 16:45', status: 'completed' },
-  { id: 'wps-004', templateName: 'Credit Review Checklist', category: 'Credit Review', lastModified: '2026-07-26 09:20', status: 'not-started' },
-]
-
 // ===== WPS Data (Two-Section structure: Standard + Substantive) =====
 
 interface WpsRow {

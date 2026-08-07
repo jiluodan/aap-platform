@@ -632,7 +632,7 @@ function EngagementHub() {
                     {sortedKcwFiles.map((kf, kfIdx) => {
                       const relatedOps = getOpinionProfilesForKcw(kf)
                       // Dummy phase completion data per row (varies by index for realism)
-                      const phaseData: Record<string, number>[] = [
+                      const phaseData: { v: number }[][] = [
                         [{ v: 85 }, { v: 72 }, { v: 45 }, { v: 20 }, { v: 0 }],
                         [{ v: 92 }, { v: 80 }, { v: 60 }, { v: 35 }, { v: 10 }],
                         [{ v: 40 }, { v: 25 }, { v: 12 }, { v: 5 }, { v: 0 }],

@@ -67,7 +67,7 @@ const DEMO_KCW_FILES_BY_ENGAGEMENT: Record<string, KcwFileOption[]> = {
 }
 
 function WorkPaperStation() {
-  const { clientId, engagementId } = useParams<{ clientId: string; engagementId: string }>()
+  const { engagementId } = useParams<{ clientId: string; engagementId: string }>()
 
   // Resolve KCW files for current engagement (demo: falls back to default list)
   const kcwFileList: KcwFileOption[] = (engagementId && DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId])
