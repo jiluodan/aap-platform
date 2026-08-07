@@ -1,3 +1,4 @@
+/* Area 1: Global Header Bar - dark blue background, always visible */
 .top-nav {
   height: var(--header-height);
   display: flex;
@@ -7,61 +8,104 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  border-bottom: 1px solid var(--border-light);
+  background: linear-gradient(135deg, #00338D 0%, #002D7A 100%);
+  border-bottom: none;
 }
 
-.nav-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-/* Welcome Greeting */
-.nav-welcome {
+/* Brand Logo (Area 1) */
+.nav-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 14px;
-  background: linear-gradient(135deg, var(--primary-50), var(--accent-50));
-  border: 1px solid var(--primary-100);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.nav-brand:hover { opacity: 0.9; }
+
+.brand-logo {
+  font-size: 20px;
+  font-weight: 800;
+  color: #FFFFFF;
+  background: var(--primary-700);
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
+
+/* Area 2: Welcome Section - only on home page, below header */
+.top-nav-welcome-section {
+  padding: 16px 24px;
+  background: var(--bg-base);
+}
+
+/* Sub bar for non-home pages (breadcrumb + back button) */
+.top-nav-sub-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Welcome Card (Area 2) */
+.welcome-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-light);
   border-radius: var(--radius-md);
+  margin-top: 8px;
   transition: all var(--transition-base);
 }
 
-.nav-welcome:hover {
-  box-shadow: 0 4px 12px rgba(0, 184, 245, 0.1);
+.welcome-card:hover {
+  box-shadow: var(--shadow-md);
   border-color: var(--primary-200);
 }
 
-.welcome-icon {
-  width: 30px;
-  height: 30px;
+.welcome-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-600), var(--accent-500));
+  background: linear-gradient(135deg, var(--primary-700), var(--accent-pacific));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 184, 245, 0.2);
-}
-
-.welcome-text {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.welcome-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.welcome-name {
-  font-size: 14px;
+  color: #FFFFFF;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--primary-600);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 51, 141, 0.25);
+}
+
+.welcome-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.welcome-greeting {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.welcome-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /* Language Toggle */
@@ -71,18 +115,18 @@
   gap: 4px;
   padding: 6px 12px;
   border-radius: var(--radius-md);
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-light);
+  background: #FFFFFF;
+  border: 1.5px solid rgba(0,0,0,0.08);
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   transition: all var(--transition-base);
   cursor: pointer;
 }
 
 .lang-toggle:hover {
   border-color: var(--primary-300);
-  box-shadow: 0 0 0 3px rgba(0, 184, 245, 0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .lang-flag {
@@ -94,7 +138,6 @@
 .lang-flag.active {
   color: white;
   background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  box-shadow: 0 2px 6px rgba(0, 184, 245, 0.2);
 }
 
 .lang-sep {
@@ -162,8 +205,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-light);
+  background: #FFFFFF;
+  border: 1.5px solid rgba(0,0,0,0.08);
   border-radius: var(--radius-md);
   width: 280px;
   transition: all var(--transition-base);
@@ -172,7 +215,7 @@
 .nav-search:hover,
 .nav-search:focus-within {
   border-color: var(--primary-300);
-  box-shadow: 0 0 0 3px rgba(0, 184, 245, 0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .nav-search svg {
@@ -202,14 +245,13 @@
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-light);
+  background: #FFFFFF;
+  border: 1.5px solid rgba(0,0,0,0.08);
   position: relative;
   transition: all var(--transition-base);
 }
 
 .nav-icon-btn:hover {
-  background: var(--bg-hover);
   border-color: var(--border);
   color: var(--primary-500);
 }
@@ -231,8 +273,8 @@
   gap: 10px;
   padding: 5px 12px 5px 5px;
   border-radius: var(--radius-md);
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-light);
+  background: #FFFFFF;
+  border: 1.5px solid rgba(0,0,0,0.08);
   cursor: pointer;
   position: relative;
   transition: all var(--transition-base);
@@ -318,7 +360,7 @@
 }
 
 .dropdown-item.danger:hover {
-  background: var(--coral-50);
+  background: rgba(237, 33, 36, 0.06);
 }
 
 .dropdown-divider {

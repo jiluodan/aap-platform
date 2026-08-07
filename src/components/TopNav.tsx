@@ -70,92 +70,106 @@ function TopNav() {
   const breadcrumbTrail = getBreadcrumbTrail()
 
   return (
-    <header className="top-nav glass">
-      <div className="nav-left">
-        {/* Welcome greeting - only on home page */}
-        {isHome && (
-          <div className="nav-welcome animate-fade-in">
-            <span className="welcome-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
-                <path d="M8.5 9A3.5 3.5 0 0 0 5 12.5V14"/>
-                <path d="M15.5 9A3.5 3.5 0 0 1 19 12.5V14"/>
-                <circle cx="12" cy="14" r="2"/>
-              </svg>
-            </span>
-            <div className="welcome-text">
-              <span className="welcome-label">{t('welcome')},</span>
-              <span className="welcome-name">RJ</span>
+    <>
+      {/* Area 1: Global Header Bar - dark blue, always visible on all pages */}
+      <header className="top-nav">
+        <div className="nav-brand" onClick={() => navigate('/')}>
+          <span className="brand-logo">KPMG</span>
+          <span className="brand-name">Audit Application Platform (AAP)</span>
+        </div>
+
+        <div className="nav-right">
+          {/* Language Toggle */}
+          <button className="lang-toggle" onClick={toggleLang} title={t('language')}>
+            <span className={`lang-flag ${lang === 'en' ? 'active' : ''}`}>EN</span>
+            <span className="lang-sep">/</span>
+            <span className={`lang-flag ${lang === 'zh' ? 'active' : ''}`}>中</span>
+          </button>
+
+          <div className="nav-search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" placeholder={t('searchPlaceholder')} />
+          </div>
+
+          <button className="nav-icon-btn animate-pulse-glow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span className="notification-dot"></span>
+          </button>
+
+          <div className="nav-user" onClick={() => setShowUserMenu(!showUserMenu)}>
+            <div className="user-avatar-mini">ER</div>
+            <span className="user-name-mini">RJ</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+
+            {showUserMenu && (
+              <div className="user-dropdown animate-fade-in-scale">
+                <div className="dropdown-item">Profile Settings</div>
+                <div className="dropdown-item">My Tasks</div>
+                <div className="dropdown-divider"></div>
+                <div className="dropdown-item danger">Sign Out</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Area 2: Welcome Section - only on home page, below the header */}
+      {isHome && (
+        <div className="top-nav-welcome-section">
+          <nav className="nav-breadcrumb">
+            {breadcrumbTrail.map((item, idx) => (
+              <span key={idx} className={item.active ? 'bc-item active' : 'bc-item'} onClick={() => item.path && navigate(item.path)}>
+                {idx > 0 && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="bc-sep">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                )}
+                {item.label}
+              </span>
+            ))}
+          </nav>
+
+          <div className="welcome-card">
+            <div className="welcome-avatar">RJ</div>
+            <div className="welcome-text-group">
+              <span className="welcome-greeting">{t('welcome')}, RJ</span>
+              <span className="welcome-subtitle">Welcome back to Audit Application Platform</span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {!isHome && (
+      {/* Breadcrumb for non-home pages */}
+      {!isHome && (
+        <div className="top-nav-sub-bar">
           <button className="nav-back-btn" onClick={() => navigate(-1)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="m15 18-6-6 6-6"/>
             </svg>
             {t('back')}
           </button>
-        )}
-
-        <nav className="nav-breadcrumb">
-          {breadcrumbTrail.map((item, idx) => (
-            <span key={idx} className={item.active ? 'bc-item active' : 'bc-item'} onClick={() => item.path && navigate(item.path)}>
-              {idx > 0 && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="bc-sep">
-                  <path d="m9 18 6-6-6-6"/>
-                </svg>
-              )}
-              {item.label}
-            </span>
-          ))}
-        </nav>
-      </div>
-
-      <div className="nav-right">
-        {/* Language Toggle */}
-        <button className="lang-toggle" onClick={toggleLang} title={t('language')}>
-          <span className={`lang-flag ${lang === 'en' ? 'active' : ''}`}>EN</span>
-          <span className="lang-sep">/</span>
-          <span className={`lang-flag ${lang === 'zh' ? 'active' : ''}`}>中</span>
-        </button>
-
-        <div className="nav-search">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" placeholder={t('searchPlaceholder')} />
+          <nav className="nav-breadcrumb">
+            {breadcrumbTrail.map((item, idx) => (
+              <span key={idx} className={item.active ? 'bc-item active' : 'bc-item'} onClick={() => item.path && navigate(item.path)}>
+                {idx > 0 && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="bc-sep">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                )}
+                {item.label}
+              </span>
+            ))}
+          </nav>
         </div>
-
-        <button className="nav-icon-btn animate-pulse-glow">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-          </svg>
-          <span className="notification-dot"></span>
-        </button>
-
-        <div className="nav-user" onClick={() => setShowUserMenu(!showUserMenu)}>
-          <div className="user-avatar-mini">RJ</div>
-          <div className="user-info-mini">
-            <span className="user-name-mini" style={{ visibility: 'hidden' }}>RJ</span>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="m6 9 6 6 6-6"/>
-          </svg>
-
-          {showUserMenu && (
-            <div className="user-dropdown animate-fade-in-scale">
-              <div className="dropdown-item">Profile Settings</div>
-              <div className="dropdown-item">My Tasks</div>
-              <div className="dropdown-divider"></div>
-              <div className="dropdown-item danger">Sign Out</div>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
+      )}
+    </>
   )
 }
 

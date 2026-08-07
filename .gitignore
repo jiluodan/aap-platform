@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Temp files
+deploy_raw.bin
+tmp_check.cjs
+tmp_rerun.cjs

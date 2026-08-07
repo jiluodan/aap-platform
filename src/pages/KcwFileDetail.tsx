@@ -250,15 +250,6 @@ function KcwFileDetail() {
 
   return (
     <div className="kcw-detail">
-      {/* Breadcrumb */}
-      <div className="kcw-breadcrumb">
-        <span className="kcw-crumb-item">客户总览</span>
-        <span className="kcw-crumb-sep">/</span>
-        <span className="kcw-crumb-item">{clientId || '1688465'}</span>
-        <span className="kcw-crumb-sep">/</span>
-        <span className="kcw-crumb-item active">{kcwId || '241231_Stat_RF_sample2_F_SA_ISA_single'}</span>
-      </div>
-
       {/* Header Card */}
       <div className="kcw-header-card">
         <div className="kcw-header-left">
