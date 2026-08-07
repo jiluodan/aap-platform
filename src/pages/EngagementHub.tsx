@@ -619,24 +619,38 @@ function EngagementHub() {
                     <tr>
                       <th className="col-kcw-name">{lang === 'zh' ? 'KCw file name' : 'KCw file name'}</th>
                       <th className="col-kcw-workflow">{lang === 'zh' ? 'Workflow' : 'Workflow'}</th>
-                      <th className="col-kcw-rate">{lang === 'zh' ? 'COMPLETION RATE' : 'COMPLETION RATE'}</th>
+                      <th className="col-kcw-phase">Preliminary</th>
+                      <th className="col-kcw-phase">Planning</th>
+                      <th className="col-kcw-phase">Interim</th>
+                      <th className="col-kcw-phase">Final</th>
+                      <th className="col-kcw-phase">Completion</th>
                       <th className="col-kcw-actions">{lang === 'zh' ? 'Manage KCw file' : 'Manage KCw file'}</th>
-                      <th className="col-kcw-linked-count">{lang === 'zh' ? 'Numbers of linked opinion profile' : 'Numbers of linked opinion profile'}</th>
+                      <th className="col-kcw-linked-count">{lang === 'zh' ? 'Linked OPs' : 'Linked OPs'}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedKcwFiles.map(kf => {
+                    {sortedKcwFiles.map((kf, kfIdx) => {
                       const relatedOps = getOpinionProfilesForKcw(kf)
-                      const statusInfo = KCW_STATUS_TYPES.find(s => s.key === kf.status) || KCW_STATUS_TYPES[2]
+                      // Dummy phase completion data per row (varies by index for realism)
+                      const phaseData: Record<string, number>[] = [
+                        [{ v: 85 }, { v: 72 }, { v: 45 }, { v: 20 }, { v: 0 }],
+                        [{ v: 92 }, { v: 80 }, { v: 60 }, { v: 35 }, { v: 10 }],
+                        [{ v: 40 }, { v: 25 }, { v: 12 }, { v: 5 }, { v: 0 }],
+                        [{ v: 15 }, { v: 8 }, { v: 3 }, { v: 1 }, { v: 0 }],
+                        [{ v: 70 }, { v: 55 }, { v: 30 }, { v: 18 }, { v: 5 }],
+                      ]
+                      const phases = phaseData[kfIdx % phaseData.length] || phaseData[0]
                       return (
                         <tr key={kf.id} className="clickable-row" onClick={() => handleKcwClick(kf.id)}>
                           <td className="col-kcw-name" title={kf.name}>{kf.name}</td>
                           <td className="col-kcw-workflow">
                             <span className={`workflow-badge ${(workflowMap[kf.type] || kf.type).toLowerCase()}`}>{workflowMap[kf.type] || kf.type}</span>
                           </td>
-                          <td className="col-kcw-rate">
-                            <span className="completion-rate" style={{ color: statusInfo.color }}>{rateMap[kf.status] || '0%'}</span>
-                          </td>
+                          {phases.map((p, i) => (
+                            <td key={i} className="col-kcw-phase">
+                              <span className="kcw-phase-val" style={{ color: p.v >= 70 ? '#16a34a' : p.v >= 30 ? '#f59e0b' : '#ef4444', opacity: p.v === 0 ? 0.45 : 1 }}>{p.v}%</span>
+                            </td>
+                          ))}
                           <td className="col-kcw-actions">
                             <div className="kcw-action-group">
                               <button className="kcw-action-btn team" title={lang === 'zh' ? 'Team member' : 'Team member'}>

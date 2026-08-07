@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import './WorkPaperStation.css'
 
 // ===== Data Types =====
@@ -24,6 +25,14 @@ interface SubstWpRow {
   status: 'Not Selected' | 'Selected'
 }
 
+// KCW File type — mirrors EngagementHub's KCwFile for cross-page consistency
+interface KcwFileOption {
+  id: string
+  name: string
+  status: string
+  type: string
+}
+
 // ===== Demo Data =====
 const standardWpRows: WpRow[] = [
   { id: 's1', name: 'D&A Routine Output', requiredType: 'Required', linkedKcwActivity: 'kcw_act_778095', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
@@ -45,12 +54,27 @@ const substWpRows: SubstWpRow[] = [
   { id: 'sub7', name: 'wendy001', procedureId: 'PROC_e86a28', subType: 'General Purpose', rmId: 'RM_e86a38', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_3bH60', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
 ]
 
-const kcwFileOptions = [
-  { value: 'pf_001', label: 'General Purpose WP Profile (pf. 001 2025-03-15)' },
-]
+// KCW File demo data — mirrors EngagementHub's KCW File list.
+// In production this would be fetched by engagementId from API.
+const DEMO_KCW_FILES_BY_ENGAGEMENT: Record<string, KcwFileOption[]> = {
+  default: [
+    { id: 'KC001', name: '241231_Stat_RF_Aurora_Planning', status: 'completed', type: 'Planning' },
+    { id: 'KC002', name: '241231_Stat_RF_Aurora_Risk', status: 'in-progress', type: 'Risk' },
+    { id: 'KC003', name: '241231_Stat_RF_GoldenHorizon_Planning', status: 'pending', type: 'Planning' },
+    { id: 'KC004', name: '241231_Stat_RF_GoldenHorizon_Fraud', status: 'not-started', type: 'Fraud' },
+    { id: 'KC005', name: '241231_Stat_RF_PacificStar_Single', status: 'on-hold', type: 'Risk' },
+  ],
+}
 
 function WorkPaperStation() {
-  const [selectedKcw, setSelectedKcw] = useState(kcwFileOptions[0]?.value || '')
+  const { clientId, engagementId } = useParams<{ clientId: string; engagementId: string }>()
+
+  // Resolve KCW files for current engagement (demo: falls back to default list)
+  const kcwFileList: KcwFileOption[] = (engagementId && DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId])
+    ? DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId]
+    : DEMO_KCW_FILES_BY_ENGAGEMENT.default
+
+  const [selectedKcw, setSelectedKcw] = useState(kcwFileList[0]?.id || '')
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     'std-other': true,
     'std-indep': true,
@@ -108,17 +132,22 @@ function WorkPaperStation() {
           </button>
         </div>
 
-        {/* Select KCW file row */}
+        {/* Select KCW file row — dynamically populated from current Engagement's KCW Files */}
         <div className="wps-kcw-select-row">
           <label>*Select the KCw file:</label>
           <select className="wps-kcw-dropdown" value={selectedKcw} onChange={e => setSelectedKcw(e.target.value)}>
-            {kcwFileOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {kcwFileList.map(kf => (
+              <option key={kf.id} value={kf.id}>{kf.name}</option>
             ))}
           </select>
-          <span className="wps-opinion-link">
-            属于当前 Opinion Profile 图标：HKSA Enhanced - Listed - MB
-          </span>
+          {(() => {
+            const current = kcwFileList.find(k => k.id === selectedKcw)
+            return current ? (
+              <span className="wps-opinion-link">
+                Type: <strong>{current.type}</strong> &middot; Status: <span className={`status-dot ${current.status === 'completed' ? 'selected' : 'not-selected'}`}></span> {current.status}
+              </span>
+            ) : null
+          })()}
         </div>
 
         {/* Info note */}
@@ -308,6 +337,7 @@ function WorkPaperStation() {
               <span className="wps-subgroup-count">{substWpRows.length} / 7</span>
             </div>
             {expandedGroups['subst'] && (
+              <div className="wps-table-wrap">
               <table className="wps-table subst-table">
                 <thead>
                   <tr>
@@ -331,6 +361,7 @@ function WorkPaperStation() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>

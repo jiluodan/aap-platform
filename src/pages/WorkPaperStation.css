@@ -1,7 +1,9 @@
 /* ===== Work Paper Station Page ===== */
 .wps-page {
   animation: fadeIn 0.4s ease-out;
-  padding-bottom: 40px;
+  padding-bottom: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* ===== Title Row ===== */
@@ -60,14 +62,14 @@
 .wps-stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
 .wps-stat-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
+  padding: 12px 16px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-light);
 }
@@ -101,7 +103,7 @@
 
 /* ===== Section ===== */
 .wps-section {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .wps-section-header {
@@ -394,11 +396,28 @@
   cursor: pointer;
 }
 
-/* Substantive table - more columns */
+/* Substantive table - more columns, scrollable on small screens */
 .subst-table thead th,
 .subst-table tbody td {
-  padding: 8px 8px;
+  padding: 7px 8px;
   font-size: 11px;
+}
+
+/* Table wrapper for horizontal scroll on narrow screens */
+.wps-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wps-table-wrap::-webkit-scrollbar {
+  height: 5px;
+}
+.wps-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.wps-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
 }
 
 /* ===== Empty State ===== */
@@ -418,45 +437,14 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
   }
-  .subst-table {
+  /* Keep tables as tables — use horizontal scroll instead of card layout */
+  .wps-table-wrap {
     overflow-x: auto;
-    display: block;
   }
-  .subst-table thead,
-  .subst-table tbody,
-  .subst-table tr,
-  .subst-table th,
-  .subst-table td {
-    display: block;
-  }
-  .subst-table thead tr {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-  }
-  .subst-table tbody tr {
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    padding: 10px;
-    margin-bottom: 8px;
-  }
-  .subst-table tbody td {
-    border: none;
-    position: relative;
-    padding-left: 50%;
-    padding: 4px 4px 4px 50%;
-    white-space: normal;
-  }
-  .subst-table tbody td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-weight: 600;
-    font-size: 10px;
-    color: var(--text-secondary);
-    white-space: nowrap;
+  .wps-section-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 

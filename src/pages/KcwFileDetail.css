@@ -157,26 +157,34 @@
 .kcw-comp-list {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 4px 16px;
+  gap: 3px 12px;
 }
 
 .kcw-comp-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 1.5px 0;
+  align-items: baseline;
+  padding: 1px 0;
+  gap: 6px;
 }
 
 .kcw-comp-item-label {
   font-size: 9px;
   color: #374151;
   font-weight: 500;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .kcw-comp-item-value {
   font-size: 10px;
   font-weight: 700;
   color: #f59e0b;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ===== Section Container ===== */
@@ -273,91 +281,349 @@
   vertical-align: middle;
 }
 
-/* ===== Work Paper Station Section ===== */
-.kcw-wps-list {
+/* ===== Work Paper Station Section (KCW File Detail) ===== */
+.kcw-wps-section {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
-.kcw-wps-card {
+/* Bound KCW file info bar — no need to select, already known from route */
+.kcw-wps-kcw-info {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  background: var(--bg-card-alt);
-  border: 1px solid transparent;
-  transition: all var(--transition-fast);
-  cursor: pointer;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(59, 130, 246, 0.12);
 }
 
-.kcw-wps-card:hover {
-  border-color: var(--primary-200);
-  background: var(--bg-hover);
-  transform: translateX(3px);
-  box-shadow: 0 1px 6px rgba(0, 91, 184, 0.06);
-}
-
-.kcw-wps-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.kcw-wps-name {
-  font-size: 11px;
+.kcw-wps-kcw-label {
   font-weight: 600;
+  color: var(--primary-600);
+}
+
+.kcw-wps-kcw-info strong {
+  color: var(--text-primary);
+  font-size: 10.5px;
+}
+
+.kcw-wps-kcw-hint {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ===== Section Block (Major Category: Standard / Substantive) ===== */
+.kcw-wps-section-block {
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: white;
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.kcw-wps-section-block:hover {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.kcw-wps-section-block.expanded {
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+/* Section header — major category row */
+.kcw-wps-section-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition-fast);
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+  border-bottom: 1px solid transparent;
+}
+
+.kcw-wps-section-block.expanded > .kcw-wps-section-header {
+  border-bottom-color: var(--border-lighter);
+}
+
+.kcw-wps-section-header:hover {
+  background: linear-gradient(135deg, #e0e9ff 0%, #f8fafc 100%);
+}
+
+.kcw-wps-section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-600);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.kcw-wps-section-title {
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
-.kcw-wps-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Run Match button (only on Substantive section) */
+.kcw-wps-run-btn {
+  margin-left: auto;
+  padding: 3px 14px;
+  background: var(--primary-600);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
   font-size: 9.5px;
-  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
 }
 
-.kcw-wps-category {
-  background: var(--primary-100);
-  color: var(--primary-700);
+.kcw-wps-run-btn:hover {
+  background: var(--primary-700);
+}
+
+/* Section body container for subgroups */
+.kcw-wps-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 3px 0 2px;
+}
+
+/* ===== Subgroup (Minor Category within a Section) ===== */
+.kcw-wps-subgroup {
+  border: 1px solid var(--border-lighter);
+  border-radius: var(--radius-sm);
+  background: #fafbfc;
+  overflow: hidden;
+}
+
+.kcw-wps-subgroup.expanded {
+  background: white;
+  border-color: rgba(59, 130, 246, 0.15);
+}
+
+/* Subgroup header */
+.kcw-wps-subgroup-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition-fast);
+  flex-wrap: wrap;
+}
+
+.kcw-wps-subgroup-header:hover {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* ===== Shared group elements (arrow, title, tags, count) ===== */
+
+/* Arrow icon */
+.kcw-wps-group-arrow {
+  font-size: 11px;
+  color: var(--primary-600);
+  width: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Title text */
+.kcw-wps-group-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Subtitle (gray hint) */
+.kcw-wps-group-sub {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* REQUIRED tag (large, for section header) */
+.kcw-wps-req-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: var(--radius-sm);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+}
+
+/* Required Work Papers tag (smaller, for subgroup) */
+.kcw-wps-req-tag-sm {
+  font-size: 8.5px;
+  color: var(--primary-600);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* OPTIONAL tag */
+.kcw-wps-opt-tag {
+  font-size: 8.5px;
+  color: #b45309;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* Row count badge */
+.kcw-wps-group-count {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Table wrapper with horizontal scroll for subst tables */
+.kcw-wps-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--border-lighter);
+  -webkit-overflow-scrolling: touch;
+}
+
+.kcw-wps-table-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+.kcw-wps-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.kcw-wps-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 2px;
+}
+
+/* WPS config table */
+.kcw-wps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.kcw-wps-table thead th {
+  background: #f8fafc;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 9px;
+  text-align: left;
+  padding: 4px 7px;
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.kcw-wps-table tbody td {
+  padding: 4px 7px;
+  border-bottom: 1px solid var(--border-lighter);
+  color: var(--text-primary);
+  vertical-align: middle;
+  font-size: 9.5px;
+}
+
+.kcw-wps-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.kcw-wps-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.03);
+}
+
+/* Name cell truncate */
+.wp-name-cell {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+/* Req badge */
+.req-badge {
+  display: inline-flex;
+  align-items: center;
   padding: 1px 6px;
   border-radius: var(--radius-sm);
-  font-weight: 500;
-  font-size: 9px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
 }
 
-.kcw-wps-status {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+.req-badge.required {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
-.kcw-status-dot {
-  width: 7px;
-  height: 7px;
+.req-badge.highly-rec {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+/* Lang tag */
+.lang-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: var(--radius-sm);
+  font-size: 8px;
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.lang-tag:last-child {
+  margin-right: 0;
+}
+
+/* Status dot */
+.status-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 3px;
 }
 
-.kcw-status-dot.completed { background: #22c55e; box-shadow: 0 0 5px rgba(34, 197, 94, 0.35); }
-.kcw-status-dot.in-progress { background: #f59e0b; box-shadow: 0 0 5px rgba(245, 158, 11, 0.35); animation: wpsPulse 2s ease-in-out infinite; }
-.kcw-status-dot.not-started { background: #d1d5db; }
+.status-dot.not-selected { background: #d1d5db; }
+.status-dot.selected { background: #22c55e; }
 
-@keyframes wpsPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.kcw-status-text {
-  font-size: 9.5px;
-  font-weight: 500;
+/* Migrate select */
+.migrate-select {
+  font-size: 8.5px;
+  padding: 1px 4px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: white;
   color: var(--text-secondary);
+  cursor: pointer;
 }
-
-/* Empty state */
+/* Empty state (kept for potential use) */
 .kcw-wps-empty {
   display: flex;
   flex-direction: column;

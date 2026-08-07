@@ -2104,6 +2104,8 @@
 /* Data table base */
 .data-table {
   width: 100%;
+  min-width: 980px;
+  table-layout: auto;
   border-collapse: collapse;
   font-size: 12px;
 }
@@ -2146,20 +2148,28 @@
   box-shadow: 0 2px 12px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.2);
 }
 
-/* Column widths */
-.col-aap-id { width: 65px; }
-.col-entity { min-width: 150px; max-width: 200px; }
-.col-opinion-type { width: 95px; }
-.col-report-type { width: 90px; }
-.col-period { width: 100px; }
-.col-report-date { width: 90px; }
-.col-phase { width: 50px; text-align: center !important; }
+/* Column widths — min-width based: natural stretch on wide screens,
+   horizontal scroll on narrow screens */
+.col-aap-id { min-width: 80px; width: 8%; }
+.col-entity { min-width: 180px; width: 18%; }
+.col-opinion-type { min-width: 110px; width: 12%; }
+.col-report-type { min-width: 100px; width: 11%; }
+.col-period { min-width: 110px; width: 11%; }
+.col-report-date { min-width: 100px; width: 10%; }
+.col-phase { min-width: 52px; width: 6%; text-align: center !important; }
 /* KCw File table columns */
-.col-kcw-name { min-width: 220px; }
-.col-kcw-workflow { width: 100px; }
-.col-kcw-rate { width: 100px; text-align: center; }
-.col-kcw-actions { min-width: 140px; }
-.col-kcw-linked-count { width: 60px; text-align: center; font-weight: 700; color: var(--text-primary); }
+.col-kcw-name { min-width: 200px; width: 24%; }
+.col-kcw-workflow { min-width: 100px; width: 11%; }
+.col-kcw-phase { min-width: 60px; width: 7%; text-align: center; }
+.col-kcw-actions { min-width: 140px; width: 15%; }
+.col-kcw-linked-count { min-width: 70px; width: 7%; text-align: center; font-weight: 700; color: var(--text-primary); }
+
+/* Phase value in KCW table */
+.kcw-phase-val {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 /* Workflow badge */
 .workflow-badge {
