@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+// react-router-dom hooks removed: navigation handled by TopNav
 import { useState, useEffect } from 'react'
 import './DataProcessing.css'
 
@@ -84,8 +84,6 @@ const fileStatusMap = {
 }
 
 function DataProcessing() {
-  const { clientId, engagementId } = useParams()
-  const navigate = useNavigate()
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [expandedSource, setExpandedSource] = useState<string | null>(null)

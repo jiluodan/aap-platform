@@ -230,7 +230,7 @@ const completionData = [
 ]
 
 function KcwFileDetail() {
-  const { clientId, kcwId } = useParams<{ clientId: string; engagementId: string; kcwId: string }>()
+  const { kcwId } = useParams<{ clientId: string; engagementId: string; kcwId: string }>()
   // WPS section/subgroup expand/collapse state — default all collapsed
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
 

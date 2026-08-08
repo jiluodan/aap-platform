@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+// react-router-dom hooks removed: navigation handled by TopNav
 import { useState, useEffect } from 'react'
 import './AuditProcedures.css'
 
@@ -180,8 +180,6 @@ const categoryTypeMap: Record<string, string[]> = {
 }
 
 function AuditProcedures() {
-  const { clientId, engagementId } = useParams()
-  const navigate = useNavigate()
   const [expandedType, setExpandedType] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState('all')
 

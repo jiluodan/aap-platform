@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+// react-router-dom hooks removed: navigation handled by TopNav
 import { useState, useRef, useEffect } from 'react'
 import './PBCManager.css'
 
@@ -70,8 +70,6 @@ const statusMap = {
 }
 
 function PBCManager() {
-  const { clientId, engagementId } = useParams()
-  const navigate = useNavigate()
   const [filter, setFilter] = useState('all')
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
