@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import './ClientSummary.css'
@@ -170,10 +170,25 @@ function ClientSummary() {
   const navigate = useNavigate()
   const { lang, t } = useLanguage()
   const [expandedClient, setExpandedClient] = useState<string | null>('1')
+  const [viewMode, _setViewMode] = useState<'tile' | 'list'>('tile')
+
+  // Wrapped setViewMode to also dispatch sidebar toggle event
+  const setViewMode = (mode: 'tile' | 'list') => {
+    _setViewMode(mode)
+    window.dispatchEvent(new CustomEvent('view-mode-change', { detail: { mode } }))
+  }
 
   const toggleExpand = (id: string) => {
     setExpandedClient(expandedClient === id ? null : id)
   }
+
+  // Flatten all clients + engagements for list view
+  const flatList = clients.flatMap(client =>
+    client.armsProfiles.map(profile => ({
+      client,
+      profile,
+    }))
+  )
 
   return (
     <div className="client-summary animate-fade-in">
@@ -182,9 +197,32 @@ function ClientSummary() {
         <div>
           <h1 className="summary-title">{lang === 'zh' ? t('clientOverviewCn') : t('clientOverview')}</h1>
         </div>
+        <div className="view-mode-toggle">
+          <button
+            className={`vm-btn ${viewMode === 'tile' ? 'active' : ''}`}
+            onClick={() => setViewMode('tile')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            Tile View
+          </button>
+          <button
+            className={`vm-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/>
+              <line x1="4" y1="18" x2="20" y2="18"/>
+            </svg>
+            List View
+          </button>
+        </div>
       </div>
 
-      {/* Client Cards List */}
+      {/* Client Cards List - Tile View */}
+      {viewMode === 'tile' && (
       <div className="clients-list">
         {clients.map((client, index) => {
           return (
@@ -349,9 +387,7 @@ function ClientSummary() {
                               )}
                             </div>
                             <span className={`info-icon-label ${profile.budgetOverrun ? 'overrun-text' : 'normal-text'}`}>
-                              {profile.budgetOverrun
-                                ? (lang === 'zh' ? '超支' : 'Over')
-                                : (lang === 'zh' ? '正常' : 'OK')}
+                              {lang === 'zh' ? '预算' : 'Budget'}
                             </span>
                           </div>
                         </div>
@@ -373,6 +409,99 @@ function ClientSummary() {
           )
         })}
       </div>
+      )}
+
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="list-view-container animate-fade-in">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Type / LOB / Sector</th>
+                <th>Engagement Code</th>
+                <th>Engagement Name</th>
+                <th>Fee</th>
+                <th>FRR%</th>
+                <th>NI</th>
+                <th>Billing</th>
+                <th>WIP</th>
+                <th>{lang === 'zh' ? '预算' : 'Budget'}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {flatList.map(({ client, profile }) => (
+                <tr
+                  key={profile.id}
+                  className="clickable-row"
+                  onClick={() => navigate(`/engagement/${client.id}/${profile.id}`)}
+                >
+                  <td>
+                    <div className="list-client-cell">
+                      <span className="list-avatar">{client.name.charAt(0)}</span>
+                      <span className="list-client-name">{client.name}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="list-tags">
+                      <span className="list-tag">{client.clientType}</span>
+                      <span className="list-tag">{client.clientLob}</span>
+                      <span className="list-tag">{client.sector}</span>
+                    </div>
+                  </td>
+                  <td><span className="list-code">{profile.code}</span></td>
+                  <td className="list-eng-name">{profile.name}</td>
+                  {/* 6 metric icons matching Tile View card */}
+                  <td className="metric-cell">
+                    <span className="metric-icon fee" title="Fee">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                    </span>
+                  </td>
+                  <td className="metric-cell">
+                    <span className="metric-icon frr" title="FRR%">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>
+                    </span>
+                  </td>
+                  <td className="metric-cell">
+                    <span className="metric-icon ni" title="NI">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 9v6M9 12h6"/></svg>
+                    </span>
+                  </td>
+                  <td className="metric-cell">
+                    <span className="metric-icon billing" title="Billing">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                    </span>
+                  </td>
+                  <td className="metric-cell">
+                    <span className="metric-icon wip" title="WIP">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+                    </span>
+                  </td>
+                  <td className="metric-cell">
+                    {profile.budgetOverrun ? (
+                      <span className="metric-icon over" title="Overrun">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      </span>
+                    ) : (
+                      <span className="metric-icon ok" title="OK">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <span className="list-arrow">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="m9 18 6-6-6-6"/>
+                      </svg>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

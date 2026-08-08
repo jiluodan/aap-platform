@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import './Sidebar.css'
@@ -73,6 +73,20 @@ function Sidebar() {
   const toggleExpand = (id: string) => {
     setExpandedItem(expandedItem === id ? null : id)
   }
+
+  // Listen for view-mode changes from ClientSummary to auto-collapse/expand sidebar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<{ mode: 'tile' | 'list' }>
+      if (customEvent.detail.mode === 'list') {
+        setCollapsed(true)
+      } else {
+        setCollapsed(false)
+      }
+    }
+    window.addEventListener('view-mode-change', handler)
+    return () => window.removeEventListener('view-mode-change', handler)
+  }, [])
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>

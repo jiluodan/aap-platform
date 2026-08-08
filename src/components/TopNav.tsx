@@ -138,10 +138,9 @@ function TopNav() {
 
           <div className="welcome-card">
             <div className="welcome-avatar">RJ</div>
-            <div className="welcome-text-group">
-              <span className="welcome-greeting">{t('welcome')}, RJ</span>
-              <span className="welcome-subtitle">Welcome back to Audit Application Platform</span>
-            </div>
+            <span className="welcome-greeting">{t('welcome')}, RJ</span>
+            <span className="welcome-sep">·</span>
+            <span className="welcome-subtitle">Welcome back to Audit Application Platform</span>
           </div>
         </div>
       )}
