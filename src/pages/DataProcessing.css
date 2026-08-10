@@ -1,3 +1,160 @@
+/* ===== Processing Pipeline (Screenshot 1 concept) ===== */
+.dp-pipeline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #fafbff, #f5f3ff);
+  border: 1px solid #e8ecf1;
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+.pipeline-step {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  min-width: 80px;
+}
+.ps-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.ps-icon-val { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.ps-icon-proc { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.ps-icon-tab { background: linear-gradient(135deg, #059669, #047857); color: #fff; border-radius: 6px; width: 24px; height: 24px; }
+.ps-icon-ocr { background: linear-gradient(135deg, #805AD5, #6d28d9); color: #fff; border-radius: 6px; width: 24px; height: 24px; }
+.ps-icon-lake { background: linear-gradient(135deg, #059669, #047857); }
+
+.ps-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+  white-space: nowrap;
+}
+.ps-sub {
+  font-size: 8.5px;
+  color: #94a3b8;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pipeline-arrow {
+  font-size: 16px;
+  font-weight: 300;
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.pipeline-split {
+  flex-direction: row !important;
+  gap: 6px !important;
+  padding: 2px !important;
+}
+.pipeline-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid #f1f5f9;
+}
+.pipeline-branch .ps-label { font-size: 9px; }
+.pipeline-branch .ps-sub { font-size: 8px; }
+
+/* ===== Data Lakehouse Output ===== */
+.dp-lakehouse {
+  margin-top: 18px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-md, 8px);
+}
+.dlh-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dlh-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #065f46;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.dlh-subtitle {
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-left: auto;
+}
+.dlh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.dlh-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  background: #fff;
+  border: 1px solid #e8ecf1;
+  border-radius: var(--radius-md, 8px);
+  transition: all 0.15s ease;
+}
+.dlh-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
+.dlh-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dlh-card strong {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  display: block;
+  line-height: 1.25;
+}
+.dlh-card span {
+  font-size: 9.5px;
+  color: #94a3b8;
+}
+.dlh-card-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-style: dashed;
+  cursor: pointer;
+  min-height: 56px;
+}
+.dlh-card-add span {
+  font-size: 9.5px;
+  color: #94a3b8;
+}
+.dlh-card-add:hover { border-color: #93a5ff; color: #00338D; }
+.dlh-card-add svg { transition: transform 0.15s ease; }
+.dlh-card-add:hover svg { transform: rotate(90deg); }
+
 /* ===== Data Processing Engine — Redesigned (Compact) ===== */
 
 .dp-page {
