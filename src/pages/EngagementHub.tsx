@@ -446,16 +446,24 @@ function EngagementHub() {
                 <i className="fas fa-list"></i>
                 <span>{t('listView')}</span>
               </button>
-              {viewMode === 'list' && listTab === 'opinion' && (
-                <button
-                  className="add-opinion-btn"
-                  onClick={() => {}}
-                  title={lang === 'zh' ? '新增 Opinion Profile' : 'Add Opinion Profile'}
-                >
-                  <i className="fas fa-plus"></i> New Opinion Profile
-                </button>
-              )}
             </div>
+          </div>
+          {/* Action buttons - right-aligned via toolbar space-between */}
+          <div className="toolbar-actions-right">
+            <button
+              className="download-report-btn"
+              onClick={() => {}}
+              title={lang === 'zh' ? '下载报告' : 'Download Report'}
+            >
+              <i className="fas fa-download"></i> Download Report
+            </button>
+            <button
+              className="add-opinion-btn"
+              onClick={() => {}}
+              title={lang === 'zh' ? '新增 Opinion Profile' : 'Add Opinion Profile'}
+            >
+              <i className="fas fa-plus"></i> New Opinion Profile
+            </button>
           </div>
         </div>
 

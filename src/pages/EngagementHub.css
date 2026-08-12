@@ -658,6 +658,7 @@
 /* View toggle inline (inside toolbar-left, next to Sort By) */
 .view-toggle-inline {
   display: flex;
+  align-items: center;
   background: var(--bg-card-alt);
   border-radius: var(--radius-md);
   padding: 2px;
@@ -2028,6 +2029,14 @@
   box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
 }
 
+/* Action buttons container - right-aligned inside toolbar/tab-bar */
+.toolbar-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto; /* push to the right */
+}
+
 /* Add Opinion Profile button (blue pill style, same as Dashboard title) */
 .add-opinion-btn {
   display: inline-flex;
@@ -2043,7 +2052,7 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
-  margin-left: 24px;
+  margin-left: 0; /* reset margin when inside toolbar-actions-right */
 }
 
 .add-opinion-btn:hover {
@@ -2051,6 +2060,31 @@
 }
 
 .add-opinion-btn i {
+  font-size: 11px;
+}
+
+/* Download Report button (same style as New Opinion Profile - blue solid) */
+.download-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  background: var(--primary-600, #1e40af);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.download-report-btn:hover {
+  background: var(--primary-700, #1e3a8a);
+}
+
+.download-report-btn i {
   font-size: 11px;
 }
 
