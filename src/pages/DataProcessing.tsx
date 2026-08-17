@@ -25,6 +25,20 @@ interface DataSource {
   files: DataSourceFile[]
 }
 
+// ===== Database List Types =====
+interface DatabaseItem {
+  id: string
+  name: string
+  version: string
+  entityName: string
+  adpScope: string
+  mappingRule: string
+  accountStructure: string
+  usedBy: string
+  financialPeriod: string
+  status: 'valid' | 'in-progress' | 'error'
+}
+
 // ===== Demo Data =====
 const dataSources: DataSource[] = [
   // --- Structured Data ---
@@ -95,9 +109,21 @@ const typeMeta: Record<string, { labelZh: string; labelEn: string; icon: React.R
   contract: { labelZh: '合同协议', labelEn: 'Contracts', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>, color: '#059669', bg: '#ecfdf5' },
 }
 
+// ===== Database List Demo Data =====
+const databaseListData: DatabaseItem[] = [
+  { id: 'db1', name: 'test03072222', version: 'Full period', versionEn: 'Full period', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule068072222', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
+  { id: 'db2', name: 'group0729001', version: 'Full period', versionEn: 'Full period', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule0729001', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
+  { id: 'db3', name: 'pre-9739', version: 'Pre-final', versionEn: 'Pre-final', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule0729', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2024-01-01 ~ 2024-12-31', status: 'valid' },
+  { id: 'db4', name: 'test0726001', version: 'Full period', versionEn: 'Full period', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule0726m', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
+  { id: 'db5', name: 'MF345', version: 'V5', versionEn: 'V5', entityName: 'KPMG_35', adpScope: '', mappingRule: 'rule345copy(1)copy(1)', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2022-01-01 ~ 2022-12-31', status: 'in-progress' },
+  { id: 'db6', name: 'MF346', version: 'V4', versionEn: 'V4', entityName: 'KPMG_35', adpScope: '', mappingRule: 'rule345copy(1)copy(1)', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2022-01-01 ~ 2022-12-31', status: 'valid' },
+]
+
 function DataProcessing() {
   const { lang } = useLanguage()
   const [activeTab, setActiveTab] = useState<'structured' | 'unstructured'>('structured')
+  const [uploadExpanded, setUploadExpanded] = useState(false)
+  const [uploadPanelTab, setUploadPanelTab] = useState<'structured' | 'unstructured'>('structured')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -184,79 +210,188 @@ function DataProcessing() {
         </div>
       </div>
 
-      {/* === Upload Zone (compact, tabbed) === */}
-      <div className="dp-upload-area">
-        <div className="dp-tab-bar">
-          <button className={`dp-tab ${activeTab === 'structured' ? 'active' : ''}`} onClick={() => setActiveTab('structured')}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            {t('结构化数据', 'Structured Data')}
-          </button>
-          <button className={`dp-tab ${activeTab === 'unstructured' ? 'active' : ''}`} onClick={() => setActiveTab('unstructured')}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            {t('非结构化数据', 'Unstructured Data')}
+      {/* === Data Source Section (Tabbed: Structured / Unstructured) === */}
+      <div className="dp-section">
+        <div className="dp-source-header">
+          <div className="dp-tab-bar dp-source-tab-bar">
+            <button className={`dp-tab ${activeTab === 'structured' ? 'active' : ''}`} onClick={() => setActiveTab('structured')}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              {t('结构化数据', 'Structured Data')}
+              <span className="dp-section-count">{structuredData.length}</span>
+            </button>
+            <button className={`dp-tab ${activeTab === 'unstructured' ? 'active' : ''}`} onClick={() => setActiveTab('unstructured')}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              {t('非结构化数据', 'Unstructured Data')}
+              <span className="dp-section-count">{unstructuredData.length}</span>
+            </button>
+          </div>
+          <button className="dp-upload-file-btn" onClick={() => setUploadExpanded(true)}>
+            <i className="fas fa-plus"></i> Upload File
           </button>
         </div>
 
-        <div className="dp-upload-zone" onClick={handleUpload}>
-          {activeTab === 'structured' ? (
-            <>
-              <div className="up-icon structured">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              </div>
-              <div className="up-text">
-                <strong>{t('拖拽或点击上传结构化文件', 'Drag or click to upload structured files')}</strong>
-                <span>{t('支持 Excel (.xlsx/.csv) · 上传后将关联到对应数据类型卡片', 'Supports Excel (.xlsx/.csv) · Files will be linked to matching data type cards')}</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="up-icon unstructured">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#805AD5" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              </div>
-              <div className="up-text">
-                <strong>{t('拖拽或点击上传非结构化文件', 'Drag or click to upload unstructured files')}</strong>
-                <span>{t('支持 PDF/图片 · 将自动调用 KDR OCR 工具解析并归类', 'Supports PDF/Images · KDR OCR will auto-parse and categorize')}</span>
-              </div>
-              <div className="kdr-badge">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                KDR OCR
-              </div>
-            </>
-          )}
-          {isUploading && (
-            <div className="up-progress">
-              <div className="up-progress-track"><div className="up-progress-fill" style={{ width: `${uploadProgress}%` }}></div></div>
-              <span>{uploadProgress}%</span>
+        <div className="dp-grid">
+          {(activeTab === 'structured' ? structuredData : unstructuredData).map(ds => renderCard(ds))}
+        </div>
+      </div>
+
+      {/* ===== Upload Modal (Dialog) ===== */}
+      {uploadExpanded && (
+        <div className="dp-modal-overlay" onClick={() => setUploadExpanded(false)}>
+          <div className="dp-modal-dialog" onClick={e => e.stopPropagation()}>
+            <div className="dp-modal-header">
+              <h3>{t('Upload File', 'Upload File')}</h3>
+              <button className="dp-modal-close" onClick={() => setUploadExpanded(false)}>
+                <i className="fas fa-times"></i>
+              </button>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* === Structured Data Section === */}
-      <div className="dp-section">
-        <div className="dp-section-head">
-          <h2 className="dp-section-title">
-            <span className="section-dot dot-blue"></span>
-            {t('结构化数据', 'Structured Data')}
-          </h2>
-          <span className="dp-section-count">{structuredData.length}</span>
-        </div>
-        <div className="dp-grid">
-          {structuredData.map(ds => renderCard(ds))}
-        </div>
-      </div>
+            <div className="dp-modal-tabs">
+              <button className={`dp-up-panel-tab ${uploadPanelTab === 'structured' ? 'active' : ''}`} onClick={() => setUploadPanelTab('structured')}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                Structured Data
+              </button>
+              <button className={`dp-up-panel-tab ${uploadPanelTab === 'unstructured' ? 'active' : ''}`} onClick={() => setUploadPanelTab('unstructured')}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Unstructured Data
+              </button>
+            </div>
 
-      {/* === Unstructured Data Section === */}
-      <div className="dp-section">
-        <div className="dp-section-head">
-          <h2 className="dp-section-title">
-            <span className="section-dot dot-purple"></span>
-            {t('非结构化数据', 'Unstructured Data')}
-          </h2>
-          <span className="dp-section-count">{unstructuredData.length}</span>
+            <div className="dp-modal-body">
+              <div className="dp-upload-zone-inner dp-modal-upload-zone" onClick={handleUpload}>
+                {uploadPanelTab === 'structured' ? (
+                  <>
+                    <div className="up-icon structured">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <div className="up-text">
+                      <strong>{t('Drag or click to upload structured files', 'Drag or click to upload structured files')}</strong>
+                      <span>{t('Supports Excel (.xlsx/.csv) · Files will be linked to matching data type cards', 'Supports Excel (.xlsx/.csv) · Files will be linked to matching data type cards')}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="up-icon unstructured">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#805AD5" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <div className="up-text">
+                      <strong>{t('Drag or click to upload unstructured files', 'Drag or click to upload unstructured files')}</strong>
+                      <span>{t('Supports PDF/Images · KDR OCR will auto-parse and categorize', 'Supports PDF/Images · KDR OCR will auto-parse and categorize')}</span>
+                    </div>
+                    <div className="kdr-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                      KDR OCR
+                    </div>
+                  </>
+                )}
+                {isUploading && (
+                  <div className="up-progress">
+                    <div className="up-progress-track"><div className="up-progress-fill" style={{ width: `${uploadProgress}%` }}></div></div>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="dp-grid">
-          {unstructuredData.map(ds => renderCard(ds))}
+      )}
+
+      {/* === Data Application Section (Database List + MUS Sampling) === */}
+      <div className="dp-data-application">
+        <div className="dp-da-header">
+          <h2 className="dp-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            {t('数据应用', 'Data Application')}
+          </h2>
+        </div>
+
+        <div className="dp-da-body">
+          {/* Left: MUS Sidebar (vertical tabs on the left side) */}
+          <div className="dp-mus-sidebar dp-mus-sidebar-left">
+            <div className="mus-tab" data-active={true}>
+              <span className="mus-tab-text">Database List</span>
+            </div>
+            <div className="mus-tab">
+              <span className="mus-tab-text">MUS Sampling</span>
+            </div>
+          </div>
+
+          {/* Right: Database List content */}
+          <div className="dp-db-list">
+            <div className="dp-db-header">
+              <span className="dp-db-desc">{t('Please upload raw file(including TB & GL) in the pool! The files can be shared by all the database under current engagement', 'Please upload raw file(including TB & GL) in the pool! The files can be shared by all the database under current engagement')}</span>
+              <div className="dp-db-header-actions">
+                <button className="dp-batch-btn outline">{t('Batch List', 'Batch List')}</button>
+                <button className="dp-batch-btn primary">{t('Add New Database', 'Add New Database')}</button>
+              </div>
+            </div>
+
+            {/* Database Table */}
+            <div className="dp-db-table-wrap">
+              <table className="dp-db-table">
+                <thead>
+                  <tr>
+                    <th>{t('Database Name', 'Database Name')}</th>
+                    <th>{t('Version', 'Version')}</th>
+                    <th>{t('Entity Name', 'Entity Name')}</th>
+                    <th>{t('ADP Scope', 'ADP Scope')}</th>
+                    <th>{t('Mapping Rule', 'Mapping Rule')}</th>
+                    <th>{t('Account Structure', 'Account Structure')}</th>
+                    <th>{t('Used by', 'Used by')}</th>
+                    <th>{t('Financial Period', 'Financial Period')}</th>
+                    <th>{t('Status', 'Status')}</th>
+                    <th>{t('Actions', 'Actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {databaseListData.map(db => (
+                    <tr key={db.id}>
+                      <td><a href="#" className="db-name-link">{db.name}</a></td>
+                      <td><span className={`db-version-badge ${db.version === 'Full period' ? 'full' : db.version === 'Pre-final' ? 'prefinal' : ''}`}>{isZh ? (db.versionEn || db.version) : db.version}</span></td>
+                      <td>{db.entityName}</td>
+                      <td>{db.adpScope || '-'}</td>
+                      <td className="db-mapping">{db.mappingRule}</td>
+                      <td>{db.accountStructure}</td>
+                      <td>{db.usedBy}</td>
+                      <td className="db-period">{db.financialPeriod}</td>
+                      <td><span className={`db-status ${db.status}`}>{db.status === 'valid' ? t('Valid', 'Valid') : db.status === 'in-progress' ? t('In progress', 'In progress') : db.status}</span></td>
+                      <td className="db-actions">
+                        <a href="#" className="db-action-link">{t('Copy', 'Copy')}</a>
+                        <a href="#" className="db-action-link">{t('Update', 'Update')}</a>
+                        {db.status === 'in-progress' && <a href="#" className="db-action-link danger">{t('Delete', 'Delete')}</a>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Table footer with pagination only */}
+              <div className="dp-db-footer">
+                <div className="dp-db-pagination">
+                  <span>Total {databaseListData.length}37</span>
+                  <select className="dp-page-select">
+                    <option>10/page</option>
+                    <option>20/page</option>
+                    <option>50/page</option>
+                  </select>
+                  <div className="dp-page-numbers">
+                    <button className="active">1</button>
+                    <button>2</button>
+                    <button>3</button>
+                    <button>4</button>
+                    <button>5</button>
+                    <button>6</button>
+                    <span>...</span>
+                    <button>464</button>
+                    <button>&gt;</button>
+                  </div>
+                  <span>Go to: <input type="text" className="dp-go-input" defaultValue="1" /></span>
+                </div>
+              </div>
+            </div>
+
+            <p className="dp-db-note">{t('You can update the databases by clicking Update button if you want to apply the same mapping rule from the existing databases. Only 2 databases will be kept for each individual entity for the same financial period. The oldest uploaded database will be automatically removed if there are more than 2 databases being uploaded.', 'You can update the databases by clicking Update button if you want to apply the same mapping rule from the existing databases. Only 2 databases will be kept for each individual entity for the same financial period. The oldest uploaded database will be automatically removed if there are more than 2 databases being uploaded.')}</p>
+          </div>
         </div>
       </div>
 
