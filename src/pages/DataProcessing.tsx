@@ -112,12 +112,12 @@ const typeMeta: Record<string, { labelZh: string; labelEn: string; icon: React.R
 
 // ===== Database List Demo Data =====
 const databaseListData: DatabaseItem[] = [
-  { id: 'db1', name: 'test03072222', version: 'Full period', versionEn: 'Full period', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule068072222', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
-  { id: 'db2', name: 'group0729001', version: 'Full period', versionEn: 'Full period', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule0729001', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
-  { id: 'db3', name: 'pre-9739', version: 'Pre-final', versionEn: 'Pre-final', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule0729', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2024-01-01 ~ 2024-12-31', status: 'valid' },
-  { id: 'db4', name: 'test0726001', version: 'Full period', versionEn: 'Full period', entityName: 'KPMG3', adpScope: '', mappingRule: 'rule0726m', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
-  { id: 'db5', name: 'MF345', version: 'V5', versionEn: 'V5', entityName: 'KPMG_35', adpScope: '', mappingRule: 'rule345copy(1)copy(1)', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2022-01-01 ~ 2022-12-31', status: 'in-progress' },
-  { id: 'db6', name: 'MF346', version: 'V4', versionEn: 'V4', entityName: 'KPMG_35', adpScope: '', mappingRule: 'rule345copy(1)copy(1)', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2022-01-01 ~ 2022-12-31', status: 'valid' },
+  { id: 'db1', name: 'test03072222', version: 'Full period', versionEn: 'Full period', entityName: 'Entity A', adpScope: '', mappingRule: 'rule068072222', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
+  { id: 'db2', name: 'group0729001', version: 'Full period', versionEn: 'Full period', entityName: 'Entity A', adpScope: '', mappingRule: 'rule0729001', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
+  { id: 'db3', name: 'pre-9739', version: 'Pre-final', versionEn: 'Pre-final', entityName: 'Entity A', adpScope: '', mappingRule: 'rule0729', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2024-01-01 ~ 2024-12-31', status: 'valid' },
+  { id: 'db4', name: 'test0726001', version: 'Full period', versionEn: 'Full period', entityName: 'Entity A', adpScope: '', mappingRule: 'rule0726m', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2025-01-01 ~ 2025-12-31', status: 'valid' },
+  { id: 'db5', name: 'MF345', version: 'V5', versionEn: 'V5', entityName: 'Entity B', adpScope: '', mappingRule: 'rule345copy(1)copy(1)', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2022-01-01 ~ 2022-12-31', status: 'in-progress' },
+  { id: 'db6', name: 'MF346', version: 'V4', versionEn: 'V4', entityName: 'Entity B', adpScope: '', mappingRule: 'rule345copy(1)copy(1)', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2022-01-01 ~ 2022-12-31', status: 'valid' },
 ]
 
 function DataProcessing() {

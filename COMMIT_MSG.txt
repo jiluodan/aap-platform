@@ -1,1 +1,1 @@
-fix: add missing versionEn field to DatabaseItem interface to fix build
+fix: replace real company names with generic placeholders in database data
