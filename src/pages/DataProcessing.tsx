@@ -30,6 +30,7 @@ interface DatabaseItem {
   id: string
   name: string
   version: string
+  versionEn?: string
   entityName: string
   adpScope: string
   mappingRule: string

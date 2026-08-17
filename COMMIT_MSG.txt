@@ -1,1 +1,1 @@
-chore: remove temp commit message file
+fix: add missing versionEn field to DatabaseItem interface to fix build
