@@ -10,9 +10,10 @@ permissions:
   pages: write
   id-token: write
 
+# 同一时间只允许一个部署，新推送会取消进行中的旧部署
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -26,18 +27,27 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci --fetch-retries=3 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+        run: npm ci
 
       - name: Build
         run: npm run build
 
+      - name: SPA fallback (deep-link refresh)
+        # react-router 使用 BrowserRouter，刷新子路由会 404，复制 index.html 作为 404 兜底
+        run: cp dist/index.html dist/404.html
+
+      - name: Disable Jekyll
+        run: touch dist/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: ./dist
 
   deploy:
     needs: build
