@@ -10,10 +10,10 @@ permissions:
   pages: write
   id-token: write
 
-# 同一时间只允许一个部署，新推送会取消进行中的旧部署
+# 不取消进行中的部署，避免并发/中途打断（保留既有策略）
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -27,9 +27,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --fetch-retries=3 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
       - name: Build
         run: npm run build
