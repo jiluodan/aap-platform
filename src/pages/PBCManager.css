@@ -880,19 +880,31 @@
   background: #7c3aed;
   border-radius: 9px;
 }
-/* Batch push to File Pool */
-.pab-push.has-selection {
-  border-color: #c7d2fe;
-  background: #eef2ff;
-  color: #00338D;
+/* File Pool 推送（单一入口：有选中推所选，否则推全部）—— 主操作按钮 */
+.pab-push {
+  border-color: #00338D;
+  background: #00338D;
+  color: #fff;
 }
-.pab-push .pab-badge { background: #00338D; }
-/* File Pool 推送总览（操作栏内） */
+.pab-push:hover:not(:disabled) {
+  background: #002a73;
+  border-color: #002a73;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 51, 141, 0.3);
+}
+.pab-push:disabled {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  opacity: 1;
+}
+.pab-push .pab-badge { background: rgba(255, 255, 255, 0.24); color: #fff; }
+/* File Pool 进度（操作栏内，纯展示不可点击） */
 .pab-pool {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px 4px 10px;
+  padding: 5px 11px;
   border: 1px solid #dbe4ff;
   background: linear-gradient(135deg, #f0f4ff, #eef2ff);
   border-radius: 8px;
@@ -902,22 +914,6 @@
 .pab-pool-name { font-size: 10.5px; font-weight: 700; }
 .pab-pool-count { font-size: 10px; color: #64748b; font-weight: 600; }
 .pab-pool-count b { color: #059669; font-size: 11.5px; }
-.pab-pool-push {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #fff;
-  background: #00338D;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.pab-pool-push:hover:not(:disabled) { filter: brightness(1.1); box-shadow: 0 2px 8px rgba(0,51,141,0.25); }
-.pab-pool-push:disabled { background: #cbd5e1; cursor: not-allowed; }
 
 /* ===== BATCH EDIT PANEL ===== */
 .pbc-batch-edit-panel {
@@ -1100,10 +1096,15 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
-  min-width: 760px;
+  /* = 各定宽列之和，低于此宽度时容器横向滚动，保证列不被压缩 */
+  min-width: 966px;
+  /* 固定布局：各列按指定宽度分配，富余宽度由末尾占位列吸收 */
+  table-layout: fixed;
 }
 .plv-table thead th {
   padding: 8px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: left;
   font-size: 9.5px;
   font-weight: 700;
@@ -1128,16 +1129,39 @@
   padding: 7px 8px;
   vertical-align: middle;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* 列宽：固定布局下按设计宽度分配
+   描述列与类别列均显式定宽，富余宽度统一由末尾 .plv-c-spacer（未定宽列）吸收，
+   因此各列在任何视口宽度下都不会被撑宽或压扁 */
+.plv-c-check    { width: 32px; }
+.plv-c-id       { width: 42px; }
+.plv-c-cat      { width: 96px; }
+.plv-c-assignee { width: 78px; }
+.plv-c-due      { width: 80px; }
+.plv-c-status   { width: 82px; }
+.plv-c-prio     { width: 74px; }
+.plv-c-dtype    { width: 78px; }
+.plv-c-file     { width: 46px; text-align: center; }
+.plv-c-pool     { width: 88px; }
+/* 占位列：不定宽 → 在 table-layout:fixed 下独占剩余宽度 */
+.plv-c-spacer   { width: auto; }
+
 .plv-id { font-family: 'SF Mono', Consolas, monospace; font-size: 10px; color: #94a3b8; }
-.plv-desc { max-width: 230px; white-space: normal; line-height: 1.35; }
+.plv-desc { width: 270px; white-space: normal; line-height: 1.35; }
 .plv-cat-badge {
+  display: inline-block;
+  max-width: 100%;
   font-size: 9px;
   font-weight: 600;
   padding: 1px 7px;
   border-radius: 4px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
 }
 .plv-dtype {
   font-size: 9px;
@@ -1148,18 +1172,30 @@
 }
 .plv-dtype.structured { background: #eef2ff; color: #4f46e5; }
 .plv-dtype.unstructured { background: #f3effb; color: #805AD5; }
-.plv-file-tag {
-  font-size: 9px;
-  color: #2563eb;
-  background: #eff6ff;
-  padding: 1px 5px;
-  border-radius: 3px;
-  white-space: nowrap;
-  display: inline-block;
-  max-width: 128px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: middle;
+/* 列表视图中的「文件」列：可点击图标，点击打开对应文件（不再直接展示长文件名） */
+.plv-file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid #dbe4ff;
+  background: #f5f8ff;
+  color: #00338D;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.plv-file-icon:hover {
+  background: #00338D;
+  border-color: #00338D;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 51, 141, 0.25);
+}
+.plv-file-icon:focus-visible {
+  outline: 2px solid #93a5ff;
+  outline-offset: 1px;
 }
 .plv-empty {
   text-align: center;

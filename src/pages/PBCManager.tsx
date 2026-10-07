@@ -213,9 +213,41 @@ function PBCManager() {
   // ===== File Pool 推送统计（Cards / List 两个视图共用）=====
   const poolReadyCount = poolCandidates.filter(i => !isPushed(i.id)).length
   const poolPushedCount = poolCandidates.length - poolReadyCount
-  /** 当前筛选结果中「可推送」的条目数（用于批量推送） */
-  const selectedPushable = filteredItems.filter(i => selectedIds.has(i.id) && i.fileName && !isPushed(i.id)).length
+  /** 当前筛选结果中「已选中且可推送」的条目 ID */
+  const selectedPushableIds = filteredItems
+    .filter(i => selectedIds.has(i.id) && i.fileName && !isPushed(i.id))
+    .map(i => i.id)
+  /** 推送目标数：有选中则推所选，否则推全部待推送 */
+  const pushTargetCount = selectedPushableIds.length > 0 ? selectedPushableIds.length : poolReadyCount
   const pushAllReady = () => pushFiles(poolCandidates.filter(i => !isPushed(i.id)).map(i => i.id))
+  /** 单一推送入口：优先推送所选，无选中时推送全部 */
+  const handlePush = () => {
+    if (selectedPushableIds.length > 0) pushFiles(selectedPushableIds)
+    else pushAllReady()
+  }
+
+  /**
+   * 打开 PBC 条目对应的文件。
+   * 演示环境没有真实文件存储，这里生成一份占位文档在新标签页打开，
+   * 以便完整呈现「点击图标 → 打开该文件」的交互。
+   */
+  const openFile = (fileName: string, fileSize?: string) => {
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${fileName}</title></head>
+<body style="margin:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#1e293b">
+  <div style="max-width:720px;margin:64px auto;padding:0 24px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border-radius:8px;background:#eef2ff;color:#00338D;font-size:16px">&#128196;</span>
+      <h1 style="font-size:17px;margin:0;word-break:break-all">${fileName}</h1>
+    </div>
+    <p style="color:#64748b;font-size:13px;margin:14px 0 22px">${fileSize ? fileSize + ' · ' : ''}${t('演示文件预览', 'Demo file preview')}</p>
+    <div style="border:1px dashed #cbd5e1;border-radius:10px;padding:28px;text-align:center;color:#94a3b8;font-size:13px">
+      ${t('此处为文件占位内容（原型演示）', 'Placeholder content (prototype demo)')}
+    </div>
+  </div>
+</body></html>`
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+    window.open(url, '_blank', 'noopener')
+  }
 
   // --- Handlers ---
   const handleCardClick = (category: string) => {
@@ -431,10 +463,9 @@ function PBCManager() {
         </div>
       </div>
 
-      {/* ===== EXPORT & BULK OPS SECTION (from guide screenshot) ===== */}
+      {/* ===== 操作栏：导出 + File Pool 推送（精简为单一推送入口） ===== */}
       <div className="pbc-action-bar">
         <div className="pab-left">
-          {/* Export buttons */}
           <button className="pab-btn pab-export" title={t('导出PBC列表为Excel', 'Export PBC list as Excel')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             {t('导出PBC列表', 'Export PBC List')}
@@ -443,39 +474,37 @@ function PBCManager() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             {t('导出文件清单', 'Export Files')}
           </button>
-          {/* File Pool 推送总览（两个视图共用） */}
-          <div className="pab-pool">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            <span className="pab-pool-name">{t('File Pool', 'File Pool')}</span>
-            <span className="pab-pool-count"><b>{poolPushedCount}</b>/{poolCandidates.length}</span>
-            <button className="pab-pool-push" disabled={poolReadyCount === 0} onClick={pushAllReady}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              {t(`推送全部 (${poolReadyCount})`, `Push All (${poolReadyCount})`)}
-            </button>
-          </div>
         </div>
         <div className="pab-right">
-          {/* Bulk operations */}
-          <button className={`pab-btn pab-bulk ${selectedIds.size > 0 ? 'has-selection' : ''}`}
-            disabled={selectedIds.size === 0}
-            onClick={() => setShowBatchEdit(!showBatchEdit)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            {t('批量下载', 'Batch Download')}
-            {selectedIds.size > 0 && <span className="pab-badge">{selectedIds.size}</span>}
-          </button>
-          <button className={`pab-btn pab-bulk ${selectedIds.size > 0 ? 'has-selection' : ''}`}
-            disabled={selectedIds.size === 0}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            {t('批量更新状态', 'Batch Update Status')}
-            {selectedIds.size > 0 && <span className="pab-badge">{selectedIds.size}</span>}
-          </button>
-          {/* 批量推送到 File Pool（按所选条目） */}
-          <button className={`pab-btn pab-push ${selectedPushable > 0 ? 'has-selection' : ''}`}
-            disabled={selectedPushable === 0}
-            onClick={() => pushFiles(filteredItems.filter(i => selectedIds.has(i.id) && i.fileName && !isPushed(i.id)).map(i => i.id))}>
+          {/* File Pool 进度（纯展示，不可点击） */}
+          <div className="pab-pool"
+            title={t(`已推送 ${poolPushedCount} / ${poolCandidates.length} 个文件到 File Pool`,
+              `${poolPushedCount} / ${poolCandidates.length} files pushed to File Pool`)}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <span className="pab-pool-name">File Pool</span>
+            <span className="pab-pool-count"><b>{poolPushedCount}</b>/{poolCandidates.length}</span>
+          </div>
+          {/* 批量编辑：仅在有选中时出现 */}
+          {selectedIds.size > 0 && (
+            <button className="pab-btn pab-bulk has-selection"
+              title={t('批量修改所选条目的负责人 / 截止日期 / 优先级', 'Bulk edit assignee / due date / priority')}
+              onClick={() => setShowBatchEdit(!showBatchEdit)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              {t('批量编辑', 'Bulk Edit')}
+              <span className="pab-badge">{selectedIds.size}</span>
+            </button>
+          )}
+          {/* 推送：单一入口 —— 有选中推所选，无选中推全部 */}
+          <button className="pab-btn pab-push"
+            disabled={pushTargetCount === 0}
+            onClick={handlePush}
+            title={selectedPushableIds.length > 0
+              ? t(`推送所选 ${selectedPushableIds.length} 个文件到 File Pool`, `Push ${selectedPushableIds.length} selected to File Pool`)
+              : t(`推送全部 ${poolReadyCount} 个待推送文件到 File Pool`, `Push all ${poolReadyCount} pending to File Pool`)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            {t('推送 File Pool', 'Push to File Pool')}
-            {selectedPushable > 0 && <span className="pab-badge">{selectedPushable}</span>}
+            {selectedPushableIds.length > 0
+              ? t(`推送所选 (${selectedPushableIds.length})`, `Push Selected (${selectedPushableIds.length})`)
+              : t(`推送全部 (${poolReadyCount})`, `Push All (${poolReadyCount})`)}
           </button>
         </div>
       </div>
@@ -649,17 +678,19 @@ function PBCManager() {
               <table className="plv-table">
                 <thead>
                   <tr>
-                    <th style={{width:'36px'}}></th>
-                    <th>{t('ID', 'ID')}</th>
+                    <th className="plv-c-check"></th>
+                    <th className="plv-c-id">{t('ID', 'ID')}</th>
                     <th>{t('描述', 'Description')}</th>
-                    <th>{t('类别', 'Category')}</th>
-                    <th>{t('负责人', 'Assignee')}</th>
-                    <th>{t('截止日期', 'Due Date')}</th>
-                    <th>{t('状态', 'Status')}</th>
-                    <th>{t('优先级', 'Priority')}</th>
-                    <th>{t('数据类型', 'Data Type')}</th>
-                    <th>{t('文件', 'File')}</th>
-                    <th>{t('File Pool', 'File Pool')}</th>
+                    <th className="plv-c-cat">{t('类别', 'Category')}</th>
+                    <th className="plv-c-assignee">{t('负责人', 'Assignee')}</th>
+                    <th className="plv-c-due">{t('截止日期', 'Due Date')}</th>
+                    <th className="plv-c-status">{t('状态', 'Status')}</th>
+                    <th className="plv-c-prio">{t('优先级', 'Priority')}</th>
+                    <th className="plv-c-dtype">{t('数据类型', 'Data Type')}</th>
+                    <th className="plv-c-file">{t('文件', 'File')}</th>
+                    <th className="plv-c-pool">{t('File Pool', 'File Pool')}</th>
+                    {/* 占位列：吸收表格富余宽度，避免其余列被撑宽 */}
+                    <th className="plv-c-spacer" aria-hidden="true"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -673,10 +704,12 @@ function PBCManager() {
                         <td className="plv-id">{item.id}</td>
                         <td className="plv-desc">{resolveDesc(item.description, isZh)}</td>
                         <td>
-                          <span className="plv-cat-badge" style={{
-                            background: meta?.bg || '#f1f5f9',
-                            color: meta?.color || '#64748b',
-                          }}>{getCategoryLabel(item.category, isZh)}</span>
+                          <span className="plv-cat-badge"
+                            title={getCategoryLabel(item.category, isZh)}
+                            style={{
+                              background: meta?.bg || '#f1f5f9',
+                              color: meta?.color || '#64748b',
+                            }}>{getCategoryLabel(item.category, isZh)}</span>
                         </td>
                         <td>{item.assignee || item.requestedBy}</td>
                         <td>{item.dueDate}</td>
@@ -694,8 +727,22 @@ function PBCManager() {
                             {item.dataType === 'structured' ? t('结构化', 'Str') : t('非结构化', 'Unstr')}
                           </span>
                         </td>
-                        <td>{item.fileName ? <span className="plv-file-tag">📎 {item.fileName}</span> : '-'}</td>
-                        <td>
+                        <td className="plv-c-file">
+                          {item.fileName ? (
+                            <button
+                              className="plv-file-icon"
+                              title={`${t('打开文件', 'Open file')}：${item.fileName}${item.fileSize ? ` (${item.fileSize})` : ''}`}
+                              aria-label={`${t('打开文件', 'Open file')}：${item.fileName}`}
+                              onClick={e => { e.stopPropagation(); openFile(item.fileName, item.fileSize) }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                              </svg>
+                            </button>
+                          ) : <span className="plv-na">—</span>}
+                        </td>
+                        <td className="plv-c-pool">
                           {!item.fileName
                             ? <span className="plv-na">—</span>
                             : isPushed(item.id)
@@ -710,11 +757,12 @@ function PBCManager() {
                                 </button>
                           }
                         </td>
+                        <td className="plv-c-spacer" aria-hidden="true"></td>
                       </tr>
                     )
                   })}
                   {filteredItems.length === 0 && (
-                    <tr><td colSpan={11} className="plv-empty">{t('无匹配的PBC条目', 'No matching PBC items')}</td></tr>
+                    <tr><td colSpan={12} className="plv-empty">{t('无匹配的PBC条目', 'No matching PBC items')}</td></tr>
                   )}
                 </tbody>
               </table>

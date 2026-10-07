@@ -118,6 +118,7 @@ interface OpinionProfile {
   phase: number // 1=Submit opinion profile, 2=Apply serial number, 3=Submit Final declaration, 4=Close out
 }
 
+// Dashboard 演示样例：Opinion Profile 仅保留 1 条
 const opinionProfiles: OpinionProfile[] = [
   {
     id: 'OP001', name: 'Standard Unqualified', nameCn: '标准无保留意见', status: 'active',
@@ -125,23 +126,7 @@ const opinionProfiles: OpinionProfile[] = [
     entityNameEn: 'Aurora Technology Group Co., Ltd.', entityNameCn: ' Aurora 科技集团有限公司',
     opinionType: 'Financial statement audit', reportType: 'Annual Audit',
     opinionTypeCn: '财务报表审计', reportTypeCn: '年度审计',
-    armsReportId: 'R00001051234', kcwFileIds: ['KC001', 'KC002'], phase: 3
-  },
-  {
-    id: 'OP002', name: 'Emphasis of Matter', nameCn: '强调事项段', status: 'draft',
-    lastViewed: '2025-01-20', progress: 45,
-    entityNameEn: 'Golden Horizon Investment Holdings', entityNameCn: '金地平线投资控股有限公司',
-    opinionType: 'Component reporting', reportType: 'Review of financial information',
-    opinionTypeCn: '组成部分报告', reportTypeCn: '财务信息审阅',
-    armsReportId: 'R00001057271', kcwFileIds: ['KC003', 'KC004'], phase: 2
-  },
-  {
-    id: 'OP003', name: 'Qualified - Scope', nameCn: '保留意见（范围受限）', status: 'pending',
-    lastViewed: '2025-01-18', progress: 20,
-    entityNameEn: 'Pacific Star Real Estate Development Co., Ltd.', entityNameCn: '太平洋星房地产开发有限公司',
-    opinionType: 'Others', reportType: 'Annual Audit',
-    opinionTypeCn: '其他', reportTypeCn: '年度审计',
-    armsReportId: 'R00001058233', kcwFileIds: ['KC005'], phase: 1
+    armsReportId: 'R00001051234', kcwFileIds: ['KC001'], phase: 3
   },
 ]
 
@@ -172,6 +157,7 @@ const PhaseIcon = ({ status, size = 14 }: { status: 'done' | 'current' | 'pendin
   )
 }
 
+// Dashboard 演示样例：KCw File 仅保留 1 条
 const kcwFiles: KCwFile[] = [
   {
     id: 'KC001', name: '241231_Stat_RF_Aurora_Planning', nameCn: '241231_统计_RF_Aurora_计划',
@@ -180,38 +166,6 @@ const kcwFiles: KCwFile[] = [
     lastYearSerialNumber: 'Dummy Firm Cert No.2600020 / R0000012667(06)',
     currentYearAapId: 'R000001267106',
     opinionProfileIds: ['OP001']
-  },
-  {
-    id: 'KC002', name: '241231_Stat_RF_Aurora_Risk', nameCn: '241231_统计_RF_Aurora_风险',
-    status: 'in-progress', lastViewed: '2025-01-22', type: 'Risk',
-    workbookOpinionName: '241231_Stat_RF_Aurora_Risk',
-    lastYearSerialNumber: 'Dummy Firm Cert No.2600093 / R000001267076(06)',
-    currentYearAapId: 'R000001258885',
-    opinionProfileIds: ['OP001']
-  },
-  {
-    id: 'KC003', name: '241231_Stat_RF_GoldenHorizon_Planning', nameCn: '241231_统计_RF_金地平线_计划',
-    status: 'pending', lastViewed: '2025-01-15', type: 'Planning',
-    workbookOpinionName: '241231_Stat_RF_GoldenHorizon_Planning',
-    lastYearSerialNumber: 'Dummy Firm Cert No.2600104 / R000001267079(06)',
-    currentYearAapId: 'R000001258895',
-    opinionProfileIds: ['OP002']
-  },
-  {
-    id: 'KC004', name: '241231_Stat_RF_GoldenHorizon_Fraud', nameCn: '241231_统计_RF_金地平线_舞弊',
-    status: 'not-started', lastViewed: '2025-01-10', type: 'Fraud',
-    workbookOpinionName: '241231_Stat_RF_GoldenHorizon_Fraud',
-    lastYearSerialNumber: 'Dummy Firm Cert No.2600115 / R000001267082(06)',
-    currentYearAapId: 'R000001258906',
-    opinionProfileIds: ['OP002']
-  },
-  {
-    id: 'KC005', name: '241231_Stat_RF_PacificStar_Single', nameCn: '241231_统计_RF_太平洋星_单一',
-    status: 'on-hold', lastViewed: '2025-01-08', type: 'Risk',
-    workbookOpinionName: '241231_Stat_RF_PacificStar_Single',
-    lastYearSerialNumber: 'Dummy Firm Cert No.2600128 / R000001267095(06)',
-    currentYearAapId: 'R000001258917',
-    opinionProfileIds: ['OP003']
   },
 ]
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
+import KdrWorkbench, { buildExtractedFields, type KdrFile, type KdrFileStatus } from './KdrWorkbench'
 import './DataProcessing.css'
 
 // ===== Types =====
@@ -120,6 +121,37 @@ const databaseListData: DatabaseItem[] = [
   { id: 'db6', name: 'MF346', version: 'V4', versionEn: 'V4', entityName: 'Entity B', adpScope: '', mappingRule: 'rule345copy(1)copy(1)', accountStructure: 'PRC GAAP', usedBy: 'JE Testing', financialPeriod: '2022-01-01 ~ 2022-12-31', status: 'valid' },
 ]
 
+// ===== MUS Sampling Demo Data (仅适用于结构化数据) =====
+// MUS 引擎以「任务」为单位管理抽样作业，一个任务可覆盖多个实体 / 多个审计程序
+type MusTask = {
+  id: string
+  name: string
+  taskType: string
+  taskTypeCn: string
+  fileType: string
+  fileTypeCn: string
+  entities: number
+  files: number
+  createdBy: string
+  createdAt: string
+  status: 'processing' | 'completed' | 'failed'
+}
+
+// 演示人名一律使用虚构占位（沿用 PBCManager 中 TEAM_MEMBERS 的命名约定），
+// 不引用任何真实人员姓名，格式为「姓, 名」
+const DEMO_PEOPLE = ['Zhang, San', 'Li, Si', 'Wang, Wu'] as const
+
+const MUS_TASKS: MusTask[] = [
+  { id: 'MUS-1235', name: '1235', taskType: 'Multiple files of different types', taskTypeCn: '多类型文件', fileType: 'Multiple files (TB & GL)', fileTypeCn: '多文件（TB & GL）', entities: 1, files: 1, createdBy: DEMO_PEOPLE[0], createdAt: '2026-09-19 10:24', status: 'processing' },
+  { id: 'MUS-11111111', name: '11111111', taskType: 'Multiple files of different types', taskTypeCn: '多类型文件', fileType: 'Multiple files (TB & GL)', fileTypeCn: '多文件（TB & GL）', entities: 1, files: 1, createdBy: DEMO_PEOPLE[0], createdAt: '2026-08-25 16:08', status: 'processing' },
+  { id: 'MUS-test0824', name: 'test0824', taskType: 'Multiple files of different types', taskTypeCn: '多类型文件', fileType: 'Multiple files (TB & GL)', fileTypeCn: '多文件（TB & GL）', entities: 1, files: 1, createdBy: DEMO_PEOPLE[0], createdAt: '2026-08-24 09:41', status: 'processing' },
+  { id: 'MUS-Test0811', name: 'Test0811', taskType: 'Multiple files of different types', taskTypeCn: '多类型文件', fileType: 'Multiple files (TB & GL)', fileTypeCn: '多文件（TB & GL）', entities: 1, files: 1, createdBy: DEMO_PEOPLE[1], createdAt: '2026-08-11 14:02', status: 'processing' },
+]
+
+// 非结构化文件的解析状态 → KDR 工作区状态
+const kdrStatusOf = (s: DataSourceFile['status']): KdrFileStatus =>
+  s === 'ocr-pending' ? 'pending' : s === 'processing' ? 'parsing' : s === 'error' ? 'failed' : 'parsed'
+
 function DataProcessing() {
   const { lang } = useLanguage()
   const [activeTab, setActiveTab] = useState<'structured' | 'unstructured'>('structured')
@@ -129,6 +161,15 @@ function DataProcessing() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
+  // 结构化数据「数据应用」子模块：Database List / MUS Sampling
+  const [dataAppTab, setDataAppTab] = useState<'db' | 'mus'>('db')
+  // MUS 任务列表排序
+  const [musSortKey, setMusSortKey] = useState<'name' | 'createdBy' | 'status'>('name')
+  const [musSortDir, setMusSortDir] = useState<'asc' | 'desc'>('asc')
+  const toggleMusSort = (key: 'name' | 'createdBy' | 'status') => {
+    if (musSortKey === key) setMusSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
+    else { setMusSortKey(key); setMusSortDir('asc') }
+  }
 
   const isZh = lang === 'zh'
 
@@ -189,18 +230,18 @@ function DataProcessing() {
             <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
             <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
           </svg>
-          {isSyncing ? t('同步中...', 'Syncing...') : t('同步 PBC 数据池', 'Sync PBC Data Pool')}
+          {isSyncing ? t('同步中...', 'Syncing...') : t('同步 Audit File Pool', 'Sync Audit File Pool')}
         </button>
       </div>
 
-      {/* === PBC Data Pool Sync Bar === */}
+      {/* === Audit File Pool Sync Bar === */}
       <div className="dp-pool-bar">
         <div className="pool-info">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
             <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
           </svg>
-          <span><strong>{t('PBC 数据池', 'PBC Data Pool')}</strong> — {t('已连接 Engagement 源数据', 'Connected to Engagement source data')}</span>
+          <span><strong>Audit File Pool</strong> — {t('已连接 Engagement 源数据', 'Connected to Engagement source data')}</span>
         </div>
         <div className="pool-stats">
           <span className="pool-stat-item">{dataSources.length} {t('个数据源', 'sources')}</span>
@@ -234,6 +275,11 @@ function DataProcessing() {
         <div className="dp-grid">
           {(activeTab === 'structured' ? structuredData : unstructuredData).map(ds => renderCard(ds))}
         </div>
+
+        {/* === 数据应用区 — 按数据类型挂载各自适用的模块 ===
+            结构化数据 → Database List / MUS Sampling
+            非结构化数据 → KDR */}
+        {activeTab === 'structured' ? renderDataApplication() : renderKdrPlatform()}
       </div>
 
       {/* ===== Upload Modal (Dialog) ===== */}
@@ -296,105 +342,6 @@ function DataProcessing() {
           </div>
         </div>
       )}
-
-      {/* === Data Application Section (Database List + MUS Sampling) === */}
-      <div className="dp-data-application">
-        <div className="dp-da-header">
-          <h2 className="dp-section-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            {t('数据应用', 'Data Application')}
-          </h2>
-        </div>
-
-        <div className="dp-da-body">
-          {/* Left: MUS Sidebar (vertical tabs on the left side) */}
-          <div className="dp-mus-sidebar dp-mus-sidebar-left">
-            <div className="mus-tab" data-active={true}>
-              <span className="mus-tab-text">Database List</span>
-            </div>
-            <div className="mus-tab">
-              <span className="mus-tab-text">MUS Sampling</span>
-            </div>
-          </div>
-
-          {/* Right: Database List content */}
-          <div className="dp-db-list">
-            <div className="dp-db-header">
-              <span className="dp-db-desc">{t('Please upload raw file(including TB & GL) in the pool! The files can be shared by all the database under current engagement', 'Please upload raw file(including TB & GL) in the pool! The files can be shared by all the database under current engagement')}</span>
-              <div className="dp-db-header-actions">
-                <button className="dp-batch-btn outline">{t('Batch List', 'Batch List')}</button>
-                <button className="dp-batch-btn primary">{t('Add New Database', 'Add New Database')}</button>
-              </div>
-            </div>
-
-            {/* Database Table */}
-            <div className="dp-db-table-wrap">
-              <table className="dp-db-table">
-                <thead>
-                  <tr>
-                    <th>{t('Database Name', 'Database Name')}</th>
-                    <th>{t('Version', 'Version')}</th>
-                    <th>{t('Entity Name', 'Entity Name')}</th>
-                    <th>{t('ADP Scope', 'ADP Scope')}</th>
-                    <th>{t('Mapping Rule', 'Mapping Rule')}</th>
-                    <th>{t('Account Structure', 'Account Structure')}</th>
-                    <th>{t('Used by', 'Used by')}</th>
-                    <th>{t('Financial Period', 'Financial Period')}</th>
-                    <th>{t('Status', 'Status')}</th>
-                    <th>{t('Actions', 'Actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {databaseListData.map(db => (
-                    <tr key={db.id}>
-                      <td><a href="#" className="db-name-link">{db.name}</a></td>
-                      <td><span className={`db-version-badge ${db.version === 'Full period' ? 'full' : db.version === 'Pre-final' ? 'prefinal' : ''}`}>{isZh ? (db.versionEn || db.version) : db.version}</span></td>
-                      <td>{db.entityName}</td>
-                      <td>{db.adpScope || '-'}</td>
-                      <td className="db-mapping">{db.mappingRule}</td>
-                      <td>{db.accountStructure}</td>
-                      <td>{db.usedBy}</td>
-                      <td className="db-period">{db.financialPeriod}</td>
-                      <td><span className={`db-status ${db.status}`}>{db.status === 'valid' ? t('Valid', 'Valid') : db.status === 'in-progress' ? t('In progress', 'In progress') : db.status}</span></td>
-                      <td className="db-actions">
-                        <a href="#" className="db-action-link">{t('Copy', 'Copy')}</a>
-                        <a href="#" className="db-action-link">{t('Update', 'Update')}</a>
-                        {db.status === 'in-progress' && <a href="#" className="db-action-link danger">{t('Delete', 'Delete')}</a>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Table footer with pagination only */}
-              <div className="dp-db-footer">
-                <div className="dp-db-pagination">
-                  <span>Total {databaseListData.length}37</span>
-                  <select className="dp-page-select">
-                    <option>10/page</option>
-                    <option>20/page</option>
-                    <option>50/page</option>
-                  </select>
-                  <div className="dp-page-numbers">
-                    <button className="active">1</button>
-                    <button>2</button>
-                    <button>3</button>
-                    <button>4</button>
-                    <button>5</button>
-                    <button>6</button>
-                    <span>...</span>
-                    <button>464</button>
-                    <button>&gt;</button>
-                  </div>
-                  <span>Go to: <input type="text" className="dp-go-input" defaultValue="1" /></span>
-                </div>
-              </div>
-            </div>
-
-            <p className="dp-db-note">{t('You can update the databases by clicking Update button if you want to apply the same mapping rule from the existing databases. Only 2 databases will be kept for each individual entity for the same financial period. The oldest uploaded database will be automatically removed if there are more than 2 databases being uploaded.', 'You can update the databases by clicking Update button if you want to apply the same mapping rule from the existing databases. Only 2 databases will be kept for each individual entity for the same financial period. The oldest uploaded database will be automatically removed if there are more than 2 databases being uploaded.')}</p>
-          </div>
-        </div>
-      </div>
 
       {/* === Expanded Detail Panel === */}
       {expandedId && (() => {
@@ -514,6 +461,286 @@ function DataProcessing() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
         )}
+      </div>
+    )
+  }
+
+  // --- 数据应用区（结构化数据专属）：Database List / MUS Sampling ---
+  function renderDataApplication() {
+    return (
+      <div className="dp-data-application">
+        <div className="dp-da-header">
+          <h2 className="dp-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            {t('数据应用', 'Data Application')}
+          </h2>
+          <span className="dp-da-scope">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            {t('仅适用于结构化数据', 'Structured data only')}
+          </span>
+        </div>
+
+        <div className="dp-da-body">
+          {/* 左侧：子模块切换（Database List / MUS Sampling）
+              MUS 模块采用紫色作为强调色，与 Database List 的蓝色主色区分 */}
+          <div className="dp-mus-sidebar dp-mus-sidebar-left" data-accent={dataAppTab === 'mus' ? 'mus' : 'db'}>
+            <button className="mus-tab" data-active={dataAppTab === 'db'} onClick={() => setDataAppTab('db')}>
+              <span className="mus-tab-text">Database List</span>
+            </button>
+            <button className="mus-tab" data-active={dataAppTab === 'mus'} onClick={() => setDataAppTab('mus')}>
+              <span className="mus-tab-text">MUS Sampling</span>
+            </button>
+          </div>
+
+          {dataAppTab === 'db' ? renderDatabaseList() : renderMusSampling()}
+        </div>
+      </div>
+    )
+  }
+
+  // --- 子模块一：Database List ---
+  function renderDatabaseList() {
+    return (
+      <div className="dp-db-list">
+        <div className="dp-db-header">
+          <span className="dp-db-desc">{t('Please upload raw file(including TB & GL) in the pool! The files can be shared by all the database under current engagement', 'Please upload raw file(including TB & GL) in the pool! The files can be shared by all the database under current engagement')}</span>
+          <div className="dp-db-header-actions">
+            <button className="dp-batch-btn outline">{t('Batch List', 'Batch List')}</button>
+            <button className="dp-batch-btn primary">{t('Add New Database', 'Add New Database')}</button>
+          </div>
+        </div>
+
+        {/* Database Table */}
+        <div className="dp-db-table-wrap">
+          <table className="dp-db-table">
+            <thead>
+              <tr>
+                <th>{t('Database Name', 'Database Name')}</th>
+                <th>{t('Version', 'Version')}</th>
+                <th>{t('Entity Name', 'Entity Name')}</th>
+                <th>{t('ADP Scope', 'ADP Scope')}</th>
+                <th>{t('Mapping Rule', 'Mapping Rule')}</th>
+                <th>{t('Account Structure', 'Account Structure')}</th>
+                <th>{t('Used by', 'Used by')}</th>
+                <th>{t('Financial Period', 'Financial Period')}</th>
+                <th>{t('Status', 'Status')}</th>
+                <th>{t('Actions', 'Actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {databaseListData.map(db => (
+                <tr key={db.id}>
+                  <td><a href="#" className="db-name-link">{db.name}</a></td>
+                  <td><span className={`db-version-badge ${db.version === 'Full period' ? 'full' : db.version === 'Pre-final' ? 'prefinal' : ''}`}>{isZh ? (db.versionEn || db.version) : db.version}</span></td>
+                  <td>{db.entityName}</td>
+                  <td>{db.adpScope || '-'}</td>
+                  <td className="db-mapping">{db.mappingRule}</td>
+                  <td>{db.accountStructure}</td>
+                  <td>{db.usedBy}</td>
+                  <td className="db-period">{db.financialPeriod}</td>
+                  <td><span className={`db-status ${db.status}`}>{db.status === 'valid' ? t('Valid', 'Valid') : db.status === 'in-progress' ? t('In progress', 'In progress') : db.status}</span></td>
+                  <td className="db-actions">
+                    <a href="#" className="db-action-link">{t('Copy', 'Copy')}</a>
+                    <a href="#" className="db-action-link">{t('Update', 'Update')}</a>
+                    {db.status === 'in-progress' && <a href="#" className="db-action-link danger">{t('Delete', 'Delete')}</a>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Table footer with pagination only */}
+          <div className="dp-db-footer">
+            <div className="dp-db-pagination">
+              <span>Total {databaseListData.length}37</span>
+              <select className="dp-page-select">
+                <option>10/page</option>
+                <option>20/page</option>
+                <option>50/page</option>
+              </select>
+              <div className="dp-page-numbers">
+                <button className="active">1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>4</button>
+                <button>5</button>
+                <button>6</button>
+                <span>...</span>
+                <button>464</button>
+                <button>&gt;</button>
+              </div>
+              <span>Go to: <input type="text" className="dp-go-input" defaultValue="1" /></span>
+            </div>
+          </div>
+        </div>
+
+        <p className="dp-db-note">{t('You can update the databases by clicking Update button if you want to apply the same mapping rule from the existing databases. Only 2 databases will be kept for each individual entity for the same financial period. The oldest uploaded database will be automatically removed if there are more than 2 databases being uploaded.', 'You can update the databases by clicking Update button if you want to apply the same mapping rule from the existing databases. Only 2 databases will be kept for each individual entity for the same financial period. The oldest uploaded database will be automatically removed if there are more than 2 databases being uploaded.')}</p>
+      </div>
+    )
+  }
+
+  // --- 子模块二：MUS Sampling（以任务为单位管理抽样作业） ---
+  function renderMusSampling() {
+    const sortedTasks = [...MUS_TASKS].sort((a, b) => {
+      const av = musSortKey === 'name' ? a.name : musSortKey === 'createdBy' ? a.createdBy : a.status
+      const bv = musSortKey === 'name' ? b.name : musSortKey === 'createdBy' ? b.createdBy : b.status
+      const r = av.localeCompare(bv)
+      return musSortDir === 'asc' ? r : -r
+    })
+
+    const sortIcon = (key: 'name' | 'createdBy' | 'status') => {
+      const active = musSortKey === key
+      const asc = musSortDir === 'asc'
+      return (
+        <svg className="mus-sort-icon" data-active={active} width="9" height="9" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+          {active
+            ? (asc ? <polyline points="6 15 12 9 18 15" /> : <polyline points="6 9 12 15 18 9" />)
+            : (<><polyline points="7 10 12 5 17 10" /><polyline points="7 14 12 19 17 14" /></>)}
+        </svg>
+      )
+    }
+
+    const statusLabel = (s: MusTask['status']) =>
+      s === 'processing' ? t('处理中', 'Processing') : s === 'completed' ? t('已完成', 'Completed') : t('失败', 'Failed')
+
+    return (
+      <div className="mus-panel">
+        {/* 适用范围与默认参数说明 + 文档指引 */}
+        <div className="mus-guide">
+          <div className="mus-guide-body">
+            <p className="mus-guide-lead">{t('MUS 抽样引擎仅适用于以下场景：', 'The MUS sampling engine is only applicable for:')}</p>
+            <ul className="mus-guide-list">
+              <li>
+                {isZh
+                  ? <><strong>多个实体</strong>就同一审计程序使用 MUS 抽样（即所有数据文件格式相同，且抽样参数一致：抽样字段、包含字段、抽样值）</>
+                  : <><strong>Multiple entities</strong> which use MUS for sampling for a same audit procedure (i.e. all data files are in the same file format with the same sampling parameters (field to be sampled, field to be included, value to sample)</>}
+              </li>
+              <li>
+                {isZh
+                  ? <>同一实体下使用 MUS 抽样的<strong>多个审计程序</strong>，且重要性水平、AMPT 及其他抽样参数一致</>
+                  : <>Multiple audit procedures using MUS for sampling under <strong>one entity</strong> with same materiality, AMPT and other sampling parameters</>}
+              </li>
+            </ul>
+            <p className="mus-guide-lead">{t('以下 MUS 参数已设为默认值：', 'The following MUS parameters are set as default:')}</p>
+            <ul className="mus-guide-list">
+              <li>
+                {isZh
+                  ? <>预期错报的默认值设为 <strong>零</strong></>
+                  : <>The default value for Expected misstatement is set as <strong>zero</strong></>}
+              </li>
+              <li>
+                {isZh
+                  ? <>默认不执行<strong>汇总抽样</strong>（即管理层无法提供完整的抽样单元清单）</>
+                  : <>Default not to perform <strong>Aggregate sampling</strong> (i.e management is unable to provide a complete list of sampling units)</>}
+              </li>
+            </ul>
+          </div>
+          <a href="#" className="mus-guide-link">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+            {t('KCw 文档指引', 'KCw documentation guidance')}
+          </a>
+        </div>
+
+        {/* 新建 MUS 任务 */}
+        <div className="mus-toolbar">
+          <button className="mus-create-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            {t('创建 MUS 任务', 'Create MUS task')}
+          </button>
+        </div>
+
+        {/* MUS 任务列表 */}
+        <div className="dp-db-table-wrap">
+          <table className="dp-db-table mus-task-table">
+            <thead>
+              <tr>
+                <th className="mus-th-sort" onClick={() => toggleMusSort('name')}>
+                  <span>{t('任务名称', 'Task Name')}</span>{sortIcon('name')}
+                </th>
+                <th>{t('任务类型', 'Task Type')}</th>
+                <th>{t('文件类型', 'File Type')}</th>
+                <th className="mus-col-num">{t('实体数量', 'Number of entities')}</th>
+                <th className="mus-col-num">{t('文件数量', 'Number of files')}</th>
+                <th className="mus-th-sort" onClick={() => toggleMusSort('createdBy')}>
+                  <span>{t('创建人', 'Created by')}</span>{sortIcon('createdBy')}
+                </th>
+                <th>{t('创建时间', 'Created time')}</th>
+                <th className="mus-th-sort" onClick={() => toggleMusSort('status')}>
+                  <span>{t('状态', 'Status')}</span>{sortIcon('status')}
+                </th>
+                <th>{t('操作', 'Action')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedTasks.map(task => (
+                <tr key={task.id}>
+                  <td className="mus-task-name">{task.name}</td>
+                  <td className="mus-ellipsis" title={isZh ? task.taskTypeCn : task.taskType}>{isZh ? task.taskTypeCn : task.taskType}</td>
+                  <td className="mus-ellipsis" title={isZh ? task.fileTypeCn : task.fileType}>{isZh ? task.fileTypeCn : task.fileType}</td>
+                  <td className="mus-col-num">{task.entities}</td>
+                  <td className="mus-col-num">{task.files}</td>
+                  <td className="mus-ellipsis" title={task.createdBy}>{task.createdBy}</td>
+                  <td className="mus-nowrap">{task.createdAt}</td>
+                  <td><span className={`mus-task-status ${task.status}`}>{statusLabel(task.status)}</span></td>
+                  <td className="mus-row-actions">
+                    <a href="#" className="mus-action-view">{t('查看', 'View')}</a>
+                    <a href="#" className="mus-action-delete">{t('删除', 'Delete')}</a>
+                  </td>
+                </tr>
+              ))}
+              {sortedTasks.length === 0 && (
+                <tr><td colSpan={9} className="mus-task-empty">{t('暂无 MUS 任务', 'No MUS task yet')}</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  // --- 非结构化数据专属：KDR（内嵌于本界面的文档识别与字段抽取工作区） ---
+  function renderKdrPlatform() {
+    // 以上方「非结构化数据」数据源中的文件作为 KDR 工作区的初始文件列表
+    const kdrFiles: KdrFile[] = unstructuredData.flatMap((ds, dsIdx) =>
+      ds.files.map((f, i) => {
+        const status = kdrStatusOf(f.status)
+        return {
+          id: f.id,
+          name: f.name,
+          fileType: f.name.split('.').pop()?.toUpperCase() || 'FILE',
+          status,
+          size: f.size,
+          source: ds.name,
+          uploader: DEMO_PEOPLE[(dsIdx + i + 1) % DEMO_PEOPLE.length],
+          uploadedAt: f.uploadDate,
+          pages: 2 + (i % 4),
+          // 已完成 OCR 的文件直接带上抽取结果；「就绪」的文件留空，便于演示「自动抽取」
+          fields: f.status === 'ocr-done' ? buildExtractedFields(f.name) : [],
+        }
+      })
+    )
+
+    return (
+      <div className="dp-data-application dp-kdr">
+        <div className="dp-da-header kdr-da-header">
+          <h2 className="dp-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#805AD5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            KDR
+          </h2>
+          <div className="dp-da-tags">
+            <span className="dp-da-scope kdr-scope">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              {t('仅适用于非结构化数据', 'Unstructured data only')}
+            </span>
+            <span className="dp-da-scope kdr-scope">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              {t('文档识别 · 字段抽取', 'Document recognition · Field extraction')}
+            </span>
+          </div>
+        </div>
+
+        <KdrWorkbench files={kdrFiles} onUpload={() => setUploadExpanded(true)} />
       </div>
     )
   }

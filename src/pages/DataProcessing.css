@@ -257,7 +257,7 @@
   50% { opacity: 0.7; }
 }
 
-/* ===== PBC Data Pool Bar ===== */
+/* ===== Audit File Pool Bar ===== */
 .dp-pool-bar {
   display: flex;
   align-items: center;
@@ -1129,6 +1129,11 @@
   border: 1px solid var(--primary-600, #0055b8);
 }
 .dp-batch-btn.primary:hover { background: #0040a0; }
+.dp-batch-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.dp-batch-btn.primary:disabled:hover { background: var(--primary-600, #0055b8); }
 
 .dp-db-note {
   font-size: 9px;
@@ -1175,16 +1180,13 @@
 }
 .dp-mus-sidebar-left .mus-tab:hover:not([data-active="true"]) { color: #64748b; background: rgba(0,51,141,0.03); }
 
-/* --- MUS Sampling Sidebar (right, legacy) --- */
-  width: 44px;
-  flex-shrink: 0;
-  background: #f8fafc;
-  border-left: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  padding: 8px 0;
-}
+/* --- 子模块切换标签（竖排文字按钮：Database List / MUS Sampling） --- */
 .mus-tab {
+  appearance: none;
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  font-family: inherit;
   writing-mode: vertical-rl;
   text-orientation: mixed;
   padding: 14px 6px;
@@ -1194,7 +1196,6 @@
   cursor: pointer;
   text-align: center;
   letter-spacing: 0.5px;
-  border-left: 3px solid transparent;
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
@@ -1212,7 +1213,178 @@
 }
 .mus-tab-text {
   transform: rotate(180deg);
+  white-space: nowrap;
 }
+/* MUS 模块激活时，侧栏指示条切换为紫色强调色 */
+.dp-mus-sidebar-left[data-accent="mus"] .mus-tab[data-active="true"] {
+  color: #7c3aed;
+  border-right-color: #7c3aed;
+}
+.dp-mus-sidebar-left[data-accent="mus"] .mus-tab:hover:not([data-active="true"]) {
+  color: #6d28d9;
+}
+
+/* --- 数据应用区：适用范围提示 --- */
+.dp-da-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #dbe4ff;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ===== MUS Sampling Panel（结构化数据专属子模块：MUS 任务管理） ===== */
+.mus-panel {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+/* 适用范围说明 + KCw 文档指引 */
+.mus-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.mus-guide-body { flex: 1; min-width: 0; }
+.mus-guide-lead {
+  margin: 0 0 3px;
+  font-size: 11.5px;
+  color: #334155;
+}
+.mus-guide-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+.mus-guide-list:last-child { margin-bottom: 0; }
+.mus-guide-list li {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #475569;
+}
+.mus-guide-list strong { color: #1e293b; font-weight: 700; }
+.mus-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 2px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mus-guide-link svg { color: #6b46c1; }
+.mus-guide-link:hover { color: #7c3aed; text-decoration: underline; }
+
+/* 新建 MUS 任务 */
+.mus-toolbar { margin-bottom: 14px; }
+.mus-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+  background: #7c3aed;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mus-create-btn:hover {
+  background: #6d28d9;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.32);
+}
+
+/* 任务列表：固定列宽，与设计稿一致 */
+.mus-task-table {
+  table-layout: fixed;
+  min-width: 962px;
+}
+.mus-task-table th {
+  white-space: normal;
+  vertical-align: bottom;
+}
+.mus-task-table td { font-size: 11px; }
+.mus-task-table th:nth-child(1) { width: 118px; }
+.mus-task-table th:nth-child(2) { width: 152px; }
+.mus-task-table th:nth-child(3) { width: 132px; }
+.mus-task-table th:nth-child(4) { width: 88px; }
+.mus-task-table th:nth-child(5) { width: 84px; }
+.mus-task-table th:nth-child(6) { width: 96px; }
+.mus-task-table th:nth-child(7) { width: 104px; }
+.mus-task-table th:nth-child(8) { width: 84px; }
+.mus-task-table th:nth-child(9) { width: 104px; }
+.mus-task-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 可排序表头 */
+.mus-task-table th.mus-th-sort { white-space: nowrap; }
+.mus-th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.mus-th-sort > span { margin-right: 4px; }
+.mus-th-sort:hover { color: #7c3aed; }
+.mus-sort-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+  color: #cbd5e1;
+}
+.mus-sort-icon[data-active="true"] { color: #7c3aed; }
+
+.mus-task-name { font-weight: 600; color: #1e293b; }
+.mus-col-num { font-variant-numeric: tabular-nums; }
+.mus-nowrap { white-space: nowrap; }
+.mus-task-status { font-weight: 600; }
+.mus-task-status.processing { color: #d69e2e; }
+.mus-task-status.completed { color: #059669; }
+.mus-task-status.failed { color: #dc2626; }
+
+.mus-row-actions { white-space: nowrap; }
+.mus-action-view,
+.mus-action-delete {
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.mus-action-view { color: #0055b8; }
+.mus-action-view:hover { text-decoration: underline; }
+.mus-action-delete { margin-left: 12px; color: #dc2626; }
+.mus-action-delete:hover { text-decoration: underline; }
+.mus-task-empty { padding: 24px 0; text-align: center; color: #94a3b8; }
+
+/* ===== KDR（非结构化数据专属模块：面板外框，工作区样式见 KdrWorkbench.css） ===== */
+.kdr-da-header {
+  background: linear-gradient(135deg, #f6f2ff, #f3effb);
+  border-bottom-color: #e4d9fb;
+}
+.kdr-da-header .dp-section-title { color: #6b46c1; }
+/* 两个 scope 标签作为一个整体靠右，避免各自 margin-left:auto 被平分间距推开 */
+.dp-da-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.dp-da-tags .dp-da-scope { margin-left: 0; }
+.kdr-scope { color: #6b46c1; border-color: #e4d9fb; }
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
@@ -1225,4 +1397,6 @@
   .pool-stats { margin-left: 0; }
   .dp-detail-panel { width: 95%; max-height: 85vh; }
   .df-head span:nth-child(3), .df-row > span:nth-child(3) { display: none; }
+  /* 数据应用区：窄屏适配 */
+  .mus-guide { flex-direction: column; gap: 8px; }
 }
