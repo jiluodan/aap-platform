@@ -17,7 +17,8 @@ function Sidebar() {
   const location = useLocation()
   const { lang } = useLanguage()
   const [expandedItem, setExpandedItem] = useState<string | null>('dashboard')
-  const [collapsed, setCollapsed] = useState(false)
+  // Collapsed by default; expands when the user clicks a nav item.
+  const [collapsed, setCollapsed] = useState(true)
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
@@ -130,6 +131,7 @@ function Sidebar() {
               <button
                 className={`nav-item ${active ? 'active' : ''} ${hasChildren ? 'has-children' : ''}`}
                 onClick={() => {
+                  if (collapsed) setCollapsed(false)
                   if (hasChildren) {
                     toggleExpand(item.id)
                   } else {

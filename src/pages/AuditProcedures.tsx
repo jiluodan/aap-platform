@@ -187,6 +187,8 @@ const categoryTypeMap: Record<string, string[]> = {
 function AuditProcedures() {
   const [expandedType, setExpandedType] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState('all')
+  // 程序类型浏览视图：card（卡片网格）/ list（列表总览，便于横向对比）
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
 
   // Stats from all visible types
   const totalProcedures = visibleTypes.reduce((sum, t) => sum + t.items.length, 0)
@@ -242,8 +244,28 @@ function AuditProcedures() {
         </div>
       </div>
 
-      {/* Section Title */}
-      <h2 className="ap-section-title">Procedure Types</h2>
+      {/* Section Title + View Toggle */}
+      <div className="ap-section-head">
+        <h2 className="ap-section-title">Procedure Types</h2>
+        <div className="ap-view-toggle" role="group" aria-label="视图切换">
+          <button
+            type="button"
+            className={viewMode === 'card' ? 'active' : ''}
+            onClick={() => setViewMode('card')}
+            title="卡片视图"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </button>
+          <button
+            type="button"
+            className={viewMode === 'list' ? 'active' : ''}
+            onClick={() => setViewMode('list')}
+            title="列表视图"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
 
       {/* Filter Tags */}
       <div className="ap-filter-bar">
@@ -270,8 +292,9 @@ function AuditProcedures() {
         })}
       </div>
 
-      {/* Cards Grid */}
-      <div className={`ap-types-grid ${expandedType ? 'grid-dimmed' : ''}`}>
+      {/* Cards Grid / List */}
+      {viewMode === 'card' ? (
+        <div className={`ap-types-grid ${expandedType ? 'grid-dimmed' : ''}`}>
         {filteredTypes.map(type => {
           const isExpanded = expandedType === type.id
           const completedItems = type.items.filter(i => i.status === 'completed' || i.status === 'reviewed').length
@@ -352,7 +375,61 @@ function AuditProcedures() {
             </div>
           )
         })}
-      </div>
+        </div>
+      ) : (
+        /* List View —— 一屏总览全部程序类型，便于横向对比 */
+        <div className="ap-types-list">
+          <table className="ap-type-table">
+            <thead>
+              <tr>
+                <th>程序类型</th>
+                <th className="num">程序数</th>
+                <th>完成进度</th>
+                <th className="col-status-dist">状态分布</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTypes.map(type => {
+                const completedItems = type.items.filter(i => i.status === 'completed' || i.status === 'reviewed').length
+                const progressPct = type.items.length > 0 ? Math.round((completedItems / type.items.length) * 100) : 0
+                return (
+                  <tr key={type.id} onClick={() => handleCardClick(type.id)}>
+                    <td>
+                      <span className="pt-name">
+                        <span className="pt-icon" style={{ background: type.color, color: '#fff' }}>{type.icon}</span>
+                        {type.label}
+                      </span>
+                    </td>
+                    <td className="num"><span className="pt-count">{type.items.length}</span></td>
+                    <td>
+                      <div className="ap-progress-wrap">
+                        <div className="ap-progress-bar">
+                          <div className="ap-progress-fill" style={{ width: `${progressPct}%`, background: type.color }}></div>
+                        </div>
+                        <span className="ap-pct">{progressPct}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="ap-status-dots">
+                        {['in-progress', 'completed', 'not-started'].map(s => {
+                          const cnt = type.items.filter(i => i.status === s).length
+                          if (cnt === 0) return null
+                          const sc = statusConfig[s as keyof typeof statusConfig]
+                          return (
+                            <span key={s} className="ap-mini-badge" style={{ background: sc.bg, color: sc.color }}>
+                              {sc.label} ({cnt})
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Expanded Overlay */}
       {expandedType && (() => {
