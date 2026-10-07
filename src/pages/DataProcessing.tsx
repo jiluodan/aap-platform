@@ -158,6 +158,8 @@ function DataProcessing() {
   const [uploadExpanded, setUploadExpanded] = useState(false)
   const [uploadPanelTab, setUploadPanelTab] = useState<'structured' | 'unstructured'>('structured')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  // 数据源浏览视图：card（按类型分区）/ list（总览全部数据源便于横向对比）
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
   const [isSyncing, setIsSyncing] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
@@ -175,6 +177,8 @@ function DataProcessing() {
 
   const structuredData = dataSources.filter(d => d.category === 'structured')
   const unstructuredData = dataSources.filter(d => d.category === 'unstructured')
+  // 当前页签对应的数据源集合 —— 下方「数据源」「数据应用」两个区块均跟随该选择
+  const activeSources = activeTab === 'structured' ? structuredData : unstructuredData
 
   // --- i18n helpers ---
   const t = (zh: string, en: string) => (isZh ? zh : en)
@@ -219,67 +223,118 @@ function DataProcessing() {
 
   return (
     <div className="dp-page animate-fade-in">
-      {/* === Header === */}
-      <div className="dp-header-row">
-        <div>
-          <h1 className="dp-title">{t('Data Processing Engine', 'Data Processing Engine')}</h1>
-          <span className="dp-subtitle">{t('财务数据采集 · 清洗 · 转换与分析处理中心', 'Financial data collection · cleansing · transformation & analysis center')}</span>
-        </div>
-        <button className={`dp-sync-btn ${isSyncing ? 'syncing' : ''}`} onClick={handleSyncPBC} disabled={isSyncing}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-          </svg>
-          {isSyncing ? t('同步中...', 'Syncing...') : t('同步 Audit File Pool', 'Sync Audit File Pool')}
-        </button>
-      </div>
-
-      {/* === Audit File Pool Sync Bar === */}
-      <div className="dp-pool-bar">
-        <div className="pool-info">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-          </svg>
-          <span><strong>Audit File Pool</strong> — {t('已连接 Engagement 源数据', 'Connected to Engagement source data')}</span>
-        </div>
-        <div className="pool-stats">
-          <span className="pool-stat-item">{dataSources.length} {t('个数据源', 'sources')}</span>
-          <span className="pool-stat-dot"></span>
-          <span className="pool-stat-item">{dataSources.reduce((s, d) => s + d.fileCount, 0)} {t('个文件', 'files')}</span>
-          <span className="pool-stat-dot"></span>
-          <span className="pool-stat-item">{t('上次同步: 2 分钟前', 'Last sync: 2 min ago')}</span>
-        </div>
-      </div>
-
-      {/* === Data Source Section (Tabbed: Structured / Unstructured) === */}
-      <div className="dp-section">
-        <div className="dp-source-header">
-          <div className="dp-tab-bar dp-source-tab-bar">
-            <button className={`dp-tab ${activeTab === 'structured' ? 'active' : ''}`} onClick={() => setActiveTab('structured')}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-              {t('结构化数据', 'Structured Data')}
-              <span className="dp-section-count">{structuredData.length}</span>
-            </button>
-            <button className={`dp-tab ${activeTab === 'unstructured' ? 'active' : ''}`} onClick={() => setActiveTab('unstructured')}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              {t('非结构化数据', 'Unstructured Data')}
-              <span className="dp-section-count">{unstructuredData.length}</span>
-            </button>
+      {/* === 顶部合并条：页面标识 + Audit File Pool（原「页面标题行」与「同步按钮行」合并为一条） === */}
+      <div className="dp-topbar">
+        <div className="dp-header-main">
+          <div className="dp-header-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
           </div>
-          <button className="dp-upload-file-btn" onClick={() => setUploadExpanded(true)}>
-            <i className="fas fa-plus"></i> Upload File
+          <div>
+            <h1 className="dp-title">{t('Data Processing Engine', 'Data Processing Engine')}</h1>
+            <span className="dp-subtitle">{t('财务数据采集 · 清洗 · 转换与分析处理中心', 'Financial data collection · cleansing · transformation & analysis center')}</span>
+          </div>
+        </div>
+
+        {/* 同步动作 + 文件池状态（状态小字并排于按钮右侧，标题区不再重复描述） */}
+        <div className="dp-pool-bar">
+          <button className={`dp-sync-btn ${isSyncing ? 'syncing' : ''}`} onClick={handleSyncPBC} disabled={isSyncing}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            {isSyncing ? t('同步中...', 'Syncing...') : t('同步 Audit File Pool', 'Sync Audit File Pool')}
+          </button>
+          <span className="pool-meta">
+            <i className="pool-dot" />{t('已连接', 'Connected')}
+            <em>·</em><b>{dataSources.length}</b>{t('个数据源', 'sources')}
+            <em>·</em><b>{dataSources.reduce((s, d) => s + d.fileCount, 0)}</b>{t('个文件', 'files')}
+            <em>·</em>{t('上次同步 2 分钟前', 'Last synced 2 min ago')}
+          </span>
+        </div>
+      </div>
+
+      {/* === 数据类型工作区：区域1 为页签，区域2/3 同处一个面板并跟随页签切换 === */}
+      <div className="dp-workspace">
+        {/* 区域1 —— 数据类型页签：其选择决定下方数据源与数据应用的展示内容 */}
+        <div className="dp-type-tabs" role="tablist" aria-label={t('数据类型', 'Data type')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'structured'}
+            className={`dp-type-card ${activeTab === 'structured' ? 'active' : ''}`}
+            onClick={() => setActiveTab('structured')}
+          >
+            <span className="dtc-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            </span>
+            <span className="dtc-text">
+              <span className="dtc-title">
+                {t('结构化数据', 'Structured Data')}
+                <span className="dp-section-count">{structuredData.length}</span>
+              </span>
+              <span className="dtc-sub">{t('Database List · MUS 抽样', 'Database List · MUS Sampling')}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'unstructured'}
+            className={`dp-type-card ${activeTab === 'unstructured' ? 'active' : ''}`}
+            onClick={() => setActiveTab('unstructured')}
+          >
+            <span className="dtc-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </span>
+            <span className="dtc-text">
+              <span className="dtc-title">
+                {t('非结构化数据', 'Unstructured Data')}
+                <span className="dp-section-count">{unstructuredData.length}</span>
+              </span>
+              <span className="dtc-sub">{t('KDR 文档识别 · 字段抽取', 'KDR recognition · field extraction')}</span>
+            </span>
           </button>
         </div>
 
-        <div className="dp-grid">
-          {(activeTab === 'structured' ? structuredData : unstructuredData).map(ds => renderCard(ds))}
-        </div>
+        <div className="dp-workspace-body">
+          {/* 区域2 —— 当前页签下的数据源列表 */}
+          <section className="dp-subsection">
+            <div className="dp-subsection-head">
+              <h2 className="dp-subsection-title">
+                <span className={`section-dot ${activeTab === 'structured' ? 'dot-blue' : 'dot-purple'}`} />
+                {t('数据源', 'Data Sources')}
+                <span className="dp-section-count">{activeSources.length}</span>
+              </h2>
+              <div className="dp-source-actions">
+                <div className="dp-view-toggle" role="group" aria-label={t('视图切换', 'View mode')}>
+                  <button type="button" className={viewMode === 'card' ? 'active' : ''} onClick={() => setViewMode('card')} title={t('卡片视图', 'Card view')}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                  </button>
+                  <button type="button" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title={t('列表视图', 'List view')}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  </button>
+                </div>
+                <button className="dp-upload-file-btn" onClick={() => setUploadExpanded(true)}>
+                  <i className="fas fa-plus"></i> Upload File
+                </button>
+              </div>
+            </div>
 
-        {/* === 数据应用区 — 按数据类型挂载各自适用的模块 ===
-            结构化数据 → Database List / MUS Sampling
-            非结构化数据 → KDR */}
-        {activeTab === 'structured' ? renderDataApplication() : renderKdrPlatform()}
+            {viewMode === 'card' ? (
+              <div className="dp-grid">
+                {activeSources.map(ds => renderCard(ds))}
+              </div>
+            ) : (
+              renderSourceList(activeSources)
+            )}
+          </section>
+
+          {/* 区域3 —— 当前页签对应的数据应用：结构化 → Database List / MUS Sampling，非结构化 → KDR */}
+          <section className="dp-subsection dp-subsection-app">
+            {activeTab === 'structured' ? renderDataApplication() : renderKdrPlatform()}
+          </section>
+        </div>
       </div>
 
       {/* ===== Upload Modal (Dialog) ===== */}
@@ -465,6 +520,57 @@ function DataProcessing() {
     )
   }
 
+  // --- 数据源列表视图：一屏总览全部数据源，便于横向对比 ---
+  function renderSourceList(list: DataSource[]) {
+    if (list.length === 0) {
+      return <div className="dp-source-list dp-source-list-empty">{t('暂无数据源', 'No data source yet')}</div>
+    }
+    return (
+      <div className="dp-source-list">
+        <table className="dp-source-table">
+          <thead>
+            <tr>
+              <th>{t('数据源', 'Data source')}</th>
+              <th>{t('类型', 'Type')}</th>
+              <th>{t('状态', 'Status')}</th>
+              <th className="num">{t('文件数', 'Files')}</th>
+              <th className="num">{t('大小', 'Size')}</th>
+              <th>{t('最后同步', 'Last sync')}</th>
+              <th>{t('来源', 'Source')}</th>
+              <th className="sl-arrow" aria-hidden="true"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map(ds => {
+              const meta = typeMeta[ds.typeKey] || typeMeta.gl
+              const sc = statusConfig(ds.status)
+              const st = ds.sourceFrom ? sourceTagConfig(ds.sourceFrom) : null
+              return (
+                <tr key={ds.id} className={expandedId === ds.id ? 'row-active' : ''} onClick={() => toggleExpand(ds.id)}>
+                  <td>
+                    <span className="sl-name">
+                      <span className="sl-icon" style={{ background: meta.bg, color: meta.color }}>{meta.icon}</span>
+                      {ds.name}
+                    </span>
+                  </td>
+                  <td className="sl-type">{isZh ? meta.labelZh : meta.labelEn}</td>
+                  <td><span className="dc-status-pill" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span></td>
+                  <td className="num">{ds.fileCount}</td>
+                  <td className="num">{ds.totalSize}</td>
+                  <td className="sl-time">{isZh ? ds.lastSync : (ds.lastSyncEn || ds.lastSync)}</td>
+                  <td>{st ? <span className="dc-source-tag" style={{ background: st.bg, color: st.color }}>{st.label}</span> : <span className="sl-dash">—</span>}</td>
+                  <td className="sl-arrow">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   // --- 数据应用区（结构化数据专属）：Database List / MUS Sampling ---
   function renderDataApplication() {
     return (
@@ -474,10 +580,6 @@ function DataProcessing() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
             {t('数据应用', 'Data Application')}
           </h2>
-          <span className="dp-da-scope">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            {t('仅适用于结构化数据', 'Structured data only')}
-          </span>
         </div>
 
         <div className="dp-da-body">
@@ -636,7 +738,13 @@ function DataProcessing() {
               </li>
             </ul>
           </div>
-          <a href="#" className="mus-guide-link">
+          {/* 文档指引图标：新标签打开 KCw 文档 PDF，避免 href="#" 被哈希路由当作返回首页 */}
+          <a
+            href={`${import.meta.env.BASE_URL}docs/KCw-documentation-guidance.pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mus-guide-link"
+          >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
             {t('KCw 文档指引', 'KCw documentation guidance')}
           </a>
@@ -729,10 +837,6 @@ function DataProcessing() {
             KDR
           </h2>
           <div className="dp-da-tags">
-            <span className="dp-da-scope kdr-scope">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              {t('仅适用于非结构化数据', 'Unstructured data only')}
-            </span>
             <span className="dp-da-scope kdr-scope">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               {t('文档识别 · 字段抽取', 'Document recognition · Field extraction')}
