@@ -376,6 +376,76 @@ function EngagementHub() {
     'not-started': '0%',
   }
 
+  // Engagement module cards — single source of truth for accent color, icon & copy
+  const moduleCards = [
+    {
+      key: 'pbc',
+      path: 'pbc',
+      accent: 'amber',
+      title: t('pbcManager'),
+      desc: lang === 'zh'
+        ? '客户资料收集与管理中心，追踪 PBC 清单状态及跟进事项'
+        : 'Client-provided document collection and management center, tracking PBC list status and follow-ups',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      ),
+    },
+    {
+      key: 'data',
+      path: 'data',
+      accent: 'purple',
+      title: lang === 'zh' ? '数据处理工程师' : 'Data Processing Engineer',
+      desc: lang === 'zh'
+        ? '财务数据采集、清洗、转换与分析处理中心，支持多数据源接入'
+        : 'Financial data collection, cleaning, transformation and analysis center, supporting multi-source data access',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3" />
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+        </svg>
+      ),
+    },
+    {
+      key: 'procedures',
+      path: 'procedures',
+      accent: 'blue',
+      title: t('moduleAuditProcedures'),
+      desc: lang === 'zh'
+        ? '审计程序执行中心，包含 Vouching、JE Testing、Credit Review 等核心审计程序'
+        : 'Audit procedure execution center, including Vouching, JE Testing, Credit Review and other core audit procedures',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="8" y="2" width="8" height="4" rx="1" />
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <path d="m9 14 2 2 4-4" />
+        </svg>
+      ),
+    },
+    {
+      key: 'workpapers',
+      path: 'workpapers',
+      accent: 'rose',
+      title: t('workPaperStation'),
+      desc: lang === 'zh'
+        ? '审计底稿模板管理中心，维护各类业务流程的标准化模板'
+        : 'Template management center for audit work papers, maintaining standardized templates for all engagement procedures',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m12 2 9 5-9 5-9-5 9-5z" />
+          <path d="m3 12 9 5 9-5" />
+          <path d="m3 17 9 5 9-5" />
+        </svg>
+      ),
+    },
+  ]
+
   return (
     <div className="engagement-hub animate-fade-in">
       {/* 项目头部信息 + 迷你柱状图 */}
@@ -409,10 +479,64 @@ function EngagementHub() {
         </div>
       </div>
 
+      {/* 功能模块 Tab 切换 */}
+      <div className="hub-modules-tabs">
+        <div className="modules-tabs-header">
+          <button className="modules-tab active">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+            {t('engagementModules')}
+          </button>
+          <span className="modules-header-meta">
+            {lang === 'zh' ? '选择模块进入对应工作台' : 'Select a module to open its workspace'}
+          </span>
+        </div>
+        <div className="module-grid">
+          {moduleCards.map(m => (
+            <div
+              key={m.key}
+              className={`module-card accent-${m.accent}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/engagement/${clientId}/${engagementId}/${m.path}`)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate(`/engagement/${clientId}/${engagementId}/${m.path}`)
+                }
+              }}
+            >
+              <div className="module-icon-bg">{m.icon}</div>
+              <div className="module-content">
+                <h3>{m.title}</h3>
+                <p>{m.desc}</p>
+              </div>
+              <span className="module-arrow">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Opinion and KCw File Dashboard */}
       <div className="opinion-kcw-section">
         <div className="modules-tabs-header">
-          <button className="modules-tab active">{t('opinionAndKCwTitle')}</button>
+          <button className="modules-tab active">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M8 16V11" />
+              <path d="M12 16V7" />
+              <path d="M16 16v-3" />
+            </svg>
+            {t('opinionAndKCwTitle')}
+          </button>
         </div>
 
         <div className="opinion-kcw-toolbar">
@@ -741,87 +865,6 @@ function EngagementHub() {
         )}
       </div>
 
-      {/* 功能模块 Tab 切换 */}
-      <div className="hub-modules-tabs">
-        <div className="modules-tabs-header">
-          <button className="modules-tab active">{t('engagementModules')}</button>
-        </div>
-        <div className="modules-tabs-content">
-          <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/pbc`)}>
-            <div className="module-icon-bg amber">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-              </svg>
-            </div>
-            <div className="module-content">
-              <h3>{t('pbcManager')}</h3>
-              <p>{lang === 'zh' ? '客户资料收集与管理中心，追踪PBC清单状态及跟进事项' : 'Client-provided document collection and management center, tracking PBC list status and follow-ups'}</p>
-            </div>
-            <div className="module-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </div>
-          </div>
-
-          <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/data`)}>
-            <div className="module-icon-bg purple">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-              </svg>
-            </div>
-            <div className="module-content">
-              <h3>{lang === 'zh' ? '数据处理工程师' : 'Data Processing Engineer'}</h3>
-              <p>{lang === 'zh' ? '财务数据采集、清洗、转换与分析处理中心，支持多数据源接入' : 'Financial data collection, cleaning, transformation and analysis center, supporting multi-source data access'}</p>
-            </div>
-            <div className="module-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </div>
-          </div>
-
-          <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/procedures`)}>
-            <div className="module-icon-bg blue">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-              </svg>
-            </div>
-            <div className="module-content">
-              <h3>{t('moduleAuditProcedures')}</h3>
-              <p>{lang === 'zh' ? '审计程序执行中心，包含Vouching、JE Testing、Credit Review等核心审计程序' : 'Audit procedure execution center, including Vouching, JE Testing, Credit Review and other core audit procedures'}</p>
-            </div>
-            <div className="module-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </div>
-          </div>
-
-          <div className="module-card card-lift" onClick={() => navigate(`/engagement/${clientId}/${engagementId}/workpapers`)}>
-            <div className="module-icon-bg rose">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <line x1="10" y1="9" x2="8" y2="9"/>
-                <path d="M12 11v6"/>
-                <path d="m15 14-3-3-3 3"/>
-              </svg>
-            </div>
-            <div className="module-content">
-              <h3>Work Paper Station</h3>
-              <p>Template management center for audit work papers, maintaining standardized templates for all engagement procedures</p>
-            </div>
-            <div className="module-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
       {completionPopup && createPortal(
         <div className="popup-overlay" onClick={() => setCompletionPopup(null)}>
           <div

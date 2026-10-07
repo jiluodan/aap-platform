@@ -1,9 +1,37 @@
 // PBC Management — Enhanced with filter, batch edit, list view, export, bulk ops, charts
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
+import { PBC_CATEGORIES, PBC_ITEM_DEFS } from '../data/pbcCatalog'
 import './PBCManager.css'
 
 // ===== Types =====
+/**
+ * PBC 状态（三态闭环，贴合「发出请求 → 收到 → 复核接收」的实际流程）
+ *   requested  待提供    审计已发出请求，客户尚未提交资料
+ *   review     待复核    客户已提交，等待 / 正在进行审计复核
+ *   accepted   已接收    复核通过，可归档 / 推送 DPE
+ * （复核不通过的条目会退回客户，重新进入「待提供」，故不再单列 rejected / partial）
+ */
+type PBCStatus = 'requested' | 'review' | 'accepted'
+
+interface StatusDef {
+  key: PBCStatus
+  zh: string
+  en: string
+  color: string
+  bg: string
+  /** 是否仍需客户方动作（用于「待跟进」统计） */
+  clientAction?: boolean
+}
+
+const PBC_STATUS_FLOW: StatusDef[] = [
+  { key: 'requested', zh: '待提供', en: 'Requested', color: '#D69E2E', bg: '#FFFBEB', clientAction: true },
+  { key: 'review',    zh: '待复核', en: 'In Review', color: '#3182CE', bg: '#EBF4FF' },
+  { key: 'accepted',  zh: '已接收', en: 'Accepted',  color: '#059669', bg: '#ECFDF5' },
+]
+
+const statusDefMap = Object.fromEntries(PBC_STATUS_FLOW.map(s => [s.key, s])) as Record<PBCStatus, StatusDef>
+
 interface PBCItem {
   id: string
   category: string
@@ -11,7 +39,7 @@ interface PBCItem {
   requestedBy: string
   requestedDate: string
   dueDate: string
-  status: 'pending' | 'received' | 'reviewed' | 'accepted'
+  status: PBCStatus
   priority: 'high' | 'medium' | 'low'
   dataType: 'structured' | 'unstructured'
   fileName?: string
@@ -19,127 +47,69 @@ interface PBCItem {
   assignee?: string
 }
 
-interface PoolFile {
-  id: string
-  name: string
-  size: string
-  category: string
-  dataType: 'structured' | 'unstructured'
-  status: 'raw' | 'meta' | 'processed'
-  uploadDate: string
-  pushedToDPE: boolean
-}
-
 // Helper for bilingual description
 const resolveDesc = (desc: string | ((isZh: boolean) => string), isZh: boolean): string =>
   typeof desc === 'function' ? desc(isZh) : desc
 
-// ===== Standard Account Categories (from guide screenshot) =====
-interface CategoryDef {
-  key: string           // internal key
-  zh: string            // Chinese display name
-  en: string            // English display name
-  iconZh: string
-  iconEn: string
-  color: string
-  bg: string
-  type: 'structured' | 'unstructured' | 'mixed'
-}
-
-const CATEGORIES: CategoryDef[] = [
-  { key: 'financial',   zh: '财务报表',     en: 'Financial Statements',    iconZh: '📊', iconEn: '📊', color: '#4f46e5', bg: '#eef2ff', type: 'structured' },
-  { key: 'bank',        zh: '银行文档',     en: 'Bank Documents',          iconZh: '🏦', iconEn: '🏦', color: '#2563eb', bg: '#eff6ff', type: 'unstructured' },
-  { key: 'contract',    zh: '合同与协议',   en: 'Contracts & Agreements',  iconZh: '📝', iconEn: '📝', color: '#059669', bg: '#ecfdf5', type: 'unstructured' },
-  { key: 'tax',         zh: '税务文件',     en: 'Tax Documents',           iconZh: '📋', iconEn: '📋', color: '#d97706', bg: '#fffbeb', type: 'mixed' },
-  { key: 'payroll',     zh: '工资与人事',   en: 'Payroll & HR',            iconZh: '👥', iconEn: '👥', color: '#dc2626', bg: '#fef2f2', type: 'mixed' },
-  { key: 'fixedasset',  zh: '固定资产',     en: 'Fixed Assets',            iconZh: '🏗️', iconEn: '🏗️', color: '#ea580c', bg: '#fff7ed', type: 'mixed' },
-  { key: 'inventory',   zh: '存货',         en: 'Inventory',               iconZh: '📦', iconEn: '📦', color: '#0891b2', bg: '#ecfeff', type: 'structured' },
-  { key: 'legal',       zh: '法律文档',     en: 'Legal Documents',         iconZh: '⚖️', iconEn: '⚖️', color: '#7c3aed', bg: '#f5f3ff', type: 'unstructured' },
-  { key: 'internalctrl',zh: '内部控制',     en: 'Internal Control',        iconZh: '🛡️', iconEn: '🛡️', color: '#0d9488', bg: '#f0fdfa', type: 'structured' },
-  { key: 'other',       zh: '其他',         en: 'Other',                   iconZh: '📄', iconEn: '📄', color: '#64748b', bg: '#f8fafc', type: 'mixed' },
-]
-
+// ===== 大类 / 子类 分类目录（来源：客户 PBC 清单 A 列）=====
+// A 列加粗标题行 → 大类；A 列非加粗行 → 该大类下的子类
+const CATEGORIES = PBC_CATEGORIES
 const categoryMetaMap = Object.fromEntries(CATEGORIES.map(c => [c.key, c]))
 const getCategoryLabel = (key: string, isZh: boolean) => {
   const cat = CATEGORIES.find(c => c.key === key)
   return cat ? (isZh ? cat.zh : cat.en) : key
 }
 
-// ===== Demo Data =====
-const pbcItems: PBCItem[] = [
-  // 财务报表 / Financial Statements
-  { id: '1', category: 'financial', description: (isZh => isZh ? '2025年度审计财务报表（草案）' : '2025 Annual Audit Financial Statements (Draft)'), requestedBy: 'Zhang San', requestedDate: '2026-07-01', dueDate: '2026-07-10', status: 'accepted', priority: 'high', dataType: 'structured', fileName: 'FS_2025_Draft.xlsx', fileSize: '1.8MB', assignee: 'Li Si' },
-  { id: '2', category: 'financial', description: (isZh => isZh ? 'Q1-Q4 2025 管理账目（月度）' : 'Q1-Q4 2025 Management Accounts (Monthly)'), requestedBy: 'Zhang San', requestedDate: '2026-07-01', dueDate: '2026-07-12', status: 'accepted', priority: 'high', dataType: 'structured', fileName: 'MA_Q1Q4_2025.xlsx', fileSize: '2.4MB', assignee: 'Wang Wu' },
-  { id: '3', category: 'financial', description: (isZh => isZh ? '试算平衡表（Level 4 明细）' : 'Trial Balance (Level 4 Detail)'), requestedBy: 'Zhang San', requestedDate: '2026-07-02', dueDate: '2026-07-14', status: 'received', priority: 'medium', dataType: 'structured', fileName: 'TB_L4_202512.xlsx', fileSize: '98KB', assignee: 'Li Si' },
-  { id: '4', category: 'financial', description: (isZh => isZh ? '总账导出（全年）' : 'General Ledger Extract (Full Year)'), requestedBy: 'Li Si', requestedDate: '2026-07-03', dueDate: '2026-07-16', status: 'reviewed', priority: 'medium', dataType: 'structured', fileName: 'GL_FY2025.xlsx', fileSize: '1.2MB', assignee: 'Sun Ba' },
-  { id: '5', category: 'financial', description: (isZh => isZh ? '合并报表及抵销分录' : 'Consolidation Package and Eliminations'), requestedBy: 'Zhang San', requestedDate: '2026-07-04', dueDate: '2026-07-18', status: 'pending', priority: 'high', dataType: 'structured', assignee: '' },
-  { id: '6', category: 'financial', description: (isZh => isZh ? '财务报表附注披露' : 'Notes to Financial Statements Disclosures'), requestedBy: 'Li Si', requestedDate: '2026-07-05', dueDate: '2026-07-20', status: 'pending', priority: 'medium', dataType: 'structured', assignee: '' },
-
-  // 银行文档 / Bank Documents
-  { id: '7', category: 'bank', description: (isZh => isZh ? '2025年12月31日银行对账单及调节表' : 'Dec 31, 2025 Bank Statements and Reconciliation'), requestedBy: 'Li Si', requestedDate: '2026-07-02', dueDate: '2026-07-12', status: 'received', priority: 'high', dataType: 'unstructured', fileName: 'BankStmt_202512.pdf', fileSize: '320KB', assignee: 'Wang Wu' },
-  { id: '8', category: 'bank', description: (isZh => isZh ? '全部银行函证（年末余额）' : 'All Bank Confirmations (Year-end Balances)'), requestedBy: 'Li Si', requestedDate: '2026-07-03', dueDate: '2026-07-14', status: 'received', priority: 'high', dataType: 'unstructured', fileName: 'BankConf_2025.pdf', fileSize: '180KB', assignee: 'Zhao Liu' },
-  { id: '9', category: 'bank', description: (isZh => isZh ? '贷款协议及授信函件' : 'Loan Agreements and Facility Letters'), requestedBy: 'Wang Wu', requestedDate: '2026-07-04', dueDate: '2026-07-16', status: 'reviewed', priority: 'medium', dataType: 'unstructured', fileName: 'LoanAgreements.pdf', fileSize: '920KB', assignee: 'Qian Qi' },
-  { id: '10', category: 'bank', description: (isZh => isZh ? '大额银行间资金划转记录' : 'Interbank Fund Transfer Records (Large)'), requestedBy: 'Li Si', requestedDate: '2026-07-06', dueDate: '2026-07-20', status: 'pending', priority: 'low', dataType: 'unstructured', assignee: '' },
-
-  // 税务文件 / Tax Documents
-  { id: '11', category: 'tax', description: (isZh => isZh ? '2025年度企业所得税汇算清缴申报表' : '2025 Annual CIT Settlement and Declaration Form'), requestedBy: 'Wang Wu', requestedDate: '2026-07-03', dueDate: '2026-07-15', status: 'pending', priority: 'medium', dataType: 'structured', assignee: '' },
-  { id: '12', category: 'tax', description: (isZh => isZh ? '增值税申报表（月度，全年）' : 'VAT Returns (Monthly, Full Year)'), requestedBy: 'Wang Wu', requestedDate: '2026-07-04', dueDate: '2026-07-17', status: 'received', priority: 'medium', dataType: 'structured', fileName: 'VAT_Monthly_2025.xlsx', fileSize: '450KB', assignee: 'Sun Ba' },
-  { id: '13', category: 'tax', description: (isZh => isZh ? '转让定价同期资料' : 'Transfer Pricing Documentation'), requestedBy: 'Wang Wu', requestedDate: '2026-07-06', dueDate: '2026-07-21', status: 'pending', priority: 'high', dataType: 'unstructured', assignee: '' },
-  { id: '14', category: 'tax', description: (isZh => isZh ? '税款缴纳凭证及收据' : 'Tax Payment Vouchers and Receipts'), requestedBy: 'Sun Ba', requestedDate: '2026-07-07', dueDate: '2026-07-22', status: 'reviewed', priority: 'low', dataType: 'unstructured', fileName: 'TaxVouchers_2025.pdf', fileSize: '210KB', assignee: 'Li Si' },
-
-  // 合同与协议 / Contracts & Agreements
-  { id: '15', category: 'contract', description: (isZh => isZh ? '重大销售合同清单及样本（金额>100万）' : 'Major Sales Contracts List and Samples (Amount > 1M)'), requestedBy: 'Zhao Liu', requestedDate: '2026-07-05', dueDate: '2026-07-18', status: 'pending', priority: 'high', dataType: 'unstructured', assignee: '' },
-  { id: '16', category: 'contract', description: (isZh => isZh ? '采购协议及框架合同' : 'Purchase Agreements and Framework Contracts'), requestedBy: 'Zhao Liu', requestedDate: '2026-07-06', dueDate: '2026-07-19', status: 'received', priority: 'medium', dataType: 'unstructured', fileName: 'PurchaseAgreements.zip', fileSize: '3.2MB', assignee: 'Wang Wu' },
-  { id: '17', category: 'contract', description: (isZh => isZh ? '租赁协议（房产及设备）' : 'Lease Agreements (Property and Equipment)'), requestedBy: 'Zhao Liu', requestedDate: '2026-07-07', dueDate: '2026-07-20', status: 'reviewed', priority: 'low', dataType: 'unstructured', fileName: 'Lease_Agreements.pdf', fileSize: '880KB', assignee: 'Li Si' },
-  { id: '18', category: 'contract', description: (isZh => isZh ? '关联方交易协议' : 'Related Party Transaction Agreements'), requestedBy: 'Qian Qi', requestedDate: '2026-07-08', dueDate: '2026-07-22', status: 'pending', priority: 'high', dataType: 'unstructured', assignee: '' },
-
-  // 工资与人事 / Payroll & HR
-  { id: '19', category: 'payroll', description: (isZh => isZh ? '2025年度工资薪金明细表' : '2025 Annual Payroll Detail Schedule'), requestedBy: 'Sun Ba', requestedDate: '2026-07-06', dueDate: '2026-07-18', status: 'received', priority: 'medium', dataType: 'structured', fileName: 'Payroll_2025.xlsx', fileSize: '520KB', assignee: 'Li Si' },
-  { id: '20', category: 'payroll', description: (isZh => isZh ? '员工花名册及社保公积金缴纳记录' : 'Employee Roster & Social Insurance Records'), requestedBy: 'Sun Ba', requestedDate: '2026-07-07', dueDate: '2026-07-19', status: 'pending', priority: 'medium', dataType: 'structured', assignee: '' },
-
-  // 固定资产 / Fixed Assets
-  { id: '21', category: 'fixedasset', description: (isZh => isZh ? '固定资产清单及折旧计算表' : 'Fixed Assets Register & Depreciation Schedule'), requestedBy: 'Qian Qi', requestedDate: '2026-07-07', dueDate: '2026-07-19', status: 'received', priority: 'medium', dataType: 'structured', fileName: 'FA_Register_2025.xlsx', fileSize: '340KB', assignee: 'Sun Ba' },
-  { id: '22', category: 'fixedasset', description: (isZh => isZh ? '本年度新增/处置资产清单' : 'Additions/Disposals Schedule (Current Year)'), requestedBy: 'Qian Qi', requestedDate: '2026-07-08', dueDate: '2026-07-21', status: 'pending', priority: 'low', dataType: 'structured', assignee: '' },
-
-  // 存货 / Inventory
-  { id: '23', category: 'inventory', description: (isZh => isZh ? '期末存货盘点表及差异分析' : 'Year-end Inventory Count Sheet & Variance Analysis'), requestedBy: 'Sun Ba', requestedDate: '2026-07-08', dueDate: '2026-07-20', status: 'pending', priority: 'medium', dataType: 'structured', assignee: '' },
-  { id: '24', category: 'inventory', description: (isZh => isZh ? '存货跌价准备计提表' : 'Inventory Write-down Provision Schedule'), requestedBy: 'Sun Ba', requestedDate: '2026-07-09', dueDate: '2026-07-23', status: 'reviewed', priority: 'low', dataType: 'structured', fileName: 'Inv_Provision.xlsx', fileSize: '150KB', assignee: 'Li Si' },
-
-  // 法律文档 / Legal Documents
-  { id: '25', category: 'legal', description: (isZh => isZh ? '未决诉讼及或有事项声明' : 'Pending Litigation and Contingencies Statement'), requestedBy: 'Qian Qi', requestedDate: '2026-07-06', dueDate: '2026-07-20', status: 'reviewed', priority: 'medium', dataType: 'unstructured', assignee: '' },
-  { id: '26', category: 'legal', description: (isZh => isZh ? '公司章程及营业执照' : 'Certificate of Incorporation and Bylaws'), requestedBy: 'Qian Qi', requestedDate: '2026-07-07', dueDate: '2026-07-21', status: 'accepted', priority: 'low', dataType: 'unstructured', fileName: 'COI_Bylaws.pdf', fileSize: '340KB', assignee: 'Sun Ba' },
-  { id: '27', category: 'legal', description: (isZh => isZh ? '董事会决议及会议纪要（FY2025）' : 'Board Resolutions and Minutes (FY2025)'), requestedBy: 'Qian Qi', requestedDate: '2026-07-08', dueDate: '2026-07-22', status: 'received', priority: 'medium', dataType: 'unstructured', fileName: 'BoardMinutes_2025.pdf', fileSize: '520KB', assignee: 'Li Si' },
-
-  // 内部控制 / Internal Control
-  { id: '28', category: 'internalctrl', description: (isZh => isZh ? '2025年度内部控制自评报告' : '2025 Annual Internal Control Self-Assessment Report'), requestedBy: 'Sun Ba', requestedDate: '2026-07-08', dueDate: '2026-07-22', status: 'pending', priority: 'low', dataType: 'structured', assignee: '' },
-  { id: '29', category: 'internalctrl', description: (isZh => isZh ? 'IT一般控制文档' : 'IT General Controls Documentation'), requestedBy: 'Sun Ba', requestedDate: '2026-07-09', dueDate: '2026-07-23', status: 'received', priority: 'medium', dataType: 'structured', fileName: 'ITGC_Doc_2025.xlsx', fileSize: '760KB', assignee: 'Wang Wu' },
-  { id: '30', category: 'internalctrl', description: (isZh => isZh ? '职责分离矩阵' : 'Segregation of Duties Matrix'), requestedBy: 'Sun Ba', requestedDate: '2026-07-10', dueDate: '2026-07-24', status: 'reviewed', priority: 'low', dataType: 'structured', fileName: 'SOD_Matrix.xlsx', fileSize: '120KB', assignee: 'Li Si' },
-]
-
-// File Pool demo data
-const poolFiles: PoolFile[] = [
-  { id: 'pf-1', name: 'FS_2025_Draft.xlsx', size: '1.8MB', category: 'financial', dataType: 'structured', status: 'raw', uploadDate: '2026-07-10', pushedToDPE: true },
-  { id: 'pf-2', name: 'MA_Q1Q4_2025.xlsx', size: '2.4MB', category: 'financial', dataType: 'structured', status: 'raw', uploadDate: '2026-07-12', pushedToDPE: true },
-  { id: 'pf-3', name: 'GL_FY2025.xlsx', size: '1.2MB', category: 'financial', dataType: 'structured', status: 'processed', uploadDate: '2026-07-16', pushedToDPE: true },
-  { id: 'pf-4', name: 'TB_L4_202512.xlsx', size: '98KB', category: 'financial', dataType: 'structured', status: 'processed', uploadDate: '2026-07-14', pushedToDPE: false },
-  { id: 'pf-5', name: 'BankStmt_202512.pdf', size: '320KB', category: 'bank', dataType: 'unstructured', status: 'raw', uploadDate: '2026-07-12', pushedToDPE: true },
-  { id: 'pf-6', name: 'BankConf_2025.pdf', size: '180KB', category: 'bank', dataType: 'unstructured', status: 'raw', uploadDate: '2026-07-14', pushedToDPE: true },
-  { id: 'pf-7', name: 'VAT_Monthly_2025.xlsx', size: '450KB', category: 'tax', dataType: 'structured', status: 'raw', uploadDate: '2026-07-17', pushedToDPE: false },
-  { id: 'pf-8', name: 'PurchaseAgreements.zip', size: '3.2MB', category: 'contract', dataType: 'unstructured', status: 'raw', uploadDate: '2026-07-19', pushedToDPE: false },
-  { id: 'pf-9', name: 'Lease_Agreements.pdf', size: '880KB', category: 'contract', dataType: 'unstructured', status: 'meta', uploadDate: '2026-07-20', pushedToDPE: false },
-  { id: 'pf-10', name: 'Payroll_2025.xlsx', size: '520KB', category: 'payroll', dataType: 'structured', status: 'raw', uploadDate: '2026-07-18', pushedToDPE: false },
-  { id: 'pf-11', name: 'FA_Register_2025.xlsx', size: '340KB', category: 'fixedasset', dataType: 'structured', status: 'raw', uploadDate: '2026-07-19', pushedToDPE: false },
-  { id: 'pf-12', name: 'COI_Bylaws.pdf', size: '340KB', category: 'legal', dataType: 'unstructured', status: 'raw', uploadDate: '2026-07-21', pushedToDPE: false },
-  { id: 'pf-13', name: 'ITGC_Doc_2025.xlsx', size: '760KB', category: 'internalctrl', dataType: 'structured', status: 'raw', uploadDate: '2026-07-23', pushedToDPE: false },
-]
+// 大类数据类型徽章：由其下子类的实际数据类型推导
+const categoryDataType = (
+  items: { dataType: 'structured' | 'unstructured' }[],
+): 'structured' | 'unstructured' | 'mixed' => {
+  if (items.length === 0) return 'mixed'
+  const types = new Set(items.map(i => i.dataType))
+  return types.size > 1 ? 'mixed' : items[0].dataType
+}
 
 // Team members for assignment dropdown
 const TEAM_MEMBERS = ['Zhang San', 'Li Si', 'Wang Wu', 'Zhao Liu', 'Qian Qi', 'Sun Ba']
 
+// ===== Demo Data =====
+// 每一条 PBC 请求 = 分类目录中的一个子类；请求元数据按顺序确定性生成
+// 状态按真实分布轮转：已接收 > 待复核 > 待提供
+const STATUS_SEQ: PBCStatus[] = ['accepted', 'review', 'accepted', 'requested', 'review', 'accepted', 'review', 'accepted', 'requested', 'accepted', 'review', 'requested']
+const PRIORITY_SEQ: PBCItem['priority'][] = ['high', 'medium', 'medium', 'low']
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+const pbcItems: PBCItem[] = PBC_ITEM_DEFS.map((def, idx) => {
+  const status = STATUS_SEQ[idx % STATUS_SEQ.length]
+  const reqDay = 1 + (idx % 24)
+  const dueDay = Math.min(reqDay + 9 + (idx % 6), 28)
+  // 待提供的条目当前还没有可用文件
+  const withFile = status !== 'requested'
+  const slug = def.en.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 26)
+  return {
+    id: String(idx + 1),
+    category: def.c,
+    description: (isZh: boolean) => (isZh ? def.zh : def.en),
+    requestedBy: TEAM_MEMBERS[idx % TEAM_MEMBERS.length],
+    requestedDate: `2026-07-${pad2(reqDay)}`,
+    dueDate: `2026-07-${pad2(dueDay)}`,
+    status,
+    priority: PRIORITY_SEQ[idx % PRIORITY_SEQ.length],
+    dataType: def.dt === 's' ? 'structured' : 'unstructured',
+    fileName: withFile ? `${slug}.${def.dt === 's' ? 'xlsx' : 'pdf'}` : undefined,
+    fileSize: withFile ? `${120 + (idx * 37) % 1800}KB` : undefined,
+    assignee: status === 'requested' ? '' : TEAM_MEMBERS[(idx + 2) % TEAM_MEMBERS.length],
+  }
+})
+
+// File Pool 列表 = PBC 管理清单中已获得文件的条目（待推送 / 已推送的候选）
+// 该页签只做一件事：把这些 PBC 文件推送到 Audit File Pool
+const poolCandidates: PBCItem[] = pbcItems.filter(i => i.fileName)
+
 // ===== Component =====
 function PBCManager() {
   const { lang } = useLanguage()
-  const [viewMode, setViewMode] = useState<'cards' | 'list' | 'pool'>('cards')
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   // Filter states (from screenshot guide)
@@ -154,8 +124,11 @@ function PBCManager() {
   const [batchDueDate, setBatchDueDate] = useState('')
   const [batchPriority, setBatchPriority] = useState('')
 
-  // Pool filter
-  const [poolFilter, setPoolFilter] = useState<'all' | 'structured' | 'unstructured'>('all')
+  // File Pool 推送状态（已推送到 Audit File Pool 的 PBC 文件 id 集合）
+  const [pushedIds, setPushedIds] = useState<Set<string>>(
+    // 演示：已接收(accepted)的条目默认视为已推送成功
+    () => new Set(poolCandidates.filter(i => i.status === 'accepted').map(i => i.id)),
+  )
 
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
@@ -164,22 +137,18 @@ function PBCManager() {
 
   // --- Status config ---
   const sc = (key: string) => {
-    const map: Record<string, Record<string, { label: string; color: string; bg: string }>> = {
-      pending:   { zh: { label: '待处理', color: '#D69E2E', bg: '#FFFBEB' }, en: { label: 'Pending', color: '#D69E2E', bg: '#FFFBEB' } },
-      received:  { zh: { label: '已接收', color: '#3182CE', bg: '#EBF4FF' }, en: { label: 'Received', color: '#3182CE', bg: '#EBF4FF' } },
-      reviewed:  { zh: { label: '已审核', color: '#805AD5', bg: '#FAF5FF' }, en: { label: 'Reviewed', color: '#805AD5', bg: '#FAF5FF' } },
-      accepted:  { zh: { label: '已接受', color: '#00A3A1', bg: '#E6FFFA' }, en: { label: 'Accepted', color: '#00A3A1', bg: '#E6FFFA' } },
-    }
-    return map[key]?.[lang] || map.pending[lang]
+    const d = statusDefMap[key as PBCStatus] || PBC_STATUS_FLOW[0]
+    return { label: isZh ? d.zh : d.en, color: d.color, bg: d.bg }
   }
 
-  const poolStatusLabel = (s: string) => {
-    const m: Record<string, Record<string, string>> = {
-      raw:       { zh: '原始数据', en: 'Raw' },
-      meta:      { zh: '元数据', en: 'Meta' },
-      processed: { zh: '已处理', en: 'Processed' },
-    }
-    return m[s]?.[lang] || s
+  // --- File Pool 推送 ---
+  const isPushed = (id: string) => pushedIds.has(id)
+  const pushFiles = (ids: string[]) => {
+    setPushedIds(prev => {
+      const next = new Set(prev)
+      ids.forEach(id => next.add(id))
+      return next
+    })
   }
 
   // --- Computed filtered data ---
@@ -199,34 +168,40 @@ function PBCManager() {
   }, [filterStatus, filterCategory, filterSearch, isZh])
 
   // Stats
-  const stats = {
-    total: pbcItems.length,
-    pending: pbcItems.filter(i => i.status === 'pending').length,
-    received: pbcItems.filter(i => i.status === 'received').length,
-    reviewed: pbcItems.filter(i => i.status === 'reviewed').length,
-    accepted: pbcItems.filter(i => i.status === 'accepted').length,
-    structured: pbcItems.filter(i => i.dataType === 'structured').length,
-    unstructured: pbcItems.filter(i => i.dataType === 'unstructured').length,
-    inPool: poolFiles.length,
-    pushedToDPE: poolFiles.filter(f => f.pushedToDPE).length,
-  }
+  const stats = useMemo(() => {
+    const byStatus: Record<PBCStatus, number> = { requested: 0, review: 0, accepted: 0 }
+    let structured = 0
+    pbcItems.forEach(i => {
+      byStatus[i.status] += 1
+      if (i.dataType === 'structured') structured += 1
+    })
+    return {
+      total: pbcItems.length,
+      byStatus,
+      /** 仍需客户方提供的条目（复核退回重提也归于此状态） */
+      followUp: byStatus.requested,
+      structured,
+      unstructured: pbcItems.length - structured,
+      /** File Pool：已获得文件、可进入推送流程的条目数 */
+      inPool: poolCandidates.length,
+    }
+  }, [])
 
   // Chart data
-  const chartData = {
-    completionRate: Math.round((stats.accepted / stats.total) * 100),
-    byStatus: {
-      pending: stats.pending,
-      received: stats.received,
-      reviewed: stats.reviewed,
-      accepted: stats.accepted,
-    },
-    byCategory: CATEGORIES.map(c => ({
+  const chartData = useMemo(() => {
+    const byCategory = CATEGORIES.map(c => ({
       key: c.key,
       label: isZh ? c.zh : c.en,
       count: pbcItems.filter(i => i.category === c.key).length,
       color: c.color,
-    })).filter(c => c.count > 0),
-  }
+    })).filter(c => c.count > 0)
+    return {
+      completionRate: Math.round((stats.byStatus.accepted / stats.total) * 100),
+      byCategory,
+      // 条形按最大类别归一化，否则相对总量全部偏短、无法比较
+      maxCategoryCount: Math.max(1, ...byCategory.map(c => c.count)),
+    }
+  }, [isZh, stats])
 
   // Grouped for card view
   const grouped: Record<string, PBCItem[]> = {}
@@ -235,10 +210,12 @@ function PBCManager() {
     grouped[item.category].push(item)
   })
 
-  // Pool filtered
-  const filteredPool = poolFilter === 'all'
-    ? poolFiles
-    : poolFiles.filter(f => f.dataType === poolFilter)
+  // ===== File Pool 推送统计（Cards / List 两个视图共用）=====
+  const poolReadyCount = poolCandidates.filter(i => !isPushed(i.id)).length
+  const poolPushedCount = poolCandidates.length - poolReadyCount
+  /** 当前筛选结果中「可推送」的条目数（用于批量推送） */
+  const selectedPushable = filteredItems.filter(i => selectedIds.has(i.id) && i.fileName && !isPushed(i.id)).length
+  const pushAllReady = () => pushFiles(poolCandidates.filter(i => !isPushed(i.id)).map(i => i.id))
 
   // --- Handlers ---
   const handleCardClick = (category: string) => {
@@ -304,10 +281,6 @@ function PBCManager() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               {t('列表视图', 'List')}
             </button>
-            <button className={`pvt-btn ${viewMode === 'pool' ? 'active' : ''}`} onClick={() => setViewMode('pool')}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-              File Pool
-            </button>
           </div>
           <button className="pbc-new-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -316,74 +289,92 @@ function PBCManager() {
         </div>
       </div>
 
-      {/* ===== Overview Statistics Charts (moved to top) ===== */}
+      {/* ===== Overview Statistics — compact summary band ===== */}
       <div className="pbc-charts-section">
-        <h3 className="pch-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
-          {t('概览统计', 'Overview Statistics')}
-        </h3>
+        <div className="pch-head">
+          <h3 className="pch-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
+            {t('概览统计', 'Overview Statistics')}
+          </h3>
+          <span className="pch-head-meta">
+            {t(
+              `共 ${stats.total} 项 PBC · ${stats.followUp} 项待客户跟进`,
+              `${stats.total} PBC items · ${stats.followUp} awaiting client`
+            )}
+          </span>
+        </div>
+
         <div className="pch-grid">
-          {/* Pie chart: completion rate */}
+          {/* 1 — 完成率 */}
           <div className="pch-card pch-pie">
             <h4>{t('完成率', 'Completion Rate')}</h4>
             <div className="pie-chart-viz">
               <svg viewBox="0 0 100 100" className="pie-svg">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" strokeWidth="12"/>
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#059669" strokeWidth="12"
-                  strokeDasharray={(chartData.completionRate * 2.64) + ' 264'}
-                  strokeDashoffset="66" strokeLinecap="round"
-                  transform="rotate(-90 50 50)" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#e9eef4" strokeWidth="11" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#059669" strokeWidth="11"
+                  strokeDasharray={`${(chartData.completionRate * 2.639).toFixed(1)} 263.9`}
+                  strokeLinecap="round" />
               </svg>
               <div className="pie-center">
                 <span className="pie-percent">{chartData.completionRate}%</span>
-                <span className="pie-label">{t('已完成', 'Done')}</span>
+                <span className="pie-label">{t('已接收', 'Accepted')}</span>
               </div>
             </div>
             <div className="pie-legend">
-              <div className="pleg-item"><span className="pleg-dot" style={{background:'#059669'}}></span>{t('已接受', 'Accepted')} ({stats.accepted})</div>
-              <div className="pleg-item"><span className="pleg-dot" style={{background:'#e2e8f0'}}></span>{t('进行中', 'In Progress')} ({stats.total - stats.accepted})</div>
+              <div className="pleg-item">
+                <span className="pleg-dot" style={{ background: '#059669' }} />
+                <span className="pleg-text">{t('已接收', 'Accepted')}</span>
+                <span className="pleg-val">{stats.byStatus.accepted}</span>
+              </div>
+              <div className="pleg-item">
+                <span className="pleg-dot" style={{ background: '#e9eef4' }} />
+                <span className="pleg-text">{t('未完成', 'Outstanding')}</span>
+                <span className="pleg-val">{stats.total - stats.byStatus.accepted}</span>
+              </div>
             </div>
           </div>
 
-          {/* Status distribution cards */}
+          {/* 2 — 状态分布 */}
           <div className="pch-card pch-status-cards">
             <h4>{t('状态分布', 'Status Distribution')}</h4>
             <div className="psc-grid">
-              <div className="psc-item psc-pending">
-                <span className="psc-num">{chartData.byStatus.pending}</span>
-                <span className="psc-lbl">{sc('pending').label}</span>
-                <div className="psc-bar"><div className="psc-bar-fill" style={{width: ((chartData.byStatus.pending/stats.total)*100) + '%'}}></div></div>
-              </div>
-              <div className="psc-item psc-received">
-                <span className="psc-num">{chartData.byStatus.received}</span>
-                <span className="psc-lbl">{sc('received').label}</span>
-                <div className="psc-bar"><div className="psc-bar-fill" style={{width: ((chartData.byStatus.received/stats.total)*100) + '%'}}></div></div>
-              </div>
-              <div className="psc-item psc-reviewed">
-                <span className="psc-num">{chartData.byStatus.reviewed}</span>
-                <span className="psc-lbl">{sc('reviewed').label}</span>
-                <div className="psc-bar"><div className="psc-bar-fill" style={{width: ((chartData.byStatus.reviewed/stats.total)*100) + '%'}}></div></div>
-              </div>
-              <div className="psc-item psc-accepted">
-                <span className="psc-num">{chartData.byStatus.accepted}</span>
-                <span className="psc-lbl">{sc('accepted').label}</span>
-                <div className="psc-bar"><div className="psc-bar-fill" style={{width: ((chartData.byStatus.accepted/stats.total)*100) + '%'}}></div></div>
-              </div>
+              {PBC_STATUS_FLOW.map(s => {
+                const n = stats.byStatus[s.key]
+                return (
+                  <div key={s.key} className="psc-item" style={{ borderTopColor: s.color }}
+                    title={`${isZh ? s.zh : s.en} · ${n} (${((n / stats.total) * 100).toFixed(0)}%)`}>
+                    <span className="psc-num" style={{ color: n > 0 ? s.color : '#cbd5e1' }}>{n}</span>
+                    <span className="psc-lbl">{isZh ? s.zh : s.en}</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="psc-stack">
+              {PBC_STATUS_FLOW.map(s => (
+                stats.byStatus[s.key] > 0
+                  ? <span key={s.key} className="psc-seg" style={{ flexGrow: stats.byStatus[s.key], background: s.color }} />
+                  : null
+              ))}
+            </div>
+            <div className="psc-foot">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              {t(`${stats.followUp} 项待客户提供`, `${stats.followUp} awaiting client submission`)}
             </div>
           </div>
 
-          {/* Category distribution */}
+          {/* 3 — 类别分布（紧凑多列） */}
           <div className="pch-card pch-categories">
             <h4>{t('类别分布', 'Category Distribution')}</h4>
-            <div className="pcat-list">
+            <div className="pcat-grid">
               {chartData.byCategory.map(cat => (
-                <div key={cat.key} className="pcat-row">
-                  <span className="pcat-dot" style={{background: cat.color}}></span>
+                <div key={cat.key} className="pcat-row" title={`${cat.label} · ${cat.count}`}>
+                  <span className="pcat-dot" style={{ background: cat.color }} />
                   <span className="pcat-name">{cat.label}</span>
-                  <span className="pcat-count">{cat.count}</span>
                   <div className="pcat-bar-track">
-                    <div className="pcat-bar-fill" style={{width: ((cat.count/stats.total)*100) + '%', background: cat.color}}></div>
+                    <div className="pcat-bar-fill"
+                      style={{ width: `${(cat.count / chartData.maxCategoryCount) * 100}%`, background: cat.color }} />
                   </div>
+                  <span className="pcat-count">{cat.count}</span>
                 </div>
               ))}
             </div>
@@ -399,10 +390,11 @@ function PBCManager() {
             <label>{t('状态筛选', 'Status')}</label>
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option value="all">{t('全部状态', 'All Statuses')}</option>
-              <option value="pending">{sc('pending').label}</option>
-              <option value="received">{sc('received').label}</option>
-              <option value="reviewed">{sc('reviewed').label}</option>
-              <option value="accepted">{sc('accepted').label}</option>
+              {PBC_STATUS_FLOW.map(s => (
+                <option key={s.key} value={s.key}>
+                  {isZh ? s.zh : s.en} ({stats.byStatus[s.key]})
+                </option>
+              ))}
             </select>
           </div>
           {/* Category filter */}
@@ -451,6 +443,16 @@ function PBCManager() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             {t('导出文件清单', 'Export Files')}
           </button>
+          {/* File Pool 推送总览（两个视图共用） */}
+          <div className="pab-pool">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <span className="pab-pool-name">{t('File Pool', 'File Pool')}</span>
+            <span className="pab-pool-count"><b>{poolPushedCount}</b>/{poolCandidates.length}</span>
+            <button className="pab-pool-push" disabled={poolReadyCount === 0} onClick={pushAllReady}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {t(`推送全部 (${poolReadyCount})`, `Push All (${poolReadyCount})`)}
+            </button>
+          </div>
         </div>
         <div className="pab-right">
           {/* Bulk operations */}
@@ -466,6 +468,14 @@ function PBCManager() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             {t('批量更新状态', 'Batch Update Status')}
             {selectedIds.size > 0 && <span className="pab-badge">{selectedIds.size}</span>}
+          </button>
+          {/* 批量推送到 File Pool（按所选条目） */}
+          <button className={`pab-btn pab-push ${selectedPushable > 0 ? 'has-selection' : ''}`}
+            disabled={selectedPushable === 0}
+            onClick={() => pushFiles(filteredItems.filter(i => selectedIds.has(i.id) && i.fileName && !isPushed(i.id)).map(i => i.id))}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            {t('推送 File Pool', 'Push to File Pool')}
+            {selectedPushable > 0 && <span className="pab-badge">{selectedPushable}</span>}
           </button>
         </div>
       </div>
@@ -510,9 +520,11 @@ function PBCManager() {
       {viewMode === 'cards' && (
         <div className={`pbc-cards-grid ${expandedCategory ? 'grid-dimmed' : ''}`}>
           {Object.entries(grouped).map(([catKey, items]) => {
-            const meta = categoryMetaMap[catKey] || { iconZh: '📄', iconEn: '📄', color: '#64748b', bg: '#f8fafc', type: 'mixed' as const, zh: catKey, en: catKey }
+            const meta = categoryMetaMap[catKey] || { icon: '📄', color: '#64748b', bg: '#f8fafc', zh: catKey, en: catKey }
             const isExpanded = expandedCategory === catKey
-            const pushableCount = items.filter(i => i.fileName && (i.status === 'received' || i.status === 'reviewed' || i.status === 'accepted')).length
+            const dtype = categoryDataType(items)
+            const catFiles = items.filter(i => i.fileName)
+            const catReady = catFiles.filter(i => !isPushed(i.id))
 
             return (
               <div key={catKey} ref={el => { cardRefs.current[catKey] = el }}
@@ -521,23 +533,30 @@ function PBCManager() {
                 onClick={() => handleCardClick(catKey)}
               >
                 <div className="pbc-card-header" style={{ background: meta.bg }}>
-                  <div className="pbc-card-icon" style={{ background: meta.color }}>{isZh ? meta.iconZh : meta.iconEn}</div>
+                  <div className="pbc-card-icon" style={{ background: meta.color }}>{meta.icon}</div>
                   <div className="pbc-card-title-wrap">
                     <h3 className="pbc-card-title">{isZh ? meta.zh : meta.en}</h3>
                     <div className="pbc-card-tags">
                       <span className="pbc-data-type-badge" style={{
-                        background: meta.type === 'structured' ? '#eef2ff' : meta.type === 'unstructured' ? '#f3effb' : '#fffbeb',
-                        color: meta.type === 'structured' ? '#4f46e5' : meta.type === 'unstructured' ? '#805AD5' : '#d97706',
+                        background: dtype === 'structured' ? '#eef2ff' : dtype === 'unstructured' ? '#f3effb' : '#fffbeb',
+                        color: dtype === 'structured' ? '#4f46e5' : dtype === 'unstructured' ? '#805AD5' : '#d97706',
                       }}>
-                        {meta.type === 'structured' ? t('结构化', 'Structured') : meta.type === 'unstructured' ? t('非结构化', 'Unstructured') : t('混合', 'Mixed')}
+                        {dtype === 'structured' ? t('结构化', 'Structured') : dtype === 'unstructured' ? t('非结构化', 'Unstructured') : t('混合', 'Mixed')}
                       </span>
-                      <span className="pbc-card-count">{items.length} {t('项', 'items')}</span>
+                      <span className="pbc-card-count">{items.length} {t('个子类', 'sub-categories')}</span>
                     </div>
                   </div>
-                  {pushableCount > 0 && (
-                    <button className="pbc-push-btn" onClick={e => e.stopPropagation()} title={t('推送到 DPE', 'Push to DPE')}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                      DPE
+                  {catFiles.length > 0 && catReady.length === 0 && (
+                    <span className="pbc-push-btn pbc-push-done" title={t('已全部推送到 File Pool', 'All pushed to File Pool')}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      File Pool
+                    </span>
+                  )}
+                  {catReady.length > 0 && (
+                    <button className="pbc-push-btn" onClick={e => { e.stopPropagation(); pushFiles(catReady.map(i => i.id)) }}
+                      title={t('将该分类文件推送到 File Pool', 'Push category files to File Pool')}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      File Pool<span className="pbc-push-num">{catReady.length}</span>
                     </button>
                   )}
                   <div className="pbc-card-expand-hint">
@@ -559,8 +578,18 @@ function PBCManager() {
                           <span>{item.assignee || item.requestedBy}</span>
                           {item.fileName && <span className="pbc-file-tag">📎 {item.fileName}</span>}
                         </div>
-                        <div className="pbc-card-priority">
-                          <span className={`priority-dot priority-${item.priority}`}></span>{item.priority}
+                        <div className="pbc-card-item-right">
+                          {item.fileName && (isPushed(item.id)
+                            ? <span className="pp-push-done pp-push-mini-tag" title={t('已推送到 File Pool', 'Pushed to File Pool')}>✓</span>
+                            : <button className="pp-push-btn pp-push-xs" onClick={e => { e.stopPropagation(); pushFiles([item.id]) }}
+                                title={t('推送到 File Pool', 'Push to File Pool')}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                {t('推送', 'Push')}
+                              </button>
+                          )}
+                          <div className="pbc-card-priority">
+                            <span className={`priority-dot priority-${item.priority}`}></span>{item.priority}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -575,36 +604,38 @@ function PBCManager() {
         </div>
       )}
 
-      {/* ===== VIEW: List View with Category Tree (from guide screenshot) ===== */}
+      {/* ===== VIEW: List View (category filter on top, full-width table) ===== */}
       {viewMode === 'list' && (
         <div className="pbc-list-view animate-fade-in">
-          <div className="plv-layout">
-            {/* Left sidebar: category tree */}
-            <aside className="plv-sidebar">
-              <h4 className="plv-sidebar-title">{t('按会计科目/类别筛选', 'Filter by Account Category')}</h4>
-              <ul className="plv-tree">
-                <li className={`plt-item ${filterCategory === 'all' ? 'active' : ''}`} onClick={() => setFilterCategory('all')}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-                  <span>{t('全部分类', 'All Categories')}</span>
-                  <span className="plt-count">{pbcItems.length}</span>
-                </li>
-                {CATEGORIES.map(cat => {
-                  const count = pbcItems.filter(i => i.category === cat.key).length
-                  if (count === 0) return null
-                  return (
-                    <li key={cat.key} className={`plt-item ${filterCategory === cat.key ? 'active' : ''}`}
-                      onClick={() => setFilterCategory(cat.key)}>
-                      <span className="plt-dot" style={{ background: cat.color }}></span>
-                      <span>{isZh ? cat.zh : cat.en}</span>
-                      <span className="plt-count">{count}</span>
-                    </li>
-                  )
-                })}
-              </ul>
-            </aside>
+          {/* Category filter bar: horizontal clickable labels */}
+          <div className="plv-filter-bar">
+            <div className="plvf-head">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+              <span>{t('按会计科目/类别筛选', 'Filter by Account Category')}</span>
+            </div>
+            <div className="plvf-chips">
+              <button className={`plvf-chip ${filterCategory === 'all' ? 'active' : ''}`} onClick={() => setFilterCategory('all')}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                <span>{t('全部分类', 'All Categories')}</span>
+                <span className="plvf-num">{pbcItems.length}</span>
+              </button>
+              {CATEGORIES.map(cat => {
+                const count = pbcItems.filter(i => i.category === cat.key).length
+                if (count === 0) return null
+                return (
+                  <button key={cat.key} className={`plvf-chip ${filterCategory === cat.key ? 'active' : ''}`}
+                    onClick={() => setFilterCategory(cat.key)}>
+                    <span className="plvf-dot" style={{ background: cat.color }}></span>
+                    <span>{isZh ? cat.zh : cat.en}</span>
+                    <span className="plvf-num">{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-            {/* Right: table list */}
-            <main className="plv-main">
+          {/* Table (full width) */}
+          <main className="plv-main">
               <div className="plv-table-header">
                 <label className="plv-select-all">
                   <input type="checkbox" checked={selectedIds.size === filteredItems.length && filteredItems.length > 0}
@@ -628,6 +659,7 @@ function PBCManager() {
                     <th>{t('优先级', 'Priority')}</th>
                     <th>{t('数据类型', 'Data Type')}</th>
                     <th>{t('文件', 'File')}</th>
+                    <th>{t('File Pool', 'File Pool')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -663,84 +695,30 @@ function PBCManager() {
                           </span>
                         </td>
                         <td>{item.fileName ? <span className="plv-file-tag">📎 {item.fileName}</span> : '-'}</td>
+                        <td>
+                          {!item.fileName
+                            ? <span className="plv-na">—</span>
+                            : isPushed(item.id)
+                              ? <span className="pp-push-done" title={t('已推送到 File Pool', 'Pushed to File Pool')}>
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                                  {t('已推送', 'Pushed')}
+                                </span>
+                              : <button className="pp-push-btn" onClick={e => { e.stopPropagation(); pushFiles([item.id]) }}
+                                  title={t('推送到 File Pool', 'Push to File Pool')}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                  {t('推送', 'Push')}
+                                </button>
+                          }
+                        </td>
                       </tr>
                     )
                   })}
                   {filteredItems.length === 0 && (
-                    <tr><td colSpan={10} className="plv-empty">{t('无匹配的PBC条目', 'No matching PBC items')}</td></tr>
+                    <tr><td colSpan={11} className="plv-empty">{t('无匹配的PBC条目', 'No matching PBC items')}</td></tr>
                   )}
                 </tbody>
               </table>
-            </main>
-          </div>
-        </div>
-      )}
-
-      {/* ===== VIEW: File Pool ===== */}
-      {viewMode === 'pool' && (
-        <div className="pbc-pool-view animate-fade-in">
-          <div className="pp-header">
-            <div className="pp-title-row">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00338D" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-              <strong>File Pool (S3)</strong>
-              <span className="pp-count">{filteredPool.length} {t('个文件', 'files')}</span>
-            </div>
-            <div className="pp-filters">
-              <button className={`ppf-btn ${poolFilter === 'all' ? 'active' : ''}`} onClick={() => setPoolFilter('all')}>{t('全部', 'All')}</button>
-              <button className={`ppf-btn ${poolFilter === 'structured' ? 'active' : ''}`} onClick={() => setPoolFilter('structured')}>
-                <span className="ppf-dot str"></span>{t('结构化', 'Structured')}
-              </button>
-              <button className={`ppf-btn ${poolFilter === 'unstructured' ? 'active' : ''}`} onClick={() => setPoolFilter('unstructured')}>
-                <span className="ppf-dot unstr"></span>{t('非结构化', 'Unstructured')}
-              </button>
-            </div>
-          </div>
-          <div className="pp-buckets">
-            <div className="pp-bucket pp-bucket-kcc"><div className="ppb-label">KCC Bucket</div><div className="ppb-count">{poolFiles.filter(f => f.category === 'financial' || f.category === 'internalctrl').length}</div></div>
-            <div className="pp-bucket pp-bucket-oak"><div className="ppb-label">OAK Bucket</div><div className="ppb-count">{poolFiles.filter(f => f.category === 'tax').length}</div></div>
-            <div className="pp-bucket pp-bucket-aap"><div className="ppb-label">AAP Bucket</div><div className="ppb-count">{poolFiles.filter(f => f.category === 'bank' || f.category === 'contract' || f.category === 'legal' || f.category === 'payroll' || f.category === 'fixedasset' || f.category === 'inventory').length}</div></div>
-            <div className="pp-bucket pp-bucket-dpe"><div className="ppb-label">DPE Bucket</div><div className="ppb-count">{poolFiles.filter(f => f.pushedToDPE).length}</div></div>
-          </div>
-          <div className="pp-table-wrap">
-            <table className="pp-table">
-              <thead>
-                <tr>
-                  <th>{t('文件名', 'Filename')}</th>
-                  <th>{t('类别', 'Category')}</th>
-                  <th>{t('数据类型', 'Data Type')}</th>
-                  <th>{t('状态', 'Status')}</th>
-                  <th>{t('大小', 'Size')}</th>
-                  <th>{t('上传时间', 'Upload Date')}</th>
-                  <th>DPE</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPool.map(f => (
-                  <tr key={f.id}>
-                    <td className="pp-filename">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      {f.name}
-                    </td>
-                    <td><span className="pp-cat-tag">{getCategoryLabel(f.category, isZh)}</span></td>
-                    <td>
-                      <span className={`pp-dtype ${f.dataType}`}>
-                        {f.dataType === 'structured' ? t('结构化', 'Structured') : t('非结构化', 'Unstructured')}
-                      </span>
-                    </td>
-                    <td><span className={`pp-status ${f.status}`}>{poolStatusLabel(f.status)}</span></td>
-                    <td>{f.size}</td>
-                    <td className="pp-date">{f.uploadDate}</td>
-                    <td>
-                      {f.pushedToDPE
-                        ? <span className="pp-push-done">✓</span>
-                        : <button className="pp-push-mini" title={t('推送到 DPE', 'Push to DPE')}>→</button>
-                      }
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          </main>
         </div>
       )}
 
@@ -751,14 +729,23 @@ function PBCManager() {
           <div className="pbc-expanded-card-wrapper">
             {(() => {
               const items = grouped[expandedCategory] || []
-              const meta = categoryMetaMap[expandedCategory] || { iconZh: '📄', iconEn: '📄', color: '#64748b', bg: '#f8fafc', type: 'mixed' as const, zh: expandedCategory, en: expandedCategory }
+              const meta = categoryMetaMap[expandedCategory] || { icon: '📄', color: '#64748b', bg: '#f8fafc', zh: expandedCategory, en: expandedCategory }
+              const dtype = categoryDataType(items)
               return (
                 <div className="pbc-category-card pbc-expanded-card" style={{ borderTop: `3px solid ${meta.color}` }} onClick={e => e.stopPropagation()}>
                   <div className="pbc-card-header" style={{ background: meta.bg }}>
-                    <div className="pbc-card-icon" style={{ background: meta.color }}>{isZh ? meta.iconZh : meta.iconEn}</div>
+                    <div className="pbc-card-icon" style={{ background: meta.color }}>{meta.icon}</div>
                     <div className="pbc-card-title-wrap">
                       <h3 className="pbc-card-title">{isZh ? (meta.zh || expandedCategory) : (meta.en || expandedCategory)}</h3>
-                      <span className="pbc-card-count">{items.length} {t('项', 'items')}</span>
+                      <div className="pbc-card-tags">
+                        <span className="pbc-data-type-badge" style={{
+                          background: dtype === 'structured' ? '#eef2ff' : dtype === 'unstructured' ? '#f3effb' : '#fffbeb',
+                          color: dtype === 'structured' ? '#4f46e5' : dtype === 'unstructured' ? '#805AD5' : '#d97706',
+                        }}>
+                          {dtype === 'structured' ? t('结构化', 'Structured') : dtype === 'unstructured' ? t('非结构化', 'Unstructured') : t('混合', 'Mixed')}
+                        </span>
+                        <span className="pbc-card-count">{items.length} {t('个子类', 'sub-categories')}</span>
+                      </div>
                     </div>
                     <button className="pbc-card-close" onClick={() => setExpandedCategory(null)}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -777,8 +764,18 @@ function PBCManager() {
                             <span>{item.assignee || item.requestedBy}</span>
                             {item.fileName && <span className="pbc-file-tag">📎 {item.fileName}</span>}
                           </div>
-                          <div className="pbc-card-priority">
-                            <span className={`priority-dot priority-${item.priority}`}></span>{item.priority}
+                          <div className="pbc-card-item-right">
+                            {item.fileName && (isPushed(item.id)
+                              ? <span className="pp-push-done pp-push-mini-tag" title={t('已推送到 File Pool', 'Pushed to File Pool')}>✓</span>
+                              : <button className="pp-push-btn pp-push-xs" onClick={e => { e.stopPropagation(); pushFiles([item.id]) }}
+                                  title={t('推送到 File Pool', 'Push to File Pool')}>
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                  {t('推送', 'Push')}
+                                </button>
+                            )}
+                            <div className="pbc-card-priority">
+                              <span className={`priority-dot priority-${item.priority}`}></span>{item.priority}
+                            </div>
                           </div>
                         </div>
                       </div>

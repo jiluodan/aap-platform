@@ -1,1 +1,0 @@
-fix: replace real company names with generic placeholders in database data
