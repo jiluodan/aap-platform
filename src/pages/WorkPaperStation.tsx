@@ -8,6 +8,8 @@ import {
   procedureTypeShortName,
 } from '../data/auditProcedures'
 import { downloadSampleWorkPaperTemplate } from '../utils/sampleExcel'
+import { useLanguage } from '../contexts/LanguageContext'
+import type { Lang } from '../i18n/translations'
 import './WorkPaperStation.css'
 
 // ===== Data Types =====
@@ -150,25 +152,246 @@ function WpsToolbar({
   search,
   searchPlaceholder,
   onSearch,
+  info,
 }: {
   search: string
   searchPlaceholder: string
   onSearch: (v: string) => void
+  /** 右侧附加信息（如已选项计数） */
+  info?: string
 }) {
+  const inputRef = useRef<HTMLInputElement>(null)
   return (
     <div className="wps-toolbar">
-      <div className="wps-search-box">
+      {/* 整个搜索框可点击聚焦，不只是中间那条输入区域 */}
+      <div className="wps-search-box" onClick={() => inputRef.current?.focus()}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
         <input
+          ref={inputRef}
+          type="text"
           className="wps-search-input"
           placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
           value={search}
           onChange={e => onSearch(e.target.value)}
         />
+        {search && (
+          <button
+            type="button"
+            className="wps-search-clear"
+            aria-label="Clear"
+            onClick={e => {
+              e.stopPropagation()
+              onSearch('')
+              inputRef.current?.focus()
+            }}
+          >
+            ×
+          </button>
+        )}
       </div>
+      {info ? <span className="wps-toolbar-info">{info}</span> : null}
     </div>
   )
 }
+
+// ===== 页面文案：跟随顶部 EN / 中 语言切换 =====
+interface WpsCopy {
+  kpiTotal: string
+  kpiUploadRate: string
+  kpiUploaded: string
+  kpiPrecheckRate: string
+  kpiPrecheckPassed: string
+  kpiReviewRate: string
+  kpiPassed: string
+  kpiNotPassed: string
+  kpiMateriality: string
+  kpiPerfMateriality: string
+  kpiMinThreshold: string
+  pageShowing: (start: number, end: number, total: number) => string
+  perPage: string
+  rowUnit: string
+  colWpName: string
+  colCategory: string
+  colReqLevel: string
+  colLinkedKcw: string
+  colStatus: string
+  colSelect: string
+  statusNotSelected: string
+  statusSelected: string
+  selectAllAria: string
+  selectRowAria: (name: string) => string
+  selectedCount: (n: number, total: number) => string
+  colBusinessProcess: string
+  colProcedureDesc: string
+  colType: string
+  colSampleInfo: string
+  colSamplingFeature: string
+  colPopulation: string
+  colSamplingDetail: string
+  colAuditProcedure: string
+  colWpTemplate: string
+  colWorkingPaper: string
+  colUploader: string
+  colReviewStatus: string
+  colActions: string
+  s1Note: string
+  s1Search: string
+  s1Empty: string
+  s2Note: string
+  s2Search: string
+  s2Empty: string
+  viewSampling: string
+  viewSamplingAction: (name: string) => string
+  samplingDoneTitle: string
+  samplingProgressAria: string
+  upload: string
+  removeWpTitle: string
+  removeWpAria: (name: string) => string
+  downloadTplTitle: (name: string) => string
+  openProcedureTitle: (label: string, code: string, itemName: string) => string
+}
+
+const WPS_COPY: Record<Lang, WpsCopy> = {
+  zh: {
+    kpiTotal: '实质性程序总数',
+    kpiUploadRate: '底稿上传率',
+    kpiUploaded: '已上传',
+    kpiPrecheckRate: '底稿预检率',
+    kpiPrecheckPassed: 'PreCheck 已通过',
+    kpiReviewRate: '底稿复核通过率',
+    kpiPassed: '已通过',
+    kpiNotPassed: '未通过',
+    kpiMateriality: '重要性水平',
+    kpiPerfMateriality: '实际执行重要性水平',
+    kpiMinThreshold: '最小阈值',
+    pageShowing: (s, e, t) => `显示第 ${s} 至 ${e} 条，共 ${t} 条实质性程序记录`,
+    perPage: '每页',
+    rowUnit: '条',
+    colWpName: '底稿名称',
+    colCategory: '类别',
+    colReqLevel: '必要级别',
+    colLinkedKcw: '关联 KCw Activity',
+    colStatus: '状态',
+    colSelect: '选择',
+    statusNotSelected: '未选择',
+    statusSelected: '已选择',
+    selectAllAria: '全选当前列表',
+    selectRowAria: n => `选择底稿模板 ${n}`,
+    selectedCount: (n, total) => `已选择 ${n} / ${total} 项`,
+    colBusinessProcess: '业务流程',
+    colProcedureDesc: '程序描述',
+    colType: '类型',
+    colSampleInfo: '样本信息',
+    colSamplingFeature: '抽样特征',
+    colPopulation: '总体金额',
+    colSamplingDetail: '抽样详情 / 进度',
+    colAuditProcedure: '审计程序',
+    colWpTemplate: '底稿模板',
+    colWorkingPaper: '工作底稿',
+    colUploader: '上传人',
+    colReviewStatus: '底稿复核状态',
+    colActions: '操作',
+    s1Note: '系统将筛选出 Kcw Opinion Profile 中适用的审计计准则 / 工作底稿 / 实体类型/是否那个逻辑，与您管理范围的 Engagement 属性匹配则展示关联匹配。',
+    s1Search: '搜索底稿名称、KCw Activity',
+    s1Empty: '无匹配的底稿模板',
+    s2Note: '系统解析用户上传的 RAAR Report，提取给 Engagement 下已计划的 RM 及对应的 Substantive Procedure，遍历管理链配置的实属性程序定义模板规则。',
+    s2Search: '搜索 RMM ID、程序编号、科...',
+    s2Empty: '无匹配的实质性程序底稿',
+    viewSampling: '查看',
+    viewSamplingAction: n => `查看抽样详情 · ${n}`,
+    samplingDoneTitle: '抽样已完成，查看抽样详情',
+    samplingProgressAria: '抽样进度',
+    upload: '上传',
+    removeWpTitle: '删除该工作底稿',
+    removeWpAria: n => `删除 ${n}`,
+    downloadTplTitle: n => `下载底稿模板（Excel）：${n}`,
+    openProcedureTitle: (label, code, itemName) => `在 Audit Procedure 中查看「${label}」\n${code}${itemName}`,
+  },
+  en: {
+    kpiTotal: 'Substantive Procedures',
+    kpiUploadRate: 'WP Upload Rate',
+    kpiUploaded: 'Uploaded',
+    kpiPrecheckRate: 'WP Pre-check Rate',
+    kpiPrecheckPassed: 'PreCheck passed',
+    kpiReviewRate: 'WP Review Pass Rate',
+    kpiPassed: 'Passed',
+    kpiNotPassed: 'Not passed',
+    kpiMateriality: 'Materiality',
+    kpiPerfMateriality: 'Performance materiality',
+    kpiMinThreshold: 'Minimum threshold',
+    pageShowing: (s, e, t) => `Showing ${s}–${e} of ${t} substantive procedure records`,
+    perPage: 'Per page',
+    rowUnit: 'rows',
+    colWpName: 'Work Paper Name',
+    colCategory: 'Category',
+    colReqLevel: 'Requirement Level',
+    colLinkedKcw: 'Linked KCw Activity',
+    colStatus: 'Status',
+    colSelect: 'Select',
+    statusNotSelected: 'Not Selected',
+    statusSelected: 'Selected',
+    selectAllAria: 'Select all in current list',
+    selectRowAria: n => `Select work paper template ${n}`,
+    selectedCount: (n, total) => `${n} of ${total} selected`,
+    colBusinessProcess: 'Business Process',
+    colProcedureDesc: 'Procedure Description',
+    colType: 'Type',
+    colSampleInfo: 'Sample Info',
+    colSamplingFeature: 'Sampling Feature',
+    colPopulation: 'Population Amount',
+    colSamplingDetail: 'Sampling Detail / Progress',
+    colAuditProcedure: 'Audit Procedure',
+    colWpTemplate: 'WP Template',
+    colWorkingPaper: 'Working Paper',
+    colUploader: 'Uploader',
+    colReviewStatus: 'WP Review Status',
+    colActions: 'Actions',
+    s1Note: 'The system filters the applicable auditing standards / work papers / entity types from the KCw Opinion Profile and shows the linked matches against the attributes of engagements within your management scope.',
+    s1Search: 'Search work paper name, KCw Activity',
+    s1Empty: 'No matching work paper templates',
+    s2Note: 'The system parses the uploaded RAAR Report, extracts the planned RMs and corresponding Substantive Procedures for the engagement, and walks the template rules configured for substantive procedures in the management chain.',
+    s2Search: 'Search RMM ID, procedure code...',
+    s2Empty: 'No matching substantive procedure work papers',
+    viewSampling: 'View',
+    viewSamplingAction: n => `View sampling detail · ${n}`,
+    samplingDoneTitle: 'Sampling complete — view sampling detail',
+    samplingProgressAria: 'Sampling progress',
+    upload: 'Upload',
+    removeWpTitle: 'Remove this working paper',
+    removeWpAria: n => `Remove ${n}`,
+    downloadTplTitle: n => `Download WP template (Excel): ${n}`,
+    openProcedureTitle: (label, code, itemName) => `Open in Audit Procedure — "${label}"\n${code}${itemName}`,
+  },
+}
+
+function useCopy(): WpsCopy {
+  const { lang } = useLanguage()
+  return WPS_COPY[lang]
+}
+
+// 业务流程：受控词表，英文界面下展示英文分类名
+const BUSINESS_PROCESS_EN: Record<string, string> = {
+  '财务报告': 'Financial Reporting',
+  '诉讼': 'Litigation',
+  '销售': 'Sales',
+  '采购': 'Procurement',
+  '存货与成本': 'Inventory & Cost',
+  '固定资产与在建工程': 'Fixed Assets & CIP',
+  '税务': 'Tax',
+  '人力资源': 'Human Resources',
+  '资金与融资': 'Treasury & Financing',
+}
+
+const REVIEW_STATUS_EN: Record<SubstWpRow['reviewStatus'], string> = {
+  '未复核': 'Not Reviewed',
+  '复核中': 'In Review',
+  '已复核': 'Reviewed',
+}
+
+const businessProcessLabel = (v: string, lang: Lang) => (lang === 'zh' ? v : BUSINESS_PROCESS_EN[v] || v)
+
+const reviewStatusLabel = (s: SubstWpRow['reviewStatus'], lang: Lang) => (lang === 'zh' ? s : REVIEW_STATUS_EN[s])
 
 // 「抽样详情 / 进度」列只有两种状态：
 //   1) 抽样进行中 —— 显示「已抽/总数」+ 细进度条，不再用圆点
@@ -180,19 +403,20 @@ function isSamplingInProgress(row: SubstWpRow) {
 }
 
 function SampleProgressCell({ row, onView }: { row: SubstWpRow; onView: (row: SubstWpRow) => void }) {
+  const c = useCopy()
   if (!isSamplingInProgress(row)) {
     return (
       <button
         type="button"
         className="wps-sample-done"
-        title="抽样已完成，查看抽样详情"
+        title={c.samplingDoneTitle}
         onClick={() => onView(row)}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
           <circle cx="12" cy="12" r="3" />
         </svg>
-        查看
+        {c.viewSampling}
       </button>
     )
   }
@@ -206,7 +430,7 @@ function SampleProgressCell({ row, onView }: { row: SubstWpRow; onView: (row: Su
       <div
         className="wps-sample-bar"
         role="progressbar"
-        aria-label="抽样进度"
+        aria-label={c.samplingProgressAria}
         aria-valuenow={row.progress}
         aria-valuemin={0}
         aria-valuemax={100}
@@ -231,31 +455,32 @@ function typeClass(t: SubstWpRow['type']) {
 }
 
 function WpsKpiStrip({ total, uploaded, prechecked, reviewed }: { total: number; uploaded: number; prechecked: number; reviewed: number }) {
+  const c = useCopy()
   const uploadRate = total ? Math.round((uploaded / total) * 100) : 0
   const precheckRate = total ? Math.round((prechecked / total) * 100) : 0
   const reviewRate = total ? Math.round((reviewed / total) * 100) : 0
   return (
     <div className="wps-kpi-strip">
       <div className="wps-kpi wps-kpi-primary">
-        <div className="wps-kpi-label">实质性程序总数</div>
+        <div className="wps-kpi-label">{c.kpiTotal}</div>
         <div className="wps-kpi-num">{total}<span>Procedures</span></div>
       </div>
       <div className="wps-kpi">
-        <div className="wps-kpi-label">底稿上传率 <b>{uploadRate}%</b> <span>已上传 {uploaded}/{total}</span></div>
+        <div className="wps-kpi-label"><span className="wps-kpi-name">{c.kpiUploadRate}</span> <b>{uploadRate}%</b> <span className="wps-kpi-detail">{c.kpiUploaded} {uploaded}/{total}</span></div>
         <div className="wps-kpi-bar"><div className="wps-kpi-bar-fill" style={{ width: `${uploadRate}%` }} /></div>
       </div>
       <div className="wps-kpi">
-        <div className="wps-kpi-label">底稿预检率 <b>{precheckRate}%</b> <span>PreCheck 已通过 {prechecked}</span></div>
+        <div className="wps-kpi-label"><span className="wps-kpi-name">{c.kpiPrecheckRate}</span> <b>{precheckRate}%</b> <span className="wps-kpi-detail">{c.kpiPrecheckPassed} {prechecked}</span></div>
         <div className="wps-kpi-bar"><div className="wps-kpi-bar-fill orange" style={{ width: `${precheckRate}%` }} /></div>
       </div>
       <div className="wps-kpi">
-        <div className="wps-kpi-label">底稿复核通过率 <b>{reviewRate}%</b> <span>已通过 {reviewed} · 未通过 {total - reviewed}</span></div>
+        <div className="wps-kpi-label"><span className="wps-kpi-name">{c.kpiReviewRate}</span> <b>{reviewRate}%</b> <span className="wps-kpi-detail">{c.kpiPassed} {reviewed} · {c.kpiNotPassed} {total - reviewed}</span></div>
         <div className="wps-kpi-bar"><div className="wps-kpi-bar-fill green" style={{ width: `${reviewRate}%` }} /></div>
       </div>
       <div className="wps-kpi">
-        <div className="wps-kpi-label">重要性水平</div>
+        <div className="wps-kpi-label">{c.kpiMateriality}</div>
         <div className="wps-kpi-num small">CNY 12,600,000</div>
-        <div className="wps-kpi-sub">实际执行重要性水平 CNY 9,450,000<br />最小阈值 CNY 630,000</div>
+        <div className="wps-kpi-sub">{c.kpiPerfMateriality} CNY 9,450,000<br />{c.kpiMinThreshold} CNY 630,000</div>
       </div>
     </div>
   )
@@ -264,18 +489,19 @@ function WpsKpiStrip({ total, uploaded, prechecked, reviewed }: { total: number;
 function WpsPagination({ total, page, pageSize, onPage, onPageSize }: {
   total: number; page: number; pageSize: number; onPage: (p: number) => void; onPageSize: (s: number) => void
 }) {
+  const c = useCopy()
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1
   const end = Math.min(total, page * pageSize)
   return (
     <div className="wps-pagination">
-      <span className="wps-page-info">显示第 {start} 至 {end} 条，共 {total} 条实质性程序记录</span>
+      <span className="wps-page-info">{c.pageShowing(start, end, total)}</span>
       <div className="wps-page-right">
-        <span>每页</span>
+        <span>{c.perPage}</span>
         <select className="wps-page-size" value={pageSize} onChange={e => onPageSize(Number(e.target.value))}>
-          <option value={15}>15 条</option>
-          <option value={10}>10 条</option>
-          <option value={20}>20 条</option>
+          <option value={15}>15 {c.rowUnit}</option>
+          <option value={10}>10 {c.rowUnit}</option>
+          <option value={20}>20 {c.rowUnit}</option>
         </select>
         <div className="wps-page-nav">
           <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}>‹</button>
@@ -340,6 +566,7 @@ function FileTypeIcon({ name }: { name: string }) {
 // ===== 「审计程序」列 =====
 // 展示该行关联的 Audit Procedure 程序类型（短名 + 程序编号），点击跳转到程序明细
 function AuditProcedureCell({ row, onOpen }: { row: SubstWpRow; onOpen: (row: SubstWpRow) => void }) {
+  const c = useCopy()
   const type = findProcedureType(row.auditProcedure.typeKey)
   if (!type) return <span className="wps-proc-empty">—</span>
 
@@ -349,7 +576,7 @@ function AuditProcedureCell({ row, onOpen }: { row: SubstWpRow; onOpen: (row: Su
     <button
       type="button"
       className="wps-proc-link"
-      title={`在 Audit Procedure 中查看「${type.label}」\n${code}${item ? ` ${item.name}` : ''}`}
+      title={c.openProcedureTitle(type.label, code, item ? ` ${item.name}` : '')}
       onClick={() => onOpen(row)}
     >
       <span className="wps-proc-icon" style={{ background: `${type.color}1A`, color: type.color }}>
@@ -368,6 +595,8 @@ function AuditProcedureCell({ row, onOpen }: { row: SubstWpRow; onOpen: (row: Su
 function WorkPaperStation() {
   const { clientId, engagementId } = useParams<{ clientId: string; engagementId: string }>()
   const navigate = useNavigate()
+  const { lang } = useLanguage()
+  const c = useCopy()
 
   const kcwFileList: KcwFileOption[] = (engagementId && DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId])
     ? DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId]
@@ -386,8 +615,12 @@ function WorkPaperStation() {
   const wpPrechecked = s2Data.filter(r => r.preChecked).length
   const wpReviewed = s2Data.filter(r => r.reviewStatus === '已复核').length
 
-  // Section 1 (Standard WP Templates) search state
+  // Section 1 (Standard WP Templates) search + selection state
   const [s1Search, setS1Search] = useState('')
+  const [s1SelectedIds, setS1SelectedIds] = useState<string[]>(
+    () => standardWpRows.filter(r => r.status === 'Selected').map(r => r.id),
+  )
+  const s1AllCheckRef = useRef<HTMLInputElement>(null)
 
   // Section 2 (Substantive Procedure WP) search + pagination state
   const [s2Search, setS2Search] = useState('')
@@ -398,7 +631,7 @@ function WorkPaperStation() {
     /* TODO: wire toolbar actions to backend */
   }
 
-  const handleViewSampling = (row: SubstWpRow) => handleAction(`查看抽样详情 · ${row.procedureName}`)
+  const handleViewSampling = (row: SubstWpRow) => handleAction(c.viewSamplingAction(row.procedureName))
 
   // 底稿模版：点击即生成并下载一份样例 Excel
   const handleDownloadTemplate = (row: SubstWpRow) => {
@@ -449,6 +682,27 @@ function WorkPaperStation() {
     return !q || r.name.toLowerCase().includes(q) || r.linkedKcwActivity.toLowerCase().includes(q) || r.category.toLowerCase().includes(q)
   })
 
+  // Section 1 selection：勾选后 Status 列同步为「已选择 / 未选择」
+  const isS1Selected = (id: string) => s1SelectedIds.includes(id)
+  const toggleS1Row = (id: string) =>
+    setS1SelectedIds(ids => (ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]))
+  const s1VisibleIds = s1Filtered.map(r => r.id)
+  const s1AllVisibleSelected = s1VisibleIds.length > 0 && s1VisibleIds.every(id => isS1Selected(id))
+  const s1SomeVisibleSelected = s1VisibleIds.some(id => isS1Selected(id))
+  const toggleS1All = () =>
+    setS1SelectedIds(ids =>
+      s1AllVisibleSelected
+        ? ids.filter(id => !s1VisibleIds.includes(id))
+        : Array.from(new Set([...ids, ...s1VisibleIds])),
+    )
+
+  // 表头全选框的「半选」态
+  useEffect(() => {
+    if (s1AllCheckRef.current) {
+      s1AllCheckRef.current.indeterminate = !s1AllVisibleSelected && s1SomeVisibleSelected
+    }
+  }, [s1AllVisibleSelected, s1SomeVisibleSelected])
+
   // Section 2 filtered by search
   const s2Filtered = s2Data.filter(r => {
     const q = s2Search.trim().toLowerCase()
@@ -467,17 +721,9 @@ function WorkPaperStation() {
       {/* Title Row */}
       <div className="wps-title-row">
         <h1 className="wps-title">Work Paper Station</h1>
-        <span className="wps-view-tag">Project Team View</span>
       </div>
 
-      {/* Info Bar */}
-      <div className="wps-info-bar">
-        <span className="wps-info-label">Audit Team Member</span>
-        <span className="wps-info-desc">本视图展示项目组可见的全部场景（M1F3 • M1F4 • M1F5）</span>
-        <span className="wps-info-right">Engagement: 1299419 · Client: AAP Demo Co., Ltd.</span>
-      </div>
-
-      {/* KPI Strip (new, screenshot-style) */}
+      {/* KPI Strip */}
       <WpsKpiStrip total={wpTotal} uploaded={wpUploaded} prechecked={wpPrechecked} reviewed={wpReviewed} />
 
       {/* ============ Section 1: Standard Work Paper Templates ============ */}
@@ -485,7 +731,6 @@ function WorkPaperStation() {
         <div className="wps-section-header">
           <h2 className="wps-section-title">
             <span className="wps-section-num">1</span> Standard Work Paper Templates
-            <span className="wps-section-meta">(M1F3 - Filter by Engagement Nature)</span>
           </h2>
         </div>
 
@@ -509,38 +754,65 @@ function WorkPaperStation() {
 
         <div className="wps-info-note">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-          系统将筛选出 Kcw Opinion Profile 中适用的审计计准则 / 工作底稿 / 实体类型/是否那个逻辑，与您管理范围的 Engagement 属性匹配则展示关联匹配。
+          {c.s1Note}
         </div>
 
         <WpsToolbar
           search={s1Search}
-          searchPlaceholder="搜索底稿名称、KCw Activity"
+          searchPlaceholder={c.s1Search}
           onSearch={setS1Search}
+          info={c.selectedCount(s1SelectedIds.length, standardWpRows.length)}
         />
 
         <div className="wps-table-wrap">
           <table className="wps-table wps-table-sm">
             <thead>
               <tr>
-                <th>底稿名称</th>
-                <th>类别</th>
-                <th>必要级别</th>
-                <th>关联 KCw Activity</th>
-                <th>状态</th>
+                <th className="wps-col-select">
+                  <input
+                    ref={s1AllCheckRef}
+                    type="checkbox"
+                    className="wps-check"
+                    aria-label={c.selectAllAria}
+                    checked={s1AllVisibleSelected}
+                    onChange={toggleS1All}
+                  />
+                  <span className="wps-col-select-label">{c.colSelect}</span>
+                </th>
+                <th>{c.colWpName}</th>
+                <th>{c.colCategory}</th>
+                <th>{c.colReqLevel}</th>
+                <th>{c.colLinkedKcw}</th>
+                <th>{c.colStatus}</th>
               </tr>
             </thead>
             <tbody>
-              {s1Filtered.map(row => (
-                <tr key={row.id}>
-                  <td className="wp-name-cell">{row.name}</td>
-                  <td>{row.category}</td>
-                  <td><span className={`req-badge ${row.requiredType === 'Required' ? 'required' : 'highly-rec'}`}>{row.requiredType}</span></td>
-                  <td>{row.linkedKcwActivity}</td>
-                  <td><span className="status-dot not-selected"></span> Not Selected</td>
-                </tr>
-              ))}
+              {s1Filtered.map(row => {
+                const selected = isS1Selected(row.id)
+                return (
+                  <tr key={row.id} className={selected ? 'is-selected' : undefined}>
+                    <td className="wps-col-select">
+                      <input
+                        type="checkbox"
+                        className="wps-check"
+                        aria-label={c.selectRowAria(row.name)}
+                        checked={selected}
+                        onChange={() => toggleS1Row(row.id)}
+                      />
+                    </td>
+                    <td className="wp-name-cell">{row.name}</td>
+                    <td>{row.category}</td>
+                    <td><span className={`req-badge ${row.requiredType === 'Required' ? 'required' : 'highly-rec'}`}>{row.requiredType}</span></td>
+                    <td>{row.linkedKcwActivity}</td>
+                    <td>
+                      <span className={`status-dot ${selected ? 'selected' : 'not-selected'}`}></span>
+                      {selected ? c.statusSelected : c.statusNotSelected}
+                    </td>
+                  </tr>
+                )
+              })}
               {s1Filtered.length === 0 && (
-                <tr><td colSpan={5} className="wps-empty-cell">无匹配的底稿模板</td></tr>
+                <tr><td colSpan={6} className="wps-empty-cell">{c.s1Empty}</td></tr>
               )}
             </tbody>
           </table>
@@ -552,19 +824,18 @@ function WorkPaperStation() {
         <div className="wps-section-header">
           <h2 className="wps-section-title">
             <span className="wps-section-num">2</span> Substantive Procedure Work Papers
-            <span className="wps-section-meta">(M1F4 - Match WP Templates to Substantive Procedures)</span>
           </h2>
         </div>
 
         <div className="wps-info-note">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-          系统解析用户上传的 RAAR Report，提取给 Engagement 下已计划的 RM 及对应的 Substantive Procedure，遍历管理链配置的实属性程序定义模板规则。
+          {c.s2Note}
         </div>
 
         <div className="wps-section-body">
           <WpsToolbar
               search={s2Search}
-              searchPlaceholder="搜索 RMM ID、程序编号、科..."
+              searchPlaceholder={c.s2Search}
               onSearch={setS2Search}
             />
 
@@ -572,25 +843,25 @@ function WorkPaperStation() {
               <table className="wps-table subst-table">
                 <thead>
                   <tr>
-                    <th>业务流程</th>
-                    <th>程序描述</th>
-                    <th>类型</th>
-                    <th>样本信息</th>
-                    <th>抽样特征</th>
-                    <th>总体金额</th>
-                    <th>抽样详情 / 进度</th>
-                    <th>审计程序</th>
-                    <th>底稿模板</th>
-                    <th>工作底稿</th>
-                    <th>上传人</th>
-                    <th>底稿复核状态</th>
-                    <th>操作</th>
+                    <th>{c.colBusinessProcess}</th>
+                    <th>{c.colProcedureDesc}</th>
+                    <th>{c.colType}</th>
+                    <th>{c.colSampleInfo}</th>
+                    <th>{c.colSamplingFeature}</th>
+                    <th>{c.colPopulation}</th>
+                    <th>{c.colSamplingDetail}</th>
+                    <th>{c.colAuditProcedure}</th>
+                    <th>{c.colWpTemplate}</th>
+                    <th>{c.colWorkingPaper}</th>
+                    <th>{c.colUploader}</th>
+                    <th>{c.colReviewStatus}</th>
+                    <th>{c.colActions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {s2Rows.map(row => (
                     <tr key={row.id}>
-                      <td>{row.businessProcess}</td>
+                      <td>{businessProcessLabel(row.businessProcess, lang)}</td>
                       <td className="wp-name-cell">{row.procedureName}</td>
                       <td><span className={`type-badge ${typeClass(row.type)}`}>{row.type}</span></td>
                       <td><span className="wps-sample-link">{row.sampleInfo} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17 17 7M9 7h8v8" /></svg></span></td>
@@ -607,7 +878,7 @@ function WorkPaperStation() {
                         <button
                           type="button"
                           className="wps-tpl-link"
-                          title={`下载底稿模版（Excel）：${row.wpTemplate}`}
+                          title={c.downloadTplTitle(row.wpTemplate)}
                           onClick={() => handleDownloadTemplate(row)}
                         >
                           <span className="wps-tpl-icon"><ExcelIcon /></span>
@@ -627,8 +898,8 @@ function WorkPaperStation() {
                             <button
                               type="button"
                               className="wps-file-del"
-                              title="删除该工作底稿"
-                              aria-label={`删除 ${row.workingPaper}`}
+                              title={c.removeWpTitle}
+                              aria-label={c.removeWpAria(row.workingPaper)}
                               onClick={() => handleRemoveWorkingPaper(row.id)}
                             >
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
@@ -637,11 +908,11 @@ function WorkPaperStation() {
                             </button>
                           </span>
                         ) : (
-                          <button type="button" className="wps-mini-upload" onClick={() => handlePickWorkingPaper(row.id)}>上传</button>
+                          <button type="button" className="wps-mini-upload" onClick={() => handlePickWorkingPaper(row.id)}>{c.upload}</button>
                         )}
                       </td>
                       <td className="wps-uploader">{row.uploader}</td>
-                      <td><span className={`review-badge ${reviewClass(row.reviewStatus)}`}>{row.reviewStatus}</span></td>
+                      <td><span className={`review-badge ${reviewClass(row.reviewStatus)}`}>{reviewStatusLabel(row.reviewStatus, lang)}</span></td>
                       <td>
                         <div className="wps-action-chips">
                           {row.actions.map(a => <span key={a} className="wps-action-chip">{a}</span>)}
@@ -650,7 +921,7 @@ function WorkPaperStation() {
                     </tr>
                   ))}
                   {s2Rows.length === 0 && (
-                    <tr><td colSpan={13} className="wps-empty-cell">无匹配的实质性程序底稿</td></tr>
+                    <tr><td colSpan={13} className="wps-empty-cell">{c.s2Empty}</td></tr>
                   )}
                 </tbody>
               </table>
