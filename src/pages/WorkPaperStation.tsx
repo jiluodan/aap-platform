@@ -28,16 +28,19 @@ interface WpAuditProcedure {
   itemCode: string  // ProcedureItem 的 code
 }
 
+/** 抽样方法：KSP / MUS，或 N/A（不涉及抽样） */
+type SamplingMethod = 'KSP' | 'MUS' | 'N/A'
+
+const SAMPLING_METHODS: SamplingMethod[] = ['KSP', 'MUS', 'N/A']
+
 interface SubstWpRow {
   id: string
   businessProcess: string
   procedureName: string
   type: 'WT' | 'TOE' | 'TOD' | 'SAP'
-  sampleInfo: string
-  samplingFeature: string
-  populationAmount: string
-  samplingDetail: string
-  progress: number
+  samplingMethod: SamplingMethod
+  /** 样本量；抽样方法为 N/A 时为 null（该列显示 N/A） */
+  sampleCount: number | null
   wpTemplate: string
   workingPaper: string
   reviewStatus: '未复核' | '复核中' | '已复核'
@@ -71,36 +74,36 @@ const standardWpRows: WpRow[] = [
 
 const substWpRowSeeds: SubstWpRowSeed[] = [
   // 财务报告
-  { id: 'r01', businessProcess: '财务报告', procedureName: 'Additional Personal Independence Requirements for CSA Audit Engagements', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Indep_WP.docx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_e56af2', kcwActivity: 'kcw_act_342b0', preChecked: true, actions: ['AFP'] },
-  { id: 'r02', businessProcess: '财务报告', procedureName: 'Group Audit Instructions – Component Auditors', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Component', populationAmount: '—', samplingDetail: '12/64', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_c6633b', kcwActivity: 'kcw_act_4c38e', preChecked: true, actions: ['OAK'] },
-  { id: 'r03', businessProcess: '财务报告', procedureName: 'Financial Statement Close – Substantive Analytical Procedures', type: 'SAP', sampleInfo: 'sample', samplingFeature: 'Analytical', populationAmount: '2,800,000.00', samplingDetail: '查看', progress: 75, wpTemplate: 'Wp Temp', workingPaper: 'FS_Close.xlsx', reviewStatus: '复核中', uploader: 'Chen (SZ/CP2)', rmId: 'RM_a12c44', kcwActivity: 'kcw_act_778095', preChecked: true, actions: ['OA Review'] },
+  { id: 'r01', businessProcess: '财务报告', procedureName: 'Additional Personal Independence Requirements for CSA Audit Engagements', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: 'Indep_WP.docx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_e56af2', kcwActivity: 'kcw_act_342b0', preChecked: true, actions: ['AFP'] },
+  { id: 'r02', businessProcess: '财务报告', procedureName: 'Group Audit Instructions – Component Auditors', type: 'TOE', samplingMethod: 'KSP', sampleCount: 64, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_c6633b', kcwActivity: 'kcw_act_4c38e', preChecked: true, actions: ['OAK'] },
+  { id: 'r03', businessProcess: '财务报告', procedureName: 'Financial Statement Close – Substantive Analytical Procedures', type: 'SAP', samplingMethod: 'MUS', sampleCount: 20, wpTemplate: 'Wp Temp', workingPaper: 'FS_Close.xlsx', reviewStatus: '复核中', uploader: 'Chen (SZ/CP2)', rmId: 'RM_a12c44', kcwActivity: 'kcw_act_778095', preChecked: true, actions: ['OA Review'] },
   // 诉讼
-  { id: 'r04', businessProcess: '诉讼', procedureName: 'Litigation & Contingencies – Legal Letter', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Legal Letter', populationAmount: '—', samplingDetail: '8/20', progress: 40, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Legal)', rmId: 'RM_l98f21', kcwActivity: 'kcw_act_55a21', preChecked: false, actions: ['OA Confirm'] },
-  { id: 'r05', businessProcess: '诉讼', procedureName: 'Contingent Liabilities Assessment', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 30, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Legal)', rmId: 'RM_l98f22', kcwActivity: 'kcw_act_55a22', preChecked: false, actions: ['OA Review'] },
+  { id: 'r04', businessProcess: '诉讼', procedureName: 'Litigation & Contingencies – Legal Letter', type: 'TOE', samplingMethod: 'MUS', sampleCount: 20, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Legal)', rmId: 'RM_l98f21', kcwActivity: 'kcw_act_55a21', preChecked: false, actions: ['OA Confirm'] },
+  { id: 'r05', businessProcess: '诉讼', procedureName: 'Contingent Liabilities Assessment', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Legal)', rmId: 'RM_l98f22', kcwActivity: 'kcw_act_55a22', preChecked: false, actions: ['OA Review'] },
   // 销售
-  { id: 'r06', businessProcess: '销售', procedureName: 'Revenue Recognition – Cut-off Testing', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Invoice', populationAmount: '75,000.00', samplingDetail: '38/40', progress: 50, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_e86a38', kcwActivity: 'kcw_act_3bH60', preChecked: false, actions: ['OA Vouching'] },
-  { id: 'r07', businessProcess: '销售', procedureName: 'Trade Receivables – Circularisation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Confirmation', populationAmount: '58,200.00', samplingDetail: '56/62', progress: 90, wpTemplate: 'Wp Temp', workingPaper: 'AR_Circ.xlsx', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_c73f0e5', kcwActivity: 'kcw_act_63e9e9', preChecked: true, actions: ['OA Confirm'] },
-  { id: 'r08', businessProcess: '销售', procedureName: 'Sales Volume & Allowance (Bad Debt)', type: 'SAP', sampleInfo: 'sample', samplingFeature: 'Model', populationAmount: '120,000.00', samplingDetail: '查看', progress: 65, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_d47b01', kcwActivity: 'kcw_act_77c10', preChecked: false, actions: ['OA Model'] },
+  { id: 'r06', businessProcess: '销售', procedureName: 'Revenue Recognition – Cut-off Testing', type: 'TOD', samplingMethod: 'KSP', sampleCount: 40, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_e86a38', kcwActivity: 'kcw_act_3bH60', preChecked: false, actions: ['OA Vouching'] },
+  { id: 'r07', businessProcess: '销售', procedureName: 'Trade Receivables – Circularisation', type: 'TOE', samplingMethod: 'KSP', sampleCount: 62, wpTemplate: 'Wp Temp', workingPaper: 'AR_Circ.xlsx', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_c73f0e5', kcwActivity: 'kcw_act_63e9e9', preChecked: true, actions: ['OA Confirm'] },
+  { id: 'r08', businessProcess: '销售', procedureName: 'Sales Volume & Allowance (Bad Debt)', type: 'SAP', samplingMethod: 'MUS', sampleCount: 30, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_d47b01', kcwActivity: 'kcw_act_77c10', preChecked: false, actions: ['OA Model'] },
   // 采购
-  { id: 'r09', businessProcess: '采购', procedureName: 'Procurement – Vendor Confirmation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Vendor', populationAmount: '45,000.00', samplingDetail: '21/30', progress: 70, wpTemplate: 'Wp Temp', workingPaper: 'Vendor_Conf.xlsx', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_p22a90', kcwActivity: 'kcw_act_88d22', preChecked: true, actions: ['OA Confirm'] },
-  { id: 'r10', businessProcess: '采购', procedureName: 'Purchase Price Variance', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '33,000.00', samplingDetail: '查看', progress: 55, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_p22a91', kcwActivity: 'kcw_act_88d23', preChecked: false, actions: ['OA Review'] },
+  { id: 'r09', businessProcess: '采购', procedureName: 'Procurement – Vendor Confirmation', type: 'TOE', samplingMethod: 'KSP', sampleCount: 30, wpTemplate: 'Wp Temp', workingPaper: 'Vendor_Conf.xlsx', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_p22a90', kcwActivity: 'kcw_act_88d22', preChecked: true, actions: ['OA Confirm'] },
+  { id: 'r10', businessProcess: '采购', procedureName: 'Purchase Price Variance', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_p22a91', kcwActivity: 'kcw_act_88d23', preChecked: false, actions: ['OA Review'] },
   // 存货与成本
-  { id: 'r11', businessProcess: '存货与成本', procedureName: 'Inventory Work Paper – Existence & Valuation', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Invoice', populationAmount: '100,000.00', samplingDetail: '25/25', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Inv_WP.xlsx', reviewStatus: '已复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_44159f', kcwActivity: 'kcw_act_47000', preChecked: true, actions: ['OA Vouching'] },
-  { id: 'r12', businessProcess: '存货与成本', procedureName: 'Cost of Sales – Roll-forward', type: 'SAP', sampleInfo: 'sample', samplingFeature: 'Roll-forward', populationAmount: '210,000.00', samplingDetail: '查看', progress: 80, wpTemplate: 'Wp Temp', workingPaper: 'COS_RF.xlsx', reviewStatus: '复核中', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_4415a0', kcwActivity: 'kcw_act_47001', preChecked: true, actions: ['OA Model'] },
-  { id: 'r13', businessProcess: '存货与成本', procedureName: 'Inventory NRV Impairment', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '18,000.00', samplingDetail: '查看', progress: 45, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_4415a1', kcwActivity: 'kcw_act_47002', preChecked: false, actions: ['OA Review'] },
+  { id: 'r11', businessProcess: '存货与成本', procedureName: 'Inventory Work Paper – Existence & Valuation', type: 'TOD', samplingMethod: 'KSP', sampleCount: 25, wpTemplate: 'Wp Temp', workingPaper: 'Inv_WP.xlsx', reviewStatus: '已复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_44159f', kcwActivity: 'kcw_act_47000', preChecked: true, actions: ['OA Vouching'] },
+  { id: 'r12', businessProcess: '存货与成本', procedureName: 'Cost of Sales – Roll-forward', type: 'SAP', samplingMethod: 'MUS', sampleCount: 35, wpTemplate: 'Wp Temp', workingPaper: 'COS_RF.xlsx', reviewStatus: '复核中', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_4415a0', kcwActivity: 'kcw_act_47001', preChecked: true, actions: ['OA Model'] },
+  { id: 'r13', businessProcess: '存货与成本', procedureName: 'Inventory NRV Impairment', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_4415a1', kcwActivity: 'kcw_act_47002', preChecked: false, actions: ['OA Review'] },
   // 固定资产与在建工程
-  { id: 'r14', businessProcess: '固定资产与在建工程', procedureName: 'PPE – Addition & Depreciation', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Tag', populationAmount: '320,000.00', samplingDetail: '40/40', progress: 95, wpTemplate: 'Wp Temp', workingPaper: 'FA_Tag.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_fa001', kcwActivity: 'kcw_act_99001', preChecked: true, actions: ['OA Vouching'] },
-  { id: 'r15', businessProcess: '固定资产与在建工程', procedureName: 'Construction in Progress – Capitalisation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Site Visit', populationAmount: '150,000.00', samplingDetail: '9/15', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_fa002', kcwActivity: 'kcw_act_99002', preChecked: true, actions: ['OA Site'] },
-  { id: 'r16', businessProcess: '固定资产与在建工程', procedureName: 'Impairment of Long-lived Assets', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '60,000.00', samplingDetail: '查看', progress: 35, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_fa003', kcwActivity: 'kcw_act_99003', preChecked: false, actions: ['OA Review'] },
+  { id: 'r14', businessProcess: '固定资产与在建工程', procedureName: 'PPE – Addition & Depreciation', type: 'TOD', samplingMethod: 'KSP', sampleCount: 40, wpTemplate: 'Wp Temp', workingPaper: 'FA_Tag.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_fa001', kcwActivity: 'kcw_act_99001', preChecked: true, actions: ['OA Vouching'] },
+  { id: 'r15', businessProcess: '固定资产与在建工程', procedureName: 'Construction in Progress – Capitalisation', type: 'TOE', samplingMethod: 'MUS', sampleCount: 15, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_fa002', kcwActivity: 'kcw_act_99002', preChecked: true, actions: ['OA Site'] },
+  { id: 'r16', businessProcess: '固定资产与在建工程', procedureName: 'Impairment of Long-lived Assets', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_fa003', kcwActivity: 'kcw_act_99003', preChecked: false, actions: ['OA Review'] },
   // 税务
-  { id: 'r17', businessProcess: '税务', procedureName: 'Tax Provision Review – Specialist WP', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 40, wpTemplate: 'Wp Temp', workingPaper: 'Tax_Prov.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_21f971', kcwActivity: 'kcw_act_599xe5', preChecked: true, actions: ['AFP'] },
-  { id: 'r18', businessProcess: '税务', procedureName: 'Transfer Pricing Documentation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Doc Review', populationAmount: '90,000.00', samplingDetail: '14/18', progress: 50, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Tax)', rmId: 'RM_tx002', kcwActivity: 'kcw_act_599xe6', preChecked: false, actions: ['OA Review'] },
+  { id: 'r17', businessProcess: '税务', procedureName: 'Tax Provision Review – Specialist WP', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: 'Tax_Prov.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_21f971', kcwActivity: 'kcw_act_599xe5', preChecked: true, actions: ['AFP'] },
+  { id: 'r18', businessProcess: '税务', procedureName: 'Transfer Pricing Documentation', type: 'TOE', samplingMethod: 'MUS', sampleCount: 18, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Tax)', rmId: 'RM_tx002', kcwActivity: 'kcw_act_599xe6', preChecked: false, actions: ['OA Review'] },
   // 人力资源
-  { id: 'r19', businessProcess: '人力资源', procedureName: 'Payroll – Completeness', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Payroll', populationAmount: '75,000.00', samplingDetail: '30/30', progress: 85, wpTemplate: 'Wp Temp', workingPaper: 'Payroll.xlsx', reviewStatus: '复核中', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_hr001', kcwActivity: 'kcw_act_66100', preChecked: true, actions: ['OA Vouching'] },
-  { id: 'r20', businessProcess: '人力资源', procedureName: 'Independent Workpaper on Fees-related Requirements', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 80, wpTemplate: 'Wp Temp', workingPaper: 'Fees_WP.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_89bf72', kcwActivity: 'kcw_act_82144d', preChecked: true, actions: ['AFP'] },
+  { id: 'r19', businessProcess: '人力资源', procedureName: 'Payroll – Completeness', type: 'TOD', samplingMethod: 'KSP', sampleCount: 30, wpTemplate: 'Wp Temp', workingPaper: 'Payroll.xlsx', reviewStatus: '复核中', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_hr001', kcwActivity: 'kcw_act_66100', preChecked: true, actions: ['OA Vouching'] },
+  { id: 'r20', businessProcess: '人力资源', procedureName: 'Independent Workpaper on Fees-related Requirements', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: 'Fees_WP.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_89bf72', kcwActivity: 'kcw_act_82144d', preChecked: true, actions: ['AFP'] },
   // 资金与融资
-  { id: 'r21', businessProcess: '资金与融资', procedureName: 'Bank Balances – Confirmation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Confirmation', populationAmount: '500,000.00', samplingDetail: '60/60', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Bank_Conf.xlsx', reviewStatus: '已复核', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr001', kcwActivity: 'kcw_act_77001', preChecked: true, actions: ['OA Confirm'] },
-  { id: 'r22', businessProcess: '资金与融资', procedureName: 'Borrowings – Existence & Obligations', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '280,000.00', samplingDetail: '查看', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr002', kcwActivity: 'kcw_act_77002', preChecked: true, actions: ['OA Review'] },
+  { id: 'r21', businessProcess: '资金与融资', procedureName: 'Bank Balances – Confirmation', type: 'TOE', samplingMethod: 'KSP', sampleCount: 60, wpTemplate: 'Wp Temp', workingPaper: 'Bank_Conf.xlsx', reviewStatus: '已复核', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr001', kcwActivity: 'kcw_act_77001', preChecked: true, actions: ['OA Confirm'] },
+  { id: 'r22', businessProcess: '资金与融资', procedureName: 'Borrowings – Existence & Obligations', type: 'WT', samplingMethod: 'N/A', sampleCount: null, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr002', kcwActivity: 'kcw_act_77002', preChecked: true, actions: ['OA Review'] },
 ]
 
 // 行 → Audit Procedure 模块的对应关系（按业务实质手工关联的 demo 映射）
@@ -225,10 +228,8 @@ interface WpsCopy {
   colBusinessProcess: string
   colProcedureDesc: string
   colType: string
-  colSampleInfo: string
-  colSamplingFeature: string
-  colPopulation: string
-  colSamplingDetail: string
+  colSamplingMethod: string
+  colNoOfSamples: string
   colAuditProcedure: string
   colWpTemplate: string
   colWorkingPaper: string
@@ -241,10 +242,8 @@ interface WpsCopy {
   s2Note: string
   s2Search: string
   s2Empty: string
-  viewSampling: string
-  viewSamplingAction: (name: string) => string
-  samplingDoneTitle: string
-  samplingProgressAria: string
+  samplingMethodAria: (name: string) => string
+  noOfSamplesAria: (name: string) => string
   upload: string
   removeWpTitle: string
   removeWpAria: (name: string) => string
@@ -282,10 +281,8 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     colBusinessProcess: '业务流程',
     colProcedureDesc: '程序描述',
     colType: '类型',
-    colSampleInfo: '样本信息',
-    colSamplingFeature: '抽样特征',
-    colPopulation: '总体金额',
-    colSamplingDetail: '抽样详情 / 进度',
+    colSamplingMethod: '抽样方法',
+    colNoOfSamples: '样本量',
     colAuditProcedure: '审计程序',
     colWpTemplate: '底稿模板',
     colWorkingPaper: '工作底稿',
@@ -298,10 +295,8 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     s2Note: '系统解析用户上传的 RAAR Report，提取给 Engagement 下已计划的 RM 及对应的 Substantive Procedure，遍历管理链配置的实属性程序定义模板规则。',
     s2Search: '搜索 RMM ID、程序编号、科...',
     s2Empty: '无匹配的实质性程序底稿',
-    viewSampling: '查看',
-    viewSamplingAction: n => `查看抽样详情 · ${n}`,
-    samplingDoneTitle: '抽样已完成，查看抽样详情',
-    samplingProgressAria: '抽样进度',
+    samplingMethodAria: n => `选择「${n}」的抽样方法`,
+    noOfSamplesAria: n => `填写「${n}」的样本量`,
     upload: '上传',
     removeWpTitle: '删除该工作底稿',
     removeWpAria: n => `删除 ${n}`,
@@ -337,10 +332,8 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     colBusinessProcess: 'Business Process',
     colProcedureDesc: 'Procedure Description',
     colType: 'Type',
-    colSampleInfo: 'Sample Info',
-    colSamplingFeature: 'Sampling Feature',
-    colPopulation: 'Population Amount',
-    colSamplingDetail: 'Sampling Detail / Progress',
+    colSamplingMethod: 'Sampling Method',
+    colNoOfSamples: 'No. of samples',
     colAuditProcedure: 'Audit Procedure',
     colWpTemplate: 'WP Template',
     colWorkingPaper: 'Working Paper',
@@ -353,10 +346,8 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     s2Note: 'The system parses the uploaded RAAR Report, extracts the planned RMs and corresponding Substantive Procedures for the engagement, and walks the template rules configured for substantive procedures in the management chain.',
     s2Search: 'Search RMM ID, procedure code...',
     s2Empty: 'No matching substantive procedure work papers',
-    viewSampling: 'View',
-    viewSamplingAction: n => `View sampling detail · ${n}`,
-    samplingDoneTitle: 'Sampling complete — view sampling detail',
-    samplingProgressAria: 'Sampling progress',
+    samplingMethodAria: n => `Sampling method for ${n}`,
+    noOfSamplesAria: n => `No. of samples for ${n}`,
     upload: 'Upload',
     removeWpTitle: 'Remove this working paper',
     removeWpAria: n => `Remove ${n}`,
@@ -393,54 +384,35 @@ const businessProcessLabel = (v: string, lang: Lang) => (lang === 'zh' ? v : BUS
 
 const reviewStatusLabel = (s: SubstWpRow['reviewStatus'], lang: Lang) => (lang === 'zh' ? s : REVIEW_STATUS_EN[s])
 
-// 「抽样详情 / 进度」列只有两种状态：
-//   1) 抽样进行中 —— 显示「已抽/总数」+ 细进度条，不再用圆点
-//   2) 抽样已完成（不涉及抽样，或进度已满）—— 只显示一个可点击的「查看」入口
-const SAMPLE_COUNT_RE = /^\d+\s*\/\s*\d+$/
-
-function isSamplingInProgress(row: SubstWpRow) {
-  return SAMPLE_COUNT_RE.test(row.samplingDetail) && row.progress < 100
+// 「抽样方法 / 样本量」两列：抽样方法为下拉（KSP / MUS / N/A），
+// 选 N/A 时样本量不可填，该单元格直接显示 N/A
+function SamplingMethodCell({ row, onChange }: { row: SubstWpRow; onChange: (method: SamplingMethod) => void }) {
+  const c = useCopy()
+  return (
+    <select
+      className="wps-sampling-select"
+      value={row.samplingMethod}
+      aria-label={c.samplingMethodAria(row.procedureName)}
+      onChange={e => onChange(e.target.value as SamplingMethod)}
+    >
+      {SAMPLING_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+    </select>
+  )
 }
 
-function SampleProgressCell({ row, onView }: { row: SubstWpRow; onView: (row: SubstWpRow) => void }) {
+function SampleCountCell({ row, onChange }: { row: SubstWpRow; onChange: (raw: string) => void }) {
   const c = useCopy()
-  if (!isSamplingInProgress(row)) {
-    return (
-      <button
-        type="button"
-        className="wps-sample-done"
-        title={c.samplingDoneTitle}
-        onClick={() => onView(row)}
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-        {c.viewSampling}
-      </button>
-    )
-  }
-
+  if (row.samplingMethod === 'N/A') return <span className="wps-na-text">N/A</span>
   return (
-    <div className="wps-sample-progress">
-      <div className="wps-sample-progress-top">
-        <span className="wps-sample-count">{row.samplingDetail}</span>
-        <span className="wps-sample-pct">{row.progress}%</span>
-      </div>
-      <div
-        className="wps-sample-bar"
-        role="progressbar"
-        aria-label={c.samplingProgressAria}
-        aria-valuenow={row.progress}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <span
-          className={`wps-sample-bar-fill${row.progress >= 80 ? ' high' : ''}`}
-          style={{ width: `${row.progress}%` }}
-        />
-      </div>
-    </div>
+    <input
+      type="number"
+      min={1}
+      className="wps-sample-count-input"
+      value={row.sampleCount ?? ''}
+      placeholder="—"
+      aria-label={c.noOfSamplesAria(row.procedureName)}
+      onChange={e => onChange(e.target.value)}
+    />
   )
 }
 
@@ -627,11 +599,18 @@ function WorkPaperStation() {
   const [s2Page, setS2Page] = useState(1)
   const [s2PageSize, setS2PageSize] = useState(15)
 
-  const handleAction = (_name: string) => {
-    /* TODO: wire toolbar actions to backend */
+  // 抽样方法：切换为 N/A 时样本量一并置空（该列展示 N/A）
+  const handleSamplingMethodChange = (rowId: string, method: SamplingMethod) => {
+    setS2Data(rows => rows.map(r => (r.id === rowId
+      ? { ...r, samplingMethod: method, sampleCount: method === 'N/A' ? null : r.sampleCount }
+      : r)))
   }
 
-  const handleViewSampling = (row: SubstWpRow) => handleAction(c.viewSamplingAction(row.procedureName))
+  // 样本量：允许留空，留空时按 null 存（展示占位符）
+  const handleSampleCountChange = (rowId: string, raw: string) => {
+    const value = raw.trim() === '' ? null : Math.max(0, Number(raw))
+    setS2Data(rows => rows.map(r => (r.id === rowId ? { ...r, sampleCount: value } : r)))
+  }
 
   // 底稿模版：点击即生成并下载一份样例 Excel
   const handleDownloadTemplate = (row: SubstWpRow) => {
@@ -846,10 +825,8 @@ function WorkPaperStation() {
                     <th>{c.colBusinessProcess}</th>
                     <th>{c.colProcedureDesc}</th>
                     <th>{c.colType}</th>
-                    <th>{c.colSampleInfo}</th>
-                    <th>{c.colSamplingFeature}</th>
-                    <th>{c.colPopulation}</th>
-                    <th>{c.colSamplingDetail}</th>
+                    <th>{c.colSamplingMethod}</th>
+                    <th>{c.colNoOfSamples}</th>
                     <th>{c.colAuditProcedure}</th>
                     <th>{c.colWpTemplate}</th>
                     <th>{c.colWorkingPaper}</th>
@@ -864,11 +841,11 @@ function WorkPaperStation() {
                       <td>{businessProcessLabel(row.businessProcess, lang)}</td>
                       <td className="wp-name-cell">{row.procedureName}</td>
                       <td><span className={`type-badge ${typeClass(row.type)}`}>{row.type}</span></td>
-                      <td><span className="wps-sample-link">{row.sampleInfo} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17 17 7M9 7h8v8" /></svg></span></td>
-                      <td>{row.samplingFeature}</td>
-                      <td className="wps-num">{row.populationAmount}</td>
                       <td>
-                        <SampleProgressCell row={row} onView={handleViewSampling} />
+                        <SamplingMethodCell row={row} onChange={m => handleSamplingMethodChange(row.id, m)} />
+                      </td>
+                      <td className="wps-num">
+                        <SampleCountCell row={row} onChange={raw => handleSampleCountChange(row.id, raw)} />
                       </td>
                       <td>
                         <AuditProcedureCell row={row} onOpen={handleOpenProcedure} />
@@ -921,7 +898,7 @@ function WorkPaperStation() {
                     </tr>
                   ))}
                   {s2Rows.length === 0 && (
-                    <tr><td colSpan={13} className="wps-empty-cell">{c.s2Empty}</td></tr>
+                    <tr><td colSpan={11} className="wps-empty-cell">{c.s2Empty}</td></tr>
                   )}
                 </tbody>
               </table>

@@ -397,16 +397,6 @@
 .type-badge.type-toe { background: #dbeafe; color: #1e40af; }
 .type-badge.type-tod { background: #cffafe; color: #0e7490; }
 
-/* Sample link */
-.wps-sample-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  color: #2563eb;
-  font-size: 11px;
-  cursor: pointer;
-}
-
 /* Numeric cell */
 .wps-num {
   font-variant-numeric: tabular-nums;
@@ -670,7 +660,7 @@
 }
 
 /* Wider substantive table for horizontal scroll */
-.wps-table.subst-table { min-width: 1560px; }
+.wps-table.subst-table { min-width: 1320px; }
 
 /* ===== KPI Strip (screenshot-style metrics) ===== */
 .wps-kpi-strip {
@@ -763,78 +753,57 @@
 .wps-section-body .wps-table-wrap { border: none; }
 .wps-section-body .wps-table { margin-bottom: 0; }
 
-/* ===== 抽样详情 / 进度 单元格（只有两态） ===== */
+/* ===== 抽样方法 / 样本量 两列 ===== */
 
-/* 态 1：抽样进行中 —— 取样计数 + 细进度条 */
-.wps-sample-progress {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 116px;
-}
-.wps-sample-progress-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  line-height: 1;
-}
-.wps-sample-count {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--text-secondary, #64748b);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.2px;
-}
-.wps-sample-pct {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--primary-600, #1e40af);
-  font-variant-numeric: tabular-nums;
-}
-.wps-sample-bar {
-  height: 5px;
-  border-radius: 999px;
-  background: #e8edf5;
-  overflow: hidden;
-}
-.wps-sample-bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #1e40af 0%, #3b82f6 100%);
-  transition: width var(--transition-base, 0.3s ease);
-}
-/* 接近完成时切换为绿色，便于快速扫读 */
-.wps-sample-bar-fill.high {
-  background: linear-gradient(90deg, #047857 0%, #10b981 100%);
-}
-
-/* 态 2：抽样已完成 —— 只保留一个可点击的「查看」入口 */
-.wps-sample-done {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 10px;
-  border: 1px solid #dbe4f0;
-  background: #f8fafc;
-  color: var(--primary-600, #1e40af);
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 600;
+/* 抽样方法：下拉选择 KSP / MUS / N/A */
+.wps-sampling-select {
+  min-width: 74px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 4px);
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: inherit;
   cursor: pointer;
-  transition: all var(--transition-fast, 0.15s ease);
+  transition: border-color var(--transition-fast, 0.15s ease), box-shadow var(--transition-fast, 0.15s ease);
 }
-.wps-sample-done svg { flex: none; }
-.wps-sample-done:hover {
-  background: var(--primary-600, #1e40af);
+.wps-sampling-select:hover { border-color: var(--primary-500, #1e40af); }
+.wps-sampling-select:focus {
+  outline: none;
   border-color: var(--primary-600, #1e40af);
-  color: #fff;
-  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.28);
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.14);
 }
-.wps-sample-done:active { transform: translateY(1px); }
-.wps-sample-done:focus-visible { outline: 2px solid #93c5fd; outline-offset: 1px; }
+
+/* 样本量：数字输入；抽样方法为 N/A 时不显示输入框 */
+.wps-sample-count-input {
+  width: 68px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 4px);
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--transition-fast, 0.15s ease), box-shadow var(--transition-fast, 0.15s ease);
+}
+.wps-sample-count-input::placeholder { color: var(--text-muted); font-weight: 400; }
+.wps-sample-count-input:hover { border-color: var(--primary-500, #1e40af); }
+.wps-sample-count-input:focus {
+  outline: none;
+  border-color: var(--primary-600, #1e40af);
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.14);
+}
+
+/* 抽样方法选 N/A 时样本量展示的 N/A */
+.wps-na-text {
+  display: inline-block;
+  color: var(--text-muted);
+  font-weight: 600;
+}
 
 /* ===== Pagination ===== */
 .wps-pagination {
