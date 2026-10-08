@@ -354,7 +354,7 @@ function EngagementHub() {
       key: 'data',
       path: 'data',
       accent: 'purple',
-      title: lang === 'zh' ? '数据处理工程师' : 'Data Processing Engineer',
+      title: lang === 'zh' ? '数据处理引擎' : 'Data Processing Engine',
       desc: lang === 'zh'
         ? '财务数据采集、清洗、转换与分析处理中心，支持多数据源接入'
         : 'Financial data collection, cleaning, transformation and analysis center, supporting multi-source data access',

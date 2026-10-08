@@ -1,28 +1,37 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { ChangeEvent } from 'react'
 import { useParams } from 'react-router-dom'
+import { downloadSampleWorkPaperTemplate } from '../utils/sampleExcel'
 import './WorkPaperStation.css'
 
 // ===== Data Types =====
 interface WpRow {
   id: string
   name: string
+  category: string
   requiredType: 'Required' | 'Highly Rec.'
   linkedKcwActivity: string
-  wpTemplates: string[]
   status: 'Not Selected' | 'Selected'
 }
 
 interface SubstWpRow {
   id: string
-  name: string
-  procedureId: string
-  subType: string
+  businessProcess: string
+  procedureName: string
+  type: 'WT' | 'TOE' | 'TOD' | 'SAP'
+  sampleInfo: string
+  samplingFeature: string
+  populationAmount: string
+  samplingDetail: string
+  progress: number
+  wpTemplate: string
+  workingPaper: string
+  reviewStatus: '未复核' | '复核中' | '已复核'
+  uploader: string
   rmId: string
-  mesp: string
-  required: boolean
   kcwActivity: string
-  wpTemplates: string[]
-  status: 'Not Selected' | 'Selected'
+  preChecked: boolean
+  actions: string[]
 }
 
 // KCW File type — mirrors EngagementHub's KCwFile for cross-page consistency
@@ -35,27 +44,47 @@ interface KcwFileOption {
 
 // ===== Demo Data =====
 const standardWpRows: WpRow[] = [
-  { id: 's1', name: 'D&A Routine Output', requiredType: 'Required', linkedKcwActivity: 'kcw_act_778095', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 's2', name: 'Independent Workpaper on Fees-related Requirements', requiredType: 'Required', linkedKcwActivity: 'kcw_act_82144d', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 's3', name: 'Tax Provision Review – Specialist WP', requiredType: 'Required', linkedKcwActivity: 'kcw_act_599xe5', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-]
-
-const optionalWpRows: WpRow[] = [
-  { id: 'o1', name: 'Other Payables – Vouching', requiredType: 'Highly Rec.', linkedKcwActivity: 'kcw_act_cfdtbo', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  { id: 's1', name: 'D&A Routine Output', category: 'Other', requiredType: 'Required', linkedKcwActivity: 'kcw_act_778095', status: 'Not Selected' },
+  { id: 's2', name: 'Independent Workpaper on Fees-related Requirements', category: 'Independent', requiredType: 'Required', linkedKcwActivity: 'kcw_act_82144d', status: 'Not Selected' },
+  { id: 's3', name: 'Tax Provision Review – Specialist WP', category: 'Specialists', requiredType: 'Required', linkedKcwActivity: 'kcw_act_599xe5', status: 'Not Selected' },
+  { id: 'o1', name: 'Other Payables – Vouching', category: 'General Purpose', requiredType: 'Highly Rec.', linkedKcwActivity: 'kcw_act_cfdtbo', status: 'Not Selected' },
 ]
 
 const substWpRows: SubstWpRow[] = [
-  { id: 'sub1', name: 'Additional Personal Independence Requirements for CSA Audit Engagements', procedureId: 'PROC_e56af2', subType: 'General Purpose', rmId: 'RM_e56af2', mesp: '', required: true, kcwActivity: 'kcw_act_342b0', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 'sub2', name: 'Group Audit Instructions – Component Auditors', procedureId: 'PROC_c6633b', subType: 'General Purpose', rmId: 'RM_c6633b', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_4c38e', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 'sub3', name: 'Independent Workpaper on Fees-related Requirements', procedureId: 'PROC_89bf72', subType: 'General Purpose', rmId: 'RM_89bf72', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_82144d', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 'sub4', name: 'Inventory Work Paper – Existence & Valuation', procedureId: 'PROC_44159f', subType: 'General Purpose', rmId: 'RM_44159f', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_47000', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 'sub5', name: 'Tax Provision Review – Specialist WP', procedureId: 'PROC_21f971', subType: 'General Purpose', rmId: 'RM_21f971', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_599xe5', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 'sub6', name: 'Trade Receivables – Circularisation', procedureId: 'PROC_c73f0e5', subType: 'General Purpose', rmId: 'RM_c73f0e5', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_63e9e9', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
-  { id: 'sub7', name: 'wendy001', procedureId: 'PROC_e86a28', subType: 'General Purpose', rmId: 'RM_e86a38', mesp: 'Yes', required: true, kcwActivity: 'kcw_act_3bH60', wpTemplates: ['CN', 'EN', 'BL'], status: 'Not Selected' },
+  // 财务报告
+  { id: 'r01', businessProcess: '财务报告', procedureName: 'Additional Personal Independence Requirements for CSA Audit Engagements', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Indep_WP.docx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_e56af2', kcwActivity: 'kcw_act_342b0', preChecked: true, actions: ['AFP'] },
+  { id: 'r02', businessProcess: '财务报告', procedureName: 'Group Audit Instructions – Component Auditors', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Component', populationAmount: '—', samplingDetail: '12/64', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_c6633b', kcwActivity: 'kcw_act_4c38e', preChecked: true, actions: ['OAK'] },
+  { id: 'r03', businessProcess: '财务报告', procedureName: 'Financial Statement Close – Substantive Analytical Procedures', type: 'SAP', sampleInfo: 'sample', samplingFeature: 'Analytical', populationAmount: '2,800,000.00', samplingDetail: '查看', progress: 75, wpTemplate: 'Wp Temp', workingPaper: 'FS_Close.xlsx', reviewStatus: '复核中', uploader: 'Chen (SZ/CP2)', rmId: 'RM_a12c44', kcwActivity: 'kcw_act_778095', preChecked: true, actions: ['OA Review'] },
+  // 诉讼
+  { id: 'r04', businessProcess: '诉讼', procedureName: 'Litigation & Contingencies – Legal Letter', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Legal Letter', populationAmount: '—', samplingDetail: '8/20', progress: 40, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Legal)', rmId: 'RM_l98f21', kcwActivity: 'kcw_act_55a21', preChecked: false, actions: ['OA Confirm'] },
+  { id: 'r05', businessProcess: '诉讼', procedureName: 'Contingent Liabilities Assessment', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 30, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Legal)', rmId: 'RM_l98f22', kcwActivity: 'kcw_act_55a22', preChecked: false, actions: ['OA Review'] },
+  // 销售
+  { id: 'r06', businessProcess: '销售', procedureName: 'Revenue Recognition – Cut-off Testing', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Invoice', populationAmount: '75,000.00', samplingDetail: '38/40', progress: 50, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_e86a38', kcwActivity: 'kcw_act_3bH60', preChecked: false, actions: ['OA Vouching'] },
+  { id: 'r07', businessProcess: '销售', procedureName: 'Trade Receivables – Circularisation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Confirmation', populationAmount: '58,200.00', samplingDetail: '56/62', progress: 90, wpTemplate: 'Wp Temp', workingPaper: 'AR_Circ.xlsx', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_c73f0e5', kcwActivity: 'kcw_act_63e9e9', preChecked: true, actions: ['OA Confirm'] },
+  { id: 'r08', businessProcess: '销售', procedureName: 'Sales Volume & Allowance (Bad Debt)', type: 'SAP', sampleInfo: 'sample', samplingFeature: 'Model', populationAmount: '120,000.00', samplingDetail: '查看', progress: 65, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_d47b01', kcwActivity: 'kcw_act_77c10', preChecked: false, actions: ['OA Model'] },
+  // 采购
+  { id: 'r09', businessProcess: '采购', procedureName: 'Procurement – Vendor Confirmation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Vendor', populationAmount: '45,000.00', samplingDetail: '21/30', progress: 70, wpTemplate: 'Wp Temp', workingPaper: 'Vendor_Conf.xlsx', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_p22a90', kcwActivity: 'kcw_act_88d22', preChecked: true, actions: ['OA Confirm'] },
+  { id: 'r10', businessProcess: '采购', procedureName: 'Purchase Price Variance', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '33,000.00', samplingDetail: '查看', progress: 55, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_p22a91', kcwActivity: 'kcw_act_88d23', preChecked: false, actions: ['OA Review'] },
+  // 存货与成本
+  { id: 'r11', businessProcess: '存货与成本', procedureName: 'Inventory Work Paper – Existence & Valuation', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Invoice', populationAmount: '100,000.00', samplingDetail: '25/25', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Inv_WP.xlsx', reviewStatus: '已复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_44159f', kcwActivity: 'kcw_act_47000', preChecked: true, actions: ['OA Vouching'] },
+  { id: 'r12', businessProcess: '存货与成本', procedureName: 'Cost of Sales – Roll-forward', type: 'SAP', sampleInfo: 'sample', samplingFeature: 'Roll-forward', populationAmount: '210,000.00', samplingDetail: '查看', progress: 80, wpTemplate: 'Wp Temp', workingPaper: 'COS_RF.xlsx', reviewStatus: '复核中', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_4415a0', kcwActivity: 'kcw_act_47001', preChecked: true, actions: ['OA Model'] },
+  { id: 'r13', businessProcess: '存货与成本', procedureName: 'Inventory NRV Impairment', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '18,000.00', samplingDetail: '查看', progress: 45, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Chen (SZ/CP2)', rmId: 'RM_4415a1', kcwActivity: 'kcw_act_47002', preChecked: false, actions: ['OA Review'] },
+  // 固定资产与在建工程
+  { id: 'r14', businessProcess: '固定资产与在建工程', procedureName: 'PPE – Addition & Depreciation', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Tag', populationAmount: '320,000.00', samplingDetail: '40/40', progress: 95, wpTemplate: 'Wp Temp', workingPaper: 'FA_Tag.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_fa001', kcwActivity: 'kcw_act_99001', preChecked: true, actions: ['OA Vouching'] },
+  { id: 'r15', businessProcess: '固定资产与在建工程', procedureName: 'Construction in Progress – Capitalisation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Site Visit', populationAmount: '150,000.00', samplingDetail: '9/15', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_fa002', kcwActivity: 'kcw_act_99002', preChecked: true, actions: ['OA Site'] },
+  { id: 'r16', businessProcess: '固定资产与在建工程', procedureName: 'Impairment of Long-lived Assets', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '60,000.00', samplingDetail: '查看', progress: 35, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_fa003', kcwActivity: 'kcw_act_99003', preChecked: false, actions: ['OA Review'] },
+  // 税务
+  { id: 'r17', businessProcess: '税务', procedureName: 'Tax Provision Review – Specialist WP', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 40, wpTemplate: 'Wp Temp', workingPaper: 'Tax_Prov.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_21f971', kcwActivity: 'kcw_act_599xe5', preChecked: true, actions: ['AFP'] },
+  { id: 'r18', businessProcess: '税务', procedureName: 'Transfer Pricing Documentation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Doc Review', populationAmount: '90,000.00', samplingDetail: '14/18', progress: 50, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '未复核', uploader: 'Wang (BJ/Tax)', rmId: 'RM_tx002', kcwActivity: 'kcw_act_599xe6', preChecked: false, actions: ['OA Review'] },
+  // 人力资源
+  { id: 'r19', businessProcess: '人力资源', procedureName: 'Payroll – Completeness', type: 'TOD', sampleInfo: 'sample', samplingFeature: 'Payroll', populationAmount: '75,000.00', samplingDetail: '30/30', progress: 85, wpTemplate: 'Wp Temp', workingPaper: 'Payroll.xlsx', reviewStatus: '复核中', uploader: 'Hu, Freya (BJ/CP3)', rmId: 'RM_hr001', kcwActivity: 'kcw_act_66100', preChecked: true, actions: ['OA Vouching'] },
+  { id: 'r20', businessProcess: '人力资源', procedureName: 'Independent Workpaper on Fees-related Requirements', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 80, wpTemplate: 'Wp Temp', workingPaper: 'Fees_WP.xlsx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_89bf72', kcwActivity: 'kcw_act_82144d', preChecked: true, actions: ['AFP'] },
+  // 资金与融资
+  { id: 'r21', businessProcess: '资金与融资', procedureName: 'Bank Balances – Confirmation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Confirmation', populationAmount: '500,000.00', samplingDetail: '60/60', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Bank_Conf.xlsx', reviewStatus: '已复核', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr001', kcwActivity: 'kcw_act_77001', preChecked: true, actions: ['OA Confirm'] },
+  { id: 'r22', businessProcess: '资金与融资', procedureName: 'Borrowings – Existence & Obligations', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '280,000.00', samplingDetail: '查看', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr002', kcwActivity: 'kcw_act_77002', preChecked: true, actions: ['OA Review'] },
 ]
 
 // KCW File demo data — mirrors EngagementHub's KCW File list.
-// In production this would be fetched by engagementId from API.
 const DEMO_KCW_FILES_BY_ENGAGEMENT: Record<string, KcwFileOption[]> = {
   default: [
     { id: 'KC001', name: '241231_Stat_RF_Aurora_Planning', status: 'completed', type: 'Planning' },
@@ -66,25 +95,286 @@ const DEMO_KCW_FILES_BY_ENGAGEMENT: Record<string, KcwFileOption[]> = {
   ],
 }
 
+
+function WpsToolbar({
+  search,
+  searchPlaceholder,
+  onSearch,
+}: {
+  search: string
+  searchPlaceholder: string
+  onSearch: (v: string) => void
+}) {
+  return (
+    <div className="wps-toolbar">
+      <div className="wps-search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+        <input
+          className="wps-search-input"
+          placeholder={searchPlaceholder}
+          value={search}
+          onChange={e => onSearch(e.target.value)}
+        />
+      </div>
+    </div>
+  )
+}
+
+// 「抽样详情 / 进度」列只有两种状态：
+//   1) 抽样进行中 —— 显示「已抽/总数」+ 细进度条，不再用圆点
+//   2) 抽样已完成（不涉及抽样，或进度已满）—— 只显示一个可点击的「查看」入口
+const SAMPLE_COUNT_RE = /^\d+\s*\/\s*\d+$/
+
+function isSamplingInProgress(row: SubstWpRow) {
+  return SAMPLE_COUNT_RE.test(row.samplingDetail) && row.progress < 100
+}
+
+function SampleProgressCell({ row, onView }: { row: SubstWpRow; onView: (row: SubstWpRow) => void }) {
+  if (!isSamplingInProgress(row)) {
+    return (
+      <button
+        type="button"
+        className="wps-sample-done"
+        title="抽样已完成，查看抽样详情"
+        onClick={() => onView(row)}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        查看
+      </button>
+    )
+  }
+
+  return (
+    <div className="wps-sample-progress">
+      <div className="wps-sample-progress-top">
+        <span className="wps-sample-count">{row.samplingDetail}</span>
+        <span className="wps-sample-pct">{row.progress}%</span>
+      </div>
+      <div
+        className="wps-sample-bar"
+        role="progressbar"
+        aria-label="抽样进度"
+        aria-valuenow={row.progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <span
+          className={`wps-sample-bar-fill${row.progress >= 80 ? ' high' : ''}`}
+          style={{ width: `${row.progress}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function reviewClass(s: SubstWpRow['reviewStatus']) {
+  if (s === '已复核') return 'done'
+  if (s === '复核中') return 'doing'
+  return 'todo'
+}
+
+function typeClass(t: SubstWpRow['type']) {
+  return `type-${t.toLowerCase()}`
+}
+
+function WpsKpiStrip({ total, uploaded, prechecked, reviewed }: { total: number; uploaded: number; prechecked: number; reviewed: number }) {
+  const uploadRate = total ? Math.round((uploaded / total) * 100) : 0
+  const precheckRate = total ? Math.round((prechecked / total) * 100) : 0
+  const reviewRate = total ? Math.round((reviewed / total) * 100) : 0
+  return (
+    <div className="wps-kpi-strip">
+      <div className="wps-kpi wps-kpi-primary">
+        <div className="wps-kpi-label">实质性程序总数</div>
+        <div className="wps-kpi-num">{total}<span>Procedures</span></div>
+      </div>
+      <div className="wps-kpi">
+        <div className="wps-kpi-label">底稿上传率 <b>{uploadRate}%</b> <span>已上传 {uploaded}/{total}</span></div>
+        <div className="wps-kpi-bar"><div className="wps-kpi-bar-fill" style={{ width: `${uploadRate}%` }} /></div>
+      </div>
+      <div className="wps-kpi">
+        <div className="wps-kpi-label">底稿预检率 <b>{precheckRate}%</b> <span>PreCheck 已通过 {prechecked}</span></div>
+        <div className="wps-kpi-bar"><div className="wps-kpi-bar-fill orange" style={{ width: `${precheckRate}%` }} /></div>
+      </div>
+      <div className="wps-kpi">
+        <div className="wps-kpi-label">底稿复核通过率 <b>{reviewRate}%</b> <span>已通过 {reviewed} · 未通过 {total - reviewed}</span></div>
+        <div className="wps-kpi-bar"><div className="wps-kpi-bar-fill green" style={{ width: `${reviewRate}%` }} /></div>
+      </div>
+      <div className="wps-kpi">
+        <div className="wps-kpi-label">重要性水平</div>
+        <div className="wps-kpi-num small">CNY 12,600,000</div>
+        <div className="wps-kpi-sub">实际执行重要性水平 CNY 9,450,000<br />最小阈值 CNY 630,000</div>
+      </div>
+    </div>
+  )
+}
+
+function WpsPagination({ total, page, pageSize, onPage, onPageSize }: {
+  total: number; page: number; pageSize: number; onPage: (p: number) => void; onPageSize: (s: number) => void
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(total, page * pageSize)
+  return (
+    <div className="wps-pagination">
+      <span className="wps-page-info">显示第 {start} 至 {end} 条，共 {total} 条实质性程序记录</span>
+      <div className="wps-page-right">
+        <span>每页</span>
+        <select className="wps-page-size" value={pageSize} onChange={e => onPageSize(Number(e.target.value))}>
+          <option value={15}>15 条</option>
+          <option value={10}>10 条</option>
+          <option value={20}>20 条</option>
+        </select>
+        <div className="wps-page-nav">
+          <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}>‹</button>
+          <span>{page} / {totalPages}</span>
+          <button type="button" disabled={page >= totalPages} onClick={() => onPage(page + 1)}>›</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===== 文件图标 =====
+// Excel：绿色圆角方块 + 白色 X，贴近 Excel 真实标识
+function ExcelIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="2.5" y="2" width="19" height="20" rx="3.5" fill="#107C41" />
+      <path
+        d="M9 8.2h2.35l1.65 2.7 1.65-2.7H17l-2.85 3.8L17.15 16h-2.35L13.1 13.3 11.2 16H8.85l2.95-3.9z"
+        fill="#fff"
+      />
+    </svg>
+  )
+}
+
+// Word：蓝色圆角方块 + 白色 W
+function WordIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="2.5" y="2" width="19" height="20" rx="3.5" fill="#2B579A" />
+      <text x="12" y="16.6" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#fff" fontFamily="'Segoe UI', Arial, sans-serif">
+        W
+      </text>
+    </svg>
+  )
+}
+
+// 其他格式：通用文档图标
+function DocIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M6 2h7.5L19 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#64748b" />
+      <path d="M13.5 2 19 7.5h-4.5a1 1 0 0 1-1-1z" fill="#fff" opacity=".45" />
+    </svg>
+  )
+}
+
+function fileKind(name: string) {
+  const ext = name.toLowerCase().split('.').pop() || ''
+  if (['xlsx', 'xls', 'xlsm', 'csv'].includes(ext)) return 'excel'
+  if (['docx', 'doc'].includes(ext)) return 'word'
+  return 'other'
+}
+
+function FileTypeIcon({ name }: { name: string }) {
+  const kind = fileKind(name)
+  if (kind === 'excel') return <ExcelIcon />
+  if (kind === 'word') return <WordIcon />
+  return <DocIcon />
+}
+
 function WorkPaperStation() {
   const { engagementId } = useParams<{ clientId: string; engagementId: string }>()
 
-  // Resolve KCW files for current engagement (demo: falls back to default list)
   const kcwFileList: KcwFileOption[] = (engagementId && DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId])
     ? DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId]
     : DEMO_KCW_FILES_BY_ENGAGEMENT.default
 
   const [selectedKcw, setSelectedKcw] = useState(kcwFileList[0]?.id || '')
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    'std-other': true,
-    'std-indep': true,
-    'std-spec': true,
-    'opt-general': true,
+
+  // 第 2 节表格数据：工作底稿的上传 / 删除都维护在本地状态里
+  const [s2Data, setS2Data] = useState<SubstWpRow[]>(substWpRows)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const pendingRowRef = useRef<string | null>(null)
+
+  // KPI inputs (derived from substantive procedure rows)
+  const wpTotal = s2Data.length
+  const wpUploaded = s2Data.filter(r => r.workingPaper).length
+  const wpPrechecked = s2Data.filter(r => r.preChecked).length
+  const wpReviewed = s2Data.filter(r => r.reviewStatus === '已复核').length
+
+  // Section 1 (Standard WP Templates) search state
+  const [s1Search, setS1Search] = useState('')
+
+  // Section 2 (Substantive Procedure WP) search + pagination state
+  const [s2Search, setS2Search] = useState('')
+  const [s2Page, setS2Page] = useState(1)
+  const [s2PageSize, setS2PageSize] = useState(15)
+
+  const handleAction = (_name: string) => {
+    /* TODO: wire toolbar actions to backend */
+  }
+
+  const handleViewSampling = (row: SubstWpRow) => handleAction(`查看抽样详情 · ${row.procedureName}`)
+
+  // 底稿模版：点击即生成并下载一份样例 Excel
+  const handleDownloadTemplate = (row: SubstWpRow) => {
+    downloadSampleWorkPaperTemplate({
+      templateName: row.wpTemplate,
+      procedureName: row.procedureName,
+      rmId: row.rmId,
+      kcwActivity: row.kcwActivity,
+      procedureType: row.type,
+      businessProcess: row.businessProcess,
+    })
+  }
+
+  // 工作底稿：上传（借用同一个隐藏 input，记录当前操作的行）
+  const handlePickWorkingPaper = (rowId: string) => {
+    pendingRowRef.current = rowId
+    fileInputRef.current?.click()
+  }
+
+  const handleWorkingPaperSelected = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    const rowId = pendingRowRef.current
+    if (file && rowId) {
+      setS2Data(rows => rows.map(r => (r.id === rowId ? { ...r, workingPaper: file.name } : r)))
+    }
+    e.target.value = '' // 允许重复选择同一个文件
+    pendingRowRef.current = null
+  }
+
+  // 工作底稿：删除已上传的文件
+  const handleRemoveWorkingPaper = (rowId: string) => {
+    setS2Data(rows => rows.map(r => (r.id === rowId ? { ...r, workingPaper: '' } : r)))
+  }
+
+  // Reset page when search/pagesize changes
+  useEffect(() => { setS2Page(1) }, [s2Search, s2PageSize])
+
+  // Section 1 filtered by search
+  const s1Filtered = standardWpRows.filter(r => {
+    const q = s1Search.trim().toLowerCase()
+    return !q || r.name.toLowerCase().includes(q) || r.linkedKcwActivity.toLowerCase().includes(q) || r.category.toLowerCase().includes(q)
   })
 
-  const toggleGroup = (key: string) => {
-    setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }))
-  }
+  // Section 2 filtered by search
+  const s2Filtered = s2Data.filter(r => {
+    const q = s2Search.trim().toLowerCase()
+    return !q ||
+      r.businessProcess.toLowerCase().includes(q) ||
+      r.procedureName.toLowerCase().includes(q) ||
+      r.rmId.toLowerCase().includes(q) ||
+      r.kcwActivity.toLowerCase().includes(q)
+  })
+  const s2PageCount = Math.max(1, Math.ceil(s2Filtered.length / s2PageSize))
+  const s2SafePage = Math.min(s2Page, s2PageCount)
+  const s2Rows = s2Filtered.slice((s2SafePage - 1) * s2PageSize, s2SafePage * s2PageSize)
 
   return (
     <div className="wps-page animate-fade-in">
@@ -101,35 +391,16 @@ function WorkPaperStation() {
         <span className="wps-info-right">Engagement: 1299419 · Client: AAP Demo Co., Ltd.</span>
       </div>
 
-      {/* Stats Cards */}
-      <div className="wps-stats-row">
-        <div className="wps-stat-card">
-          <div className="wps-stat-label">Work Paper Templates (Transferred / Total)</div>
-          <div className="wps-stat-num">4<span className="wps-stat-unit">WP</span></div>
-          <div className="wps-stat-sub">Standard WP Templates · 自动按 Engagement 属性过滤</div>
-        </div>
-        <div className="wps-stat-card">
-          <div className="wps-stat-label">Work Paper from Procedures (Matched)</div>
-          <div className="wps-stat-num">7<span className="wps-stat-unit">WP</span></div>
-          <div className="wps-stat-sub">RM → Procedure 匹配 → 子系统列表</div>
-        </div>
-        <div className="wps-stat-card">
-          <div className="wps-stat-label">Total Progress (Synced)</div>
-          <div className="wps-stat-num">5<span className="wps-stat-unit">WP</span></div>
-          <div className="wps-stat-sub">子案例同步估计</div>
-        </div>
-      </div>
+      {/* KPI Strip (new, screenshot-style) */}
+      <WpsKpiStrip total={wpTotal} uploaded={wpUploaded} prechecked={wpPrechecked} reviewed={wpReviewed} />
 
-      {/* Section 1: Standard Work Paper Templates */}
+      {/* ============ Section 1: Standard Work Paper Templates ============ */}
       <div className="wps-section">
         <div className="wps-section-header">
           <h2 className="wps-section-title">
             <span className="wps-section-num">1</span> Standard Work Paper Templates
             <span className="wps-section-meta">(M1F3 - Filter by Engagement Nature)</span>
           </h2>
-          <button className="wps-run-btn" onClick={() => {}}>
-            <i className="fas fa-play"></i> Run Match
-          </button>
         </div>
 
         {/* Select KCW file row — dynamically populated from current Engagement's KCW Files */}
@@ -150,223 +421,169 @@ function WorkPaperStation() {
           })()}
         </div>
 
-        {/* Info note */}
         <div className="wps-info-note">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
           系统将筛选出 Kcw Opinion Profile 中适用的审计计准则 / 工作底稿 / 实体类型/是否那个逻辑，与您管理范围的 Engagement 属性匹配则展示关联匹配。
         </div>
 
-        {/* REQUIRED Group */}
-        <div className="wps-group">
-          <div className="wps-group-header">
-            <span className="wps-group-badge required">REQUIRED</span>
-            <span className="wps-group-desc">Required Work Papers · 3 条</span>
-          </div>
+        <WpsToolbar
+          search={s1Search}
+          searchPlaceholder="搜索底稿名称、KCw Activity"
+          onSearch={setS1Search}
+        />
 
-          {/* 1. Other */}
-          <div className="wps-subgroup">
-            <div className="wps-subgroup-header" onClick={() => toggleGroup('std-other')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ transform: expandedGroups['std-other'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              <span className="wps-subgroup-title">1. Other</span>
-              <span className="wps-subgroup-count">{standardWpRows.filter(r => r.id.startsWith('s')).length} / 1</span>
-            </div>
-            {expandedGroups['std-other'] && (
-              <table className="wps-table">
-                <thead>
-                  <tr>
-                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standardWpRows.filter(r => r.id === 's1').map(row => (
-                    <tr key={row.id}>
-                      <td className="wp-name-cell">{row.name}</td>
-                      <td><span className={`req-badge ${row.requiredType === 'Required' ? 'required' : 'highly-rec'}`}>{row.requiredType}</span></td>
-                      <td>{row.linkedKcwActivity}</td>
-                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
-                      <td><span className="status-dot not-selected"></span> Not Selected</td>
-                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* 2. Independent Work Papers */}
-          <div className="wps-subgroup">
-            <div className="wps-subgroup-header" onClick={() => toggleGroup('std-indep')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ transform: expandedGroups['std-indep'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              <span className="wps-subgroup-title">2.2. Independent Work Papers</span>
-              <span className="wps-subgroup-count">{standardWpRows.filter(r => r.id === 's2').length} / 1</span>
-            </div>
-            {expandedGroups['std-indep'] && (
-              <table className="wps-table">
-                <thead>
-                  <tr>
-                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standardWpRows.filter(r => r.id === 's2').map(row => (
-                    <tr key={row.id}>
-                      <td className="wp-name-cell">{row.name}</td>
-                      <td><span className="req-badge required">Required</span></td>
-                      <td>{row.linkedKcwActivity}</td>
-                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
-                      <td><span className="status-dot not-selected"></span> Not Selected</td>
-                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* 3. Specialists */}
-          <div className="wps-subgroup">
-            <div className="wps-subgroup-header" onClick={() => toggleGroup('std-spec')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ transform: expandedGroups['std-spec'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              <span className="wps-subgroup-title">3.3. Specialists and Specific Team Members</span>
-              <span className="wps-subgroup-count">{standardWpRows.filter(r => r.id === 's3').length} / 1</span>
-            </div>
-            {expandedGroups['std-spec'] && (
-              <table className="wps-table">
-                <thead>
-                  <tr>
-                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standardWpRows.filter(r => r.id === 's3').map(row => (
-                    <tr key={row.id}>
-                      <td className="wp-name-cell">{row.name}</td>
-                      <td><span className="req-badge required">Required</span></td>
-                      <td>{row.linkedKcwActivity}</td>
-                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
-                      <td><span className="status-dot not-selected"></span> Not Selected</td>
-                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-        {/* OPTIONAL Group */}
-        <div className="wps-group">
-          <div className="wps-group-header">
-            <span className="wps-group-badge optional">OPTIONAL</span>
-            <span className="wps-group-desc">Optional Work Papers · Highly Recommended · Optional 1 条</span>
-          </div>
-
-          <div className="wps-subgroup">
-            <div className="wps-subgroup-header" onClick={() => toggleGroup('opt-general')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ transform: expandedGroups['opt-general'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              <span className="wps-subgroup-title">1.1. General Purpose Work Papers</span>
-              <span className="wps-subgroup-count">{optionalWpRows.length} / 1</span>
-            </div>
-            {expandedGroups['opt-general'] && (
-              <table className="wps-table">
-                <thead>
-                  <tr>
-                    <th>底稿名称</th><th>必要级别</th><th>关联 KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {optionalWpRows.map(row => (
-                    <tr key={row.id}>
-                      <td className="wp-name-cell">{row.name}</td>
-                      <td><span className="req-badge highly-rec">Highly Rec.</span></td>
-                      <td>{row.linkedKcwActivity}</td>
-                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
-                      <td><span className="status-dot not-selected"></span> Not Selected</td>
-                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+        <div className="wps-table-wrap">
+          <table className="wps-table wps-table-sm">
+            <thead>
+              <tr>
+                <th>底稿名称</th>
+                <th>类别</th>
+                <th>必要级别</th>
+                <th>关联 KCw Activity</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s1Filtered.map(row => (
+                <tr key={row.id}>
+                  <td className="wp-name-cell">{row.name}</td>
+                  <td>{row.category}</td>
+                  <td><span className={`req-badge ${row.requiredType === 'Required' ? 'required' : 'highly-rec'}`}>{row.requiredType}</span></td>
+                  <td>{row.linkedKcwActivity}</td>
+                  <td><span className="status-dot not-selected"></span> Not Selected</td>
+                </tr>
+              ))}
+              {s1Filtered.length === 0 && (
+                <tr><td colSpan={5} className="wps-empty-cell">无匹配的底稿模板</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Section 2: Substantive Procedure Work Papers */}
+      {/* ============ Section 2: Substantive Procedure Work Papers ============ */}
       <div className="wps-section">
         <div className="wps-section-header">
           <h2 className="wps-section-title">
             <span className="wps-section-num">2</span> Substantive Procedure Work Papers
             <span className="wps-section-meta">(M1F4 - Match WP Templates to Substantive Procedures)</span>
           </h2>
-          <button className="wps-run-btn" onClick={() => {}}>
-            <i className="fas fa-play"></i> Run Match
-          </button>
         </div>
 
         <div className="wps-info-note">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
           系统解析用户上传的 RAAR Report，提取给 Engagement 下已计划的 RM 及对应的 Substantive Procedure，遍历管理链配置的实属性程序定义模板规则。
         </div>
 
-        <div className="wps-group">
-          <div className="wps-group-header">
-            <span className="wps-group-badge required">REQUIRED</span>
-            <span className="wps-group-desc">Required · 7 条</span>
-          </div>
+        <div className="wps-section-body">
+          <WpsToolbar
+              search={s2Search}
+              searchPlaceholder="搜索 RMM ID、程序编号、科..."
+              onSearch={setS2Search}
+            />
 
-          <div className="wps-subgroup">
-            <div className="wps-subgroup-header" onClick={() => toggleGroup('subst')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ transform: expandedGroups['subst'] ? '' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              <span className="wps-subgroup-title">Substantive Procedure Work Papers</span>
-              <span className="wps-subgroup-count">{substWpRows.length} / 7</span>
-            </div>
-            {expandedGroups['subst'] && (
-              <div className="wps-table-wrap">
+            <div className="wps-table-wrap">
               <table className="wps-table subst-table">
                 <thead>
                   <tr>
-                    <th>底稿名称</th><th>Procedure ID</th><th>子类型</th><th>RM ID</th><th>MESP</th><th>必要级别</th><th>KCw Activity</th><th>WP 模版</th><th>状态</th><th>迁移操作</th>
+                    <th>业务流程</th>
+                    <th>程序描述</th>
+                    <th>类型</th>
+                    <th>样本信息</th>
+                    <th>抽样特征</th>
+                    <th>总体金额</th>
+                    <th>抽样详情 / 进度</th>
+                    <th>底稿模板</th>
+                    <th>工作底稿</th>
+                    <th>上传人</th>
+                    <th>底稿复核状态</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {substWpRows.map(row => (
+                  {s2Rows.map(row => (
                     <tr key={row.id}>
-                      <td className="wp-name-cell">{row.name}</td>
-                      <td>{row.procedureId}</td>
-                      <td>{row.subType}</td>
-                      <td>{row.rmId}</td>
-                      <td>{row.mesp || '-'}</td>
-                      <td><span className="req-badge required">Required</span></td>
-                      <td>{row.kcwActivity}</td>
-                      <td>{row.wpTemplates.map(t => <span key={t} className="lang-tag">{t}</span>)}</td>
-                      <td><span className="status-dot not-selected"></span> Not Selected</td>
-                      <td><select className="migrate-select"><option>-- 选择语言 --</option></select></td>
+                      <td>{row.businessProcess}</td>
+                      <td className="wp-name-cell">{row.procedureName}</td>
+                      <td><span className={`type-badge ${typeClass(row.type)}`}>{row.type}</span></td>
+                      <td><span className="wps-sample-link">{row.sampleInfo} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17 17 7M9 7h8v8" /></svg></span></td>
+                      <td>{row.samplingFeature}</td>
+                      <td className="wps-num">{row.populationAmount}</td>
+                      <td>
+                        <SampleProgressCell row={row} onView={handleViewSampling} />
+                      </td>
+                      <td>
+                        {/* 底稿模版：一个可点击的下载链接，点击生成样例 Excel */}
+                        <button
+                          type="button"
+                          className="wps-tpl-link"
+                          title={`下载底稿模版（Excel）：${row.wpTemplate}`}
+                          onClick={() => handleDownloadTemplate(row)}
+                        >
+                          <span className="wps-tpl-icon"><ExcelIcon /></span>
+                          <span className="wps-tpl-name">{row.wpTemplate}</span>
+                          <svg className="wps-tpl-dl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M12 3v11" />
+                            <path d="m7.5 10 4.5 4.5 4.5-4.5" />
+                            <path d="M4 20h16" />
+                          </svg>
+                        </button>
+                      </td>
+                      <td>
+                        {row.workingPaper ? (
+                          <span className="wps-file-chip" data-kind={fileKind(row.workingPaper)}>
+                            <span className="wps-file-icon"><FileTypeIcon name={row.workingPaper} /></span>
+                            <span className="wps-file-name" title={row.workingPaper}>{row.workingPaper}</span>
+                            <button
+                              type="button"
+                              className="wps-file-del"
+                              title="删除该工作底稿"
+                              aria-label={`删除 ${row.workingPaper}`}
+                              onClick={() => handleRemoveWorkingPaper(row.id)}
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                                <path d="M5 5l14 14M19 5 5 19" />
+                              </svg>
+                            </button>
+                          </span>
+                        ) : (
+                          <button type="button" className="wps-mini-upload" onClick={() => handlePickWorkingPaper(row.id)}>上传</button>
+                        )}
+                      </td>
+                      <td className="wps-uploader">{row.uploader}</td>
+                      <td><span className={`review-badge ${reviewClass(row.reviewStatus)}`}>{row.reviewStatus}</span></td>
+                      <td>
+                        <div className="wps-action-chips">
+                          {row.actions.map(a => <span key={a} className="wps-action-chip">{a}</span>)}
+                        </div>
+                      </td>
                     </tr>
                   ))}
+                  {s2Rows.length === 0 && (
+                    <tr><td colSpan={12} className="wps-empty-cell">无匹配的实质性程序底稿</td></tr>
+                  )}
                 </tbody>
               </table>
-              </div>
-            )}
-          </div>
+            </div>
+
+            <WpsPagination
+              total={s2Filtered.length}
+              page={s2SafePage}
+              pageSize={s2PageSize}
+              onPage={setS2Page}
+              onPageSize={s => { setS2PageSize(s); setS2Page(1) }}
+            />
         </div>
       </div>
 
+      {/* 工作底稿上传用的隐藏 input，所有行共用 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="wps-file-input"
+        accept=".xlsx,.xls,.xlsm,.csv,.docx,.doc,.pdf"
+        onChange={handleWorkingPaperSelected}
+      />
     </div>
   )
 }

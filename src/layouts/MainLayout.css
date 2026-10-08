@@ -6,6 +6,7 @@
 
 .layout-right {
   flex: 1;
+  min-width: 0; /* allow shrinking below content min-content so inner tables scroll instead of overflowing the viewport */
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
@@ -21,6 +22,7 @@
 
 .main-content {
   flex: 1;
+  min-width: 0; /* same as .layout-right: keep the content column shrinkable */
   padding: 24px 32px 32px;
   max-width: 1440px;
   margin: 0 auto;
