@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import {
+  findProcedureItem,
+  findProcedureType,
+  procedureTypeIcon,
+  procedureTypeShortName,
+} from '../data/auditProcedures'
 import { downloadSampleWorkPaperTemplate } from '../utils/sampleExcel'
 import './WorkPaperStation.css'
 
@@ -12,6 +18,12 @@ interface WpRow {
   requiredType: 'Required' | 'Highly Rec.'
   linkedKcwActivity: string
   status: 'Not Selected' | 'Selected'
+}
+
+// 与 Audit Procedure 模块的关联：指向某个程序类型下的具体程序
+interface WpAuditProcedure {
+  typeKey: string   // ProcedureType 的 key/id
+  itemCode: string  // ProcedureItem 的 code
 }
 
 interface SubstWpRow {
@@ -32,7 +44,12 @@ interface SubstWpRow {
   kcwActivity: string
   preChecked: boolean
   actions: string[]
+  /** 对应的 Audit Procedure（用于跳转到程序卡片 / 明细） */
+  auditProcedure: WpAuditProcedure
 }
+
+/** 表体数据（不含跨模块关联），关联见下方 AUDIT_PROCEDURE_LINKS */
+type SubstWpRowSeed = Omit<SubstWpRow, 'auditProcedure'>
 
 // KCW File type — mirrors EngagementHub's KCwFile for cross-page consistency
 interface KcwFileOption {
@@ -50,7 +67,7 @@ const standardWpRows: WpRow[] = [
   { id: 'o1', name: 'Other Payables – Vouching', category: 'General Purpose', requiredType: 'Highly Rec.', linkedKcwActivity: 'kcw_act_cfdtbo', status: 'Not Selected' },
 ]
 
-const substWpRows: SubstWpRow[] = [
+const substWpRowSeeds: SubstWpRowSeed[] = [
   // 财务报告
   { id: 'r01', businessProcess: '财务报告', procedureName: 'Additional Personal Independence Requirements for CSA Audit Engagements', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '—', samplingDetail: '查看', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Indep_WP.docx', reviewStatus: '已复核', uploader: 'Huang lan (SH/AQPF)', rmId: 'RM_e56af2', kcwActivity: 'kcw_act_342b0', preChecked: true, actions: ['AFP'] },
   { id: 'r02', businessProcess: '财务报告', procedureName: 'Group Audit Instructions – Component Auditors', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Component', populationAmount: '—', samplingDetail: '12/64', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_c6633b', kcwActivity: 'kcw_act_4c38e', preChecked: true, actions: ['OAK'] },
@@ -83,6 +100,39 @@ const substWpRows: SubstWpRow[] = [
   { id: 'r21', businessProcess: '资金与融资', procedureName: 'Bank Balances – Confirmation', type: 'TOE', sampleInfo: 'sample', samplingFeature: 'Confirmation', populationAmount: '500,000.00', samplingDetail: '60/60', progress: 100, wpTemplate: 'Wp Temp', workingPaper: 'Bank_Conf.xlsx', reviewStatus: '已复核', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr001', kcwActivity: 'kcw_act_77001', preChecked: true, actions: ['OA Confirm'] },
   { id: 'r22', businessProcess: '资金与融资', procedureName: 'Borrowings – Existence & Obligations', type: 'WT', sampleInfo: 'sample', samplingFeature: 'N/A', populationAmount: '280,000.00', samplingDetail: '查看', progress: 60, wpTemplate: 'Wp Temp', workingPaper: '', reviewStatus: '复核中', uploader: 'Lu los (HZ/CP1)', rmId: 'RM_tr002', kcwActivity: 'kcw_act_77002', preChecked: true, actions: ['OA Review'] },
 ]
+
+// 行 → Audit Procedure 模块的对应关系（按业务实质手工关联的 demo 映射）
+const AUDIT_PROCEDURE_LINKS: Record<string, WpAuditProcedure> = {
+  r01: { typeKey: 'fsr', itemCode: 'FSR-001' },
+  r02: { typeKey: 'group-audit', itemCode: 'GA-001' },
+  r03: { typeKey: 'fsr', itemCode: 'FSR-002' },
+  r04: { typeKey: 'kdc-confirm', itemCode: 'KDC-F003' },
+  r05: { typeKey: 'credit-review', itemCode: 'CR-002' },
+  r06: { typeKey: 'vouching', itemCode: 'VO-001' },
+  r07: { typeKey: 'kdc-confirm', itemCode: 'KDC-F002' },
+  r08: { typeKey: 'credit-review', itemCode: 'CR-001' },
+  r09: { typeKey: 'vouching', itemCode: 'VO-003' },
+  r10: { typeKey: 'je-testing', itemCode: 'JE-003' },
+  r11: { typeKey: 'inventory-obs', itemCode: 'IO-001' },
+  r12: { typeKey: 'inventory-obs', itemCode: 'IO-003' },
+  r13: { typeKey: 'inventory-obs', itemCode: 'IO-002' },
+  r14: { typeKey: 'physical-attn', itemCode: 'PA-001' },
+  r15: { typeKey: 'physical-attn', itemCode: 'PA-002' },
+  r16: { typeKey: 'vouching', itemCode: 'VO-002' },
+  r17: { typeKey: 'fsr', itemCode: 'FSR-003' },
+  r18: { typeKey: 'group-audit', itemCode: 'GA-002' },
+  r19: { typeKey: 'vouching', itemCode: 'VO-004' },
+  r20: { typeKey: 'vouching', itemCode: 'VO-002' },
+  r21: { typeKey: 'kdc-cash', itemCode: 'KDC-C001' },
+  r22: { typeKey: 'kdc-cash', itemCode: 'KDC-C002' },
+}
+
+const DEFAULT_AUDIT_PROCEDURE: WpAuditProcedure = { typeKey: 'fsr', itemCode: 'FSR-001' }
+
+const substWpRows: SubstWpRow[] = substWpRowSeeds.map(seed => ({
+  ...seed,
+  auditProcedure: AUDIT_PROCEDURE_LINKS[seed.id] ?? DEFAULT_AUDIT_PROCEDURE,
+}))
 
 // KCW File demo data — mirrors EngagementHub's KCW File list.
 const DEMO_KCW_FILES_BY_ENGAGEMENT: Record<string, KcwFileOption[]> = {
@@ -287,8 +337,37 @@ function FileTypeIcon({ name }: { name: string }) {
   return <DocIcon />
 }
 
+// ===== 「审计程序」列 =====
+// 展示该行关联的 Audit Procedure 程序类型（短名 + 程序编号），点击跳转到程序明细
+function AuditProcedureCell({ row, onOpen }: { row: SubstWpRow; onOpen: (row: SubstWpRow) => void }) {
+  const type = findProcedureType(row.auditProcedure.typeKey)
+  if (!type) return <span className="wps-proc-empty">—</span>
+
+  const item = findProcedureItem(type, row.auditProcedure.itemCode)
+  const code = item?.code ?? row.auditProcedure.itemCode
+  return (
+    <button
+      type="button"
+      className="wps-proc-link"
+      title={`在 Audit Procedure 中查看「${type.label}」\n${code}${item ? ` ${item.name}` : ''}`}
+      onClick={() => onOpen(row)}
+    >
+      <span className="wps-proc-icon" style={{ background: `${type.color}1A`, color: type.color }}>
+        {procedureTypeIcon(type, 12)}
+      </span>
+      <span className="wps-proc-label">{procedureTypeShortName(type)}</span>
+      <span className="wps-proc-code">{code}</span>
+      <svg className="wps-proc-go" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7" />
+        <path d="M9 7h8v8" />
+      </svg>
+    </button>
+  )
+}
+
 function WorkPaperStation() {
-  const { engagementId } = useParams<{ clientId: string; engagementId: string }>()
+  const { clientId, engagementId } = useParams<{ clientId: string; engagementId: string }>()
+  const navigate = useNavigate()
 
   const kcwFileList: KcwFileOption[] = (engagementId && DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId])
     ? DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId]
@@ -352,6 +431,13 @@ function WorkPaperStation() {
   // 工作底稿：删除已上传的文件
   const handleRemoveWorkingPaper = (rowId: string) => {
     setS2Data(rows => rows.map(r => (r.id === rowId ? { ...r, workingPaper: '' } : r)))
+  }
+
+  // 审计程序：跳转到 Audit Procedure 模块，直接打开对应程序类型的明细并高亮该程序
+  const handleOpenProcedure = (row: SubstWpRow) => {
+    const { typeKey, itemCode } = row.auditProcedure
+    const query = new URLSearchParams({ type: typeKey, item: itemCode })
+    navigate(`/engagement/${clientId}/${engagementId}/procedures?${query.toString()}`)
   }
 
   // Reset page when search/pagesize changes
@@ -493,6 +579,7 @@ function WorkPaperStation() {
                     <th>抽样特征</th>
                     <th>总体金额</th>
                     <th>抽样详情 / 进度</th>
+                    <th>审计程序</th>
                     <th>底稿模板</th>
                     <th>工作底稿</th>
                     <th>上传人</th>
@@ -511,6 +598,9 @@ function WorkPaperStation() {
                       <td className="wps-num">{row.populationAmount}</td>
                       <td>
                         <SampleProgressCell row={row} onView={handleViewSampling} />
+                      </td>
+                      <td>
+                        <AuditProcedureCell row={row} onOpen={handleOpenProcedure} />
                       </td>
                       <td>
                         {/* 底稿模版：一个可点击的下载链接，点击生成样例 Excel */}
@@ -560,7 +650,7 @@ function WorkPaperStation() {
                     </tr>
                   ))}
                   {s2Rows.length === 0 && (
-                    <tr><td colSpan={12} className="wps-empty-cell">无匹配的实质性程序底稿</td></tr>
+                    <tr><td colSpan={13} className="wps-empty-cell">无匹配的实质性程序底稿</td></tr>
                   )}
                 </tbody>
               </table>

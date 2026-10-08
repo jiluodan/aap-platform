@@ -597,6 +597,74 @@
 /* 上传用的隐藏 input */
 .wps-file-input { display: none; }
 
+/* ===== 审计程序：跳转到 Audit Procedure 程序明细的链接 ===== */
+.wps-proc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  height: 26px;
+  padding: 0 6px 0 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text-primary, #0f172a);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.wps-proc-link:hover {
+  background: #f4f7fd;
+  border-color: #d3dff2;
+  box-shadow: 0 1px 3px rgba(0, 51, 141, 0.12);
+}
+.wps-proc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+.wps-proc-label {
+  max-width: 110px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.wps-proc-link:hover .wps-proc-label {
+  color: #00338d;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wps-proc-code {
+  font-family: 'Courier New', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #64748b;
+}
+.wps-proc-link:hover .wps-proc-code { color: #00338d; }
+/* 跳转箭头：hover / 键盘聚焦时才展开 */
+.wps-proc-go {
+  flex: none;
+  width: 0;
+  color: #00338d;
+  opacity: 0;
+  overflow: hidden;
+  transition: width 0.16s ease, opacity 0.16s ease, margin-left 0.16s ease;
+}
+.wps-proc-link:hover .wps-proc-go,
+.wps-proc-link:focus-visible .wps-proc-go {
+  width: 11px;
+  margin-left: 1px;
+  opacity: 1;
+}
+.wps-proc-link:focus-visible { outline: 2px solid #93c5fd; outline-offset: 1px; }
+.wps-proc-empty { color: var(--text-muted, #94a3b8); }
+
 /* ===== 底稿模版：可下载的 Excel 模版链接 ===== */
 .wps-tpl-link {
   display: inline-flex;
@@ -755,7 +823,7 @@
 }
 
 /* Wider substantive table for horizontal scroll */
-.wps-table.subst-table { min-width: 1400px; }
+.wps-table.subst-table { min-width: 1560px; }
 
 /* ===== KPI Strip (screenshot-style metrics) ===== */
 .wps-kpi-strip {

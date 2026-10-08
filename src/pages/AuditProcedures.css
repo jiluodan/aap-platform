@@ -543,6 +543,44 @@
   background: #e2e8f0;
 }
 
+/* 深链定位提示条 */
+.ap-locate-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: #eef5ff;
+  border-bottom: 1px solid #dbe8fb;
+  font-size: 10.5px;
+  color: #1e3a8a;
+}
+.ap-locate-note svg { flex: none; color: #00338D; }
+.ap-locate-note span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ap-locate-note b {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+}
+.ap-locate-clear {
+  flex: none;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid #c7d9f5;
+  background: #fff;
+  color: #00338D;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ap-locate-clear:hover { background: #00338D; border-color: #00338D; color: #fff; }
+
 /* Procedure List Table in Modal - Compact */
 .ap-proc-list {
   padding: 10px 14px 14px;
@@ -581,6 +619,19 @@
 }
 .ap-proc-row:last-child { border-bottom: none; }
 .ap-proc-row:hover { background: #fafbfc; border-radius: 5px; }
+
+/* 由其他页面深链定位到的明细行 */
+.ap-proc-row-focus {
+  background: #eef5ff;
+  border-radius: 5px;
+  box-shadow: inset 3px 0 0 #00338D;
+  animation: apFocusPulse 1.6s ease-out 2;
+}
+.ap-proc-row-focus:hover { background: #e6efff; }
+@keyframes apFocusPulse {
+  0%   { background: #d7e6ff; }
+  100% { background: #eef5ff; }
+}
 
 .ap-code-text {
   font-family: 'Courier New', monospace;
