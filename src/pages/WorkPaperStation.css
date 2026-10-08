@@ -6,6 +6,12 @@
   margin: 0 auto;
 }
 
+/* 共用主体容器：Engagement 层页面与 KCW File 层子模块复用同一套界面 */
+.wps-view {
+  display: block;
+  width: 100%;
+}
+
 /* ===== Title Row ===== */
 .wps-title-row {
   display: flex;

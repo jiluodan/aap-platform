@@ -150,6 +150,18 @@ const DEMO_KCW_FILES_BY_ENGAGEMENT: Record<string, KcwFileOption[]> = {
   ],
 }
 
+/** 按 engagement + KCW File id 查找 KCW File（供 KCW File 详情页展示「已绑定文件」用） */
+export function findKcwFileOption(
+  engagementId: string | undefined,
+  kcwId: string | undefined,
+): KcwFileOption | undefined {
+  if (!kcwId) return undefined
+  const list = (engagementId && DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId])
+    ? DEMO_KCW_FILES_BY_ENGAGEMENT[engagementId]
+    : DEMO_KCW_FILES_BY_ENGAGEMENT.default
+  return list.find(f => f.id === kcwId)
+}
+
 
 function WpsToolbar({
   search,
@@ -564,7 +576,21 @@ function AuditProcedureCell({ row, onOpen }: { row: SubstWpRow; onOpen: (row: Su
   )
 }
 
-function WorkPaperStation() {
+/**
+ * Work Paper Station 主体（KPI + Standard / Substantive 两个 Section）。
+ * 抽成独立组件，供 Engagement 层页面与 KCW File 层的 Work Paper Station 子模块共用，
+ * 保证两处界面始终一致。
+ *
+ * - `showKpi`：是否展示顶部统计卡片。KCW File 页面上无需重复展示，置为 false。
+ * - `showKcwSelector`：是否展示「Select the KCw file」下拉。KCW File 页面天然绑定当前 KCW File，置为 false。
+ */
+export function WorkPaperStationView({
+  showKpi = true,
+  showKcwSelector = true,
+}: {
+  showKpi?: boolean
+  showKcwSelector?: boolean
+} = {}) {
   const { clientId, engagementId } = useParams<{ clientId: string; engagementId: string }>()
   const navigate = useNavigate()
   const { lang } = useLanguage()
@@ -696,14 +722,11 @@ function WorkPaperStation() {
   const s2Rows = s2Filtered.slice((s2SafePage - 1) * s2PageSize, s2SafePage * s2PageSize)
 
   return (
-    <div className="wps-page animate-fade-in">
-      {/* Title Row */}
-      <div className="wps-title-row">
-        <h1 className="wps-title">Work Paper Station</h1>
-      </div>
-
-      {/* KPI Strip */}
-      <WpsKpiStrip total={wpTotal} uploaded={wpUploaded} prechecked={wpPrechecked} reviewed={wpReviewed} />
+    <div className="wps-view">
+      {/* KPI Strip —— KCW File 页面下不展示 */}
+      {showKpi && (
+        <WpsKpiStrip total={wpTotal} uploaded={wpUploaded} prechecked={wpPrechecked} reviewed={wpReviewed} />
+      )}
 
       {/* ============ Section 1: Standard Work Paper Templates ============ */}
       <div className="wps-section">
@@ -713,23 +736,26 @@ function WorkPaperStation() {
           </h2>
         </div>
 
-        {/* Select KCW file row — dynamically populated from current Engagement's KCW Files */}
-        <div className="wps-kcw-select-row">
-          <label>*Select the KCw file:</label>
-          <select className="wps-kcw-dropdown" value={selectedKcw} onChange={e => setSelectedKcw(e.target.value)}>
-            {kcwFileList.map(kf => (
-              <option key={kf.id} value={kf.id}>{kf.name}</option>
-            ))}
-          </select>
-          {(() => {
-            const current = kcwFileList.find(k => k.id === selectedKcw)
-            return current ? (
-              <span className="wps-opinion-link">
-                Type: <strong>{current.type}</strong> &middot; Status: <span className={`status-dot ${current.status === 'completed' ? 'selected' : 'not-selected'}`}></span> {current.status}
-              </span>
-            ) : null
-          })()}
-        </div>
+        {/* Select KCW file row — dynamically populated from current Engagement's KCW Files.
+            在 KCW File 页面下，工作底稿已天然关联当前 KCW File，无需再次选择，故整行隐藏。 */}
+        {showKcwSelector && (
+          <div className="wps-kcw-select-row">
+            <label>*Select the KCw file:</label>
+            <select className="wps-kcw-dropdown" value={selectedKcw} onChange={e => setSelectedKcw(e.target.value)}>
+              {kcwFileList.map(kf => (
+                <option key={kf.id} value={kf.id}>{kf.name}</option>
+              ))}
+            </select>
+            {(() => {
+              const current = kcwFileList.find(k => k.id === selectedKcw)
+              return current ? (
+                <span className="wps-opinion-link">
+                  Type: <strong>{current.type}</strong> &middot; Status: <span className={`status-dot ${current.status === 'completed' ? 'selected' : 'not-selected'}`}></span> {current.status}
+                </span>
+              ) : null
+            })()}
+          </div>
+        )}
 
         <div className="wps-info-note">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
@@ -922,6 +948,20 @@ function WorkPaperStation() {
         accept=".xlsx,.xls,.xlsm,.csv,.docx,.doc,.pdf"
         onChange={handleWorkingPaperSelected}
       />
+    </div>
+  )
+}
+
+/** Engagement 层的 Work Paper Station 页面：标题 + 共用主体 */
+function WorkPaperStation() {
+  return (
+    <div className="wps-page animate-fade-in">
+      {/* Title Row */}
+      <div className="wps-title-row">
+        <h1 className="wps-title">Work Paper Station</h1>
+      </div>
+
+      <WorkPaperStationView />
     </div>
   )
 }
