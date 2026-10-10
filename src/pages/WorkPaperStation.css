@@ -556,37 +556,50 @@
 .wps-tpl-link:hover .wps-tpl-dl { color: #107c41; opacity: 1; transform: translateY(1px); }
 .wps-tpl-link:focus-visible { outline: 2px solid #86efac; outline-offset: 1px; }
 
-/* ===== 工作底稿：已上传文件的 chip（hover 出现删除按钮） ===== */
-.wps-file-chip {
+/* ===== 工作底稿：已上传文件（文件链接样式，hover 出现删除按钮） ===== */
+.wps-file-link {
+  display: inline-flex;
+  align-items: center;
+  max-width: 190px;
+}
+/* 文件名本身是链接：默认带下划线，hover 加深并加浅色底 */
+.wps-file-open {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  max-width: 168px;
+  min-width: 0;
   height: 24px;
-  padding: 0 6px 0 5px;
-  background: #fff;
-  border: 1px solid #dde5f0;
+  padding: 0 5px 0 4px;
+  border: none;
+  background: transparent;
   border-radius: 6px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
-  color: #334155;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  color: #1d4ed8;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.wps-file-chip:hover {
-  background: #f8fafc;
-  border-color: #c7d4e8;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
-}
+.wps-file-open:hover { background: #eff6ff; color: #1e3a8a; }
+.wps-file-open:focus-visible { outline: 2px solid #93c5fd; outline-offset: 1px; }
 .wps-file-icon { display: inline-flex; flex: none; }
 .wps-file-name {
   min-width: 0;
-  max-width: 122px;
+  max-width: 132px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(29, 78, 216, 0.38);
 }
-.wps-file-chip[data-kind='excel'] .wps-file-name { color: #0f7a41; }
-.wps-file-chip[data-kind='word'] .wps-file-name { color: #21497f; }
+.wps-file-open:hover .wps-file-name { text-decoration-color: currentColor; }
+.wps-file-link[data-kind='excel'] .wps-file-open { color: #0f7a41; }
+.wps-file-link[data-kind='excel'] .wps-file-open:hover { background: #f1f8f4; color: #0b5c31; }
+.wps-file-link[data-kind='excel'] .wps-file-name { text-decoration-color: rgba(15, 122, 65, 0.38); }
+.wps-file-link[data-kind='word'] .wps-file-open { color: #21497f; }
+.wps-file-link[data-kind='word'] .wps-file-open:hover { background: #f1f5fb; color: #163461; }
+.wps-file-link[data-kind='word'] .wps-file-name { text-decoration-color: rgba(33, 73, 127, 0.38); }
 
 /* 删除按钮：默认收起，hover / 键盘聚焦时展开为「X」 */
 .wps-file-del {
@@ -607,8 +620,8 @@
   cursor: pointer;
   transition: width 0.16s ease, margin-left 0.16s ease, opacity 0.16s ease, color 0.16s ease, background 0.16s ease;
 }
-.wps-file-chip:hover .wps-file-del,
-.wps-file-chip:focus-within .wps-file-del {
+.wps-file-link:hover .wps-file-del,
+.wps-file-link:focus-within .wps-file-del {
   width: 15px;
   margin-left: 1px;
   opacity: 1;
@@ -616,8 +629,8 @@
   background: #e8eef6;
 }
 /* 悬停在「X」本身：转为红色，明确是删除动作 */
-.wps-file-chip .wps-file-del:hover,
-.wps-file-chip .wps-file-del:focus-visible {
+.wps-file-link .wps-file-del:hover,
+.wps-file-link .wps-file-del:focus-visible {
   color: #fff;
   background: #ef4444;
   outline: 2px solid #fecaca;
@@ -641,21 +654,70 @@
 /* Uploader */
 .wps-uploader { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
 
-/* Action chips */
-.wps-action-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.wps-action-chip {
+/* Actions 列的「审核」按钮：驱动文档审核状态 */
+.wps-doc-review-btn {
   display: inline-flex;
   align-items: center;
-  padding: 1px 7px;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid #c7d2fe;
   background: #eef2ff;
   color: #4338ca;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 600;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
   cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
-.wps-action-chip:hover { background: #e0e7ff; }
+.wps-doc-review-btn:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+  box-shadow: 0 1px 2px rgba(67, 56, 202, 0.12);
+}
+.wps-doc-review-btn:active { transform: translateY(1px); }
+.wps-doc-review-btn:focus-visible { outline: 2px solid #6366f1; outline-offset: 1px; }
+.wps-doc-review-btn.is-reviewed {
+  border-color: #86efac;
+  background: #dcfce7;
+  color: #15803d;
+}
+.wps-doc-review-btn.is-reviewed:hover {
+  background: #bbf7d0;
+  border-color: #4ade80;
+  box-shadow: 0 1px 2px rgba(21, 128, 61, 0.14);
+}
+.wps-dr-ico { flex: 0 0 auto; }
+
+/* 「审核后是否被修改」列 */
+.wps-modified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+.wps-modified-none {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.wps-mod-ico { flex: 0 0 auto; }
 
 /* Empty row */
 .wps-empty-cell {
@@ -666,7 +728,7 @@
 }
 
 /* Wider substantive table for horizontal scroll */
-.wps-table.subst-table { min-width: 1320px; }
+.wps-table.subst-table { min-width: 1560px; }
 
 /* ===== KPI Strip (screenshot-style metrics) ===== */
 .wps-kpi-strip {
@@ -856,3 +918,246 @@
 
 /* SAP type badge (additional to WT / TOE) */
 .type-badge.type-sap { background: #fce7f3; color: #be185d; }
+
+/* =====================================================================
+   Working Paper 上传弹窗（Unified File Pool View - Upload File）
+   结构：遮罩 + 弹窗（头部 / 内容 / 底部按钮）
+   ===================================================================== */
+.wps-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  animation: wps-modal-fade 0.18s ease;
+}
+@keyframes wps-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.wps-modal-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 660px;
+  max-width: 94vw;
+  max-height: 86vh;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24), 0 6px 20px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+  animation: wps-modal-rise 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes wps-modal-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wps-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eaeef4;
+}
+.wps-modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.wps-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.wps-modal-close:hover { background: #f1f5f9; color: #475569; }
+.wps-modal-close:focus-visible { outline: 2px solid #93c5fd; outline-offset: 1px; }
+
+.wps-modal-body {
+  padding: 16px 18px 18px;
+  overflow: auto;
+}
+
+/* 上传方式：单选 */
+.wps-approach { display: flex; align-items: flex-start; gap: 16px; }
+.wps-approach-label {
+  flex: none;
+  padding-top: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+}
+.wps-radio-group { display: flex; flex-direction: column; gap: 8px; }
+.wps-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #334155;
+  cursor: pointer;
+}
+.wps-radio input {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+/* 方式一：本机上传拖拽区 */
+.wps-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 34px 16px;
+  border: 1.5px dashed #7cb0e8;
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.wps-dropzone:hover { background: #f4f9ff; border-color: #3b82f6; }
+.wps-dropzone.is-drag {
+  background: #eef6ff;
+  border-color: #2563eb;
+  box-shadow: inset 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.wps-dropzone:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+.wps-dropzone-icon { color: #2563eb; }
+.wps-dropzone-text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+  word-break: break-all;
+}
+
+/* 方式二：cnDocs 目录树 */
+.wps-cndocs {
+  margin-top: 12px;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid #e6ebf2;
+  border-radius: 8px;
+  padding: 6px 4px;
+}
+.wps-cndocs-empty {
+  margin: 0;
+  padding: 18px 12px;
+  font-size: 12.5px;
+  color: var(--text-muted, #94a3b8);
+  text-align: center;
+}
+.wps-tree { margin: 0; padding: 0; list-style: none; }
+.wps-tree-item { margin: 0; }
+.wps-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding-right: 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+.wps-tree-row:hover { background: #f4f7fb; }
+.wps-tree-row.is-selected { background: #e8f1fe; }
+.wps-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.wps-tree-toggle:hover { color: #2563eb; border-color: #93c5fd; }
+.wps-tree-toggle.is-placeholder { border-color: transparent; background: transparent; cursor: default; }
+.wps-tree-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+  height: 26px;
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+}
+.wps-tree-label.is-folder { font-weight: 600; color: #1e293b; }
+.wps-tree-label.is-folder svg { color: #f0b429; }
+.wps-tree-label.is-file { color: #334155; }
+.wps-tree-label > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.wps-tree-label:focus-visible { outline: 2px solid #93c5fd; outline-offset: 1px; }
+.wps-tree-row.is-selected .wps-tree-label.is-file { color: #1d4ed8; font-weight: 700; }
+
+/* 底部按钮 */
+.wps-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid #eaeef4;
+  background: #fff;
+}
+.wps-btn {
+  min-width: 78px;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid #d5dde8;
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.wps-btn:hover { border-color: #b9c6d8; background: #f8fafc; }
+.wps-btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 1px; }
+.wps-btn-primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+.wps-btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.wps-btn-primary:disabled {
+  border-color: #e2e8f0;
+  background: #f1f5f9;
+  color: #a8b4c4;
+  cursor: not-allowed;
+  box-shadow: none;
+}

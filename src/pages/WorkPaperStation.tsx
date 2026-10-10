@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ChangeEvent } from 'react'
+import type { ChangeEvent, DragEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   findProcedureItem,
@@ -33,8 +34,11 @@ type SamplingMethod = 'KSP' | 'MUS' | 'N/A'
 
 const SAMPLING_METHODS: SamplingMethod[] = ['KSP', 'MUS', 'N/A']
 
-/** 底稿状态（Status 列）：进行中 / 待复核 / 复核完成 */
+/** KCW active screen 状态（KCW active screen Status 列）：进行中 / 待复核 / 复核完成 */
 type ReviewStatus = 'In Progress' | 'Pending for review' | 'Review Completed'
+
+/** 文档审核状态（Doc Review Status 列）：由 Actions 列的审核按钮驱动 */
+type DocReviewStatus = 'Pending review' | 'Reviewed'
 
 interface SubstWpRow {
   id: string
@@ -46,7 +50,15 @@ interface SubstWpRow {
   sampleCount: number | null
   wpTemplate: string
   workingPaper: string
+  /** KCW active screen Status */
   reviewStatus: ReviewStatus
+  /** 文档审核状态：由 Actions 列的审核按钮控制 */
+  docReviewStatus: DocReviewStatus
+  /**
+   * 文档在「审核完成」之后是否又被修改过。
+   * 审核之前的修改不记录；审核按钮点击（完成审核）时清零。
+   */
+  modifiedAfterReview: boolean
   uploader: string
   rmId: string
   kcwActivity: string
@@ -56,8 +68,8 @@ interface SubstWpRow {
   auditProcedure: WpAuditProcedure
 }
 
-/** 表体数据（不含跨模块关联），关联见下方 AUDIT_PROCEDURE_LINKS */
-type SubstWpRowSeed = Omit<SubstWpRow, 'auditProcedure'>
+/** 表体数据（不含跨模块关联与运行时状态），关联见下方 AUDIT_PROCEDURE_LINKS */
+type SubstWpRowSeed = Omit<SubstWpRow, 'auditProcedure' | 'docReviewStatus' | 'modifiedAfterReview'>
 
 // KCW File type — mirrors EngagementHub's KCwFile for cross-page consistency
 interface KcwFileOption {
@@ -137,9 +149,15 @@ const AUDIT_PROCEDURE_LINKS: Record<string, WpAuditProcedure> = {
 
 const DEFAULT_AUDIT_PROCEDURE: WpAuditProcedure = { typeKey: 'fsr', itemCode: 'FSR-001' }
 
+// 文档审核状态为运行时状态（由 Actions 列的审核按钮驱动）：
+// 演示初始值取「Review Completed 的底稿视为已完成文档审核」，其余为待审核。
+const DEMO_MODIFIED_AFTER_REVIEW = new Set<string>(['r01'])
+
 const substWpRows: SubstWpRow[] = substWpRowSeeds.map(seed => ({
   ...seed,
   auditProcedure: AUDIT_PROCEDURE_LINKS[seed.id] ?? DEFAULT_AUDIT_PROCEDURE,
+  docReviewStatus: seed.reviewStatus === 'Review Completed' ? 'Reviewed' : 'Pending review',
+  modifiedAfterReview: DEMO_MODIFIED_AFTER_REVIEW.has(seed.id),
 }))
 
 // KCW File demo data — mirrors EngagementHub's KCW File list.
@@ -245,11 +263,27 @@ interface WpsCopy {
   colType: string
   colSamplingMethod: string
   colNoOfSamples: string
-  colAuditProcedure: string
+  colRelatedSystem: string
   colWpTemplate: string
   colWorkingPaper: string
   colUploader: string
+  /** KCW active screen Status 列 */
+  colKcwActivityStatus: string
+  /** 文档审核状态列 */
+  colDocReviewStatus: string
+  /** 「审核后是否被修改」列 */
+  colModifiedAfterReview: string
   colActions: string
+  /** Actions 列：触发文档审核 */
+  docReviewDo: string
+  /** Actions 列：已完成审核（再次点击可撤销） */
+  docReviewDone: string
+  docReviewTitle: string
+  docReviewUndoTitle: string
+  docReviewAria: (name: string) => string
+  /** 「审核后修改」列：未修改时的占位文案 */
+  modifiedNo: string
+  modifiedYes: string
   s1Note: string
   s1Search: string
   s1Empty: string
@@ -263,6 +297,19 @@ interface WpsCopy {
   removeWpAria: (name: string) => string
   downloadTplTitle: (name: string) => string
   openProcedureTitle: (label: string, code: string, itemName: string) => string
+  /** 已上传底稿：文件链接点击打开 */
+  openWpTitle: (name: string) => string
+  /** 上传弹窗：标题 */
+  uploadModalTitle: string
+  uploadApproach: string
+  approachOwnDevice: string
+  approachCnDocs: string
+  dropHint: string
+  dropHintHasFile: (name: string) => string
+  cnDocsEmpty: string
+  toggleFolderAria: (name: string) => string
+  modalSubmit: string
+  modalCancel: string
 }
 
 const WPS_COPY: Record<Lang, WpsCopy> = {
@@ -297,11 +344,21 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     colType: '类型',
     colSamplingMethod: '抽样方法',
     colNoOfSamples: '样本量',
-    colAuditProcedure: '审计程序',
+    colRelatedSystem: '关联系统',
     colWpTemplate: '底稿模板',
     colWorkingPaper: '工作底稿',
     colUploader: '上传人',
+    colKcwActivityStatus: 'KCW 活动页面状态',
+    colDocReviewStatus: '文档审核状态',
+    colModifiedAfterReview: '审核后是否被修改',
     colActions: '操作',
+    docReviewDo: '审核',
+    docReviewDone: '已审核',
+    docReviewTitle: '将该文档标记为已审核',
+    docReviewUndoTitle: '撤销审核，回到「待审核」',
+    docReviewAria: n => `审核文档「${n}」`,
+    modifiedNo: '否',
+    modifiedYes: '是',
     s1Note: '系统将筛选出 Kcw Opinion Profile 中适用的审计计准则 / 工作底稿 / 实体类型/是否那个逻辑，与您管理范围的 Engagement 属性匹配则展示关联匹配。',
     s1Search: '搜索底稿名称、KCw Activity',
     s1Empty: '无匹配的底稿模板',
@@ -315,6 +372,17 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     removeWpAria: n => `删除 ${n}`,
     downloadTplTitle: n => `下载底稿模板（Excel）：${n}`,
     openProcedureTitle: (label, code, itemName) => `在 Audit Procedure 中查看「${label}」\n${code}${itemName}`,
+    openWpTitle: n => `打开工作底稿：${n}`,
+    uploadModalTitle: '统一文件池视图 - 上传文件',
+    uploadApproach: '上传方式：',
+    approachOwnDevice: '从我的设备上传文件',
+    approachCnDocs: '文件已在 Engagement 的 cnDocs 中',
+    dropHint: '点击或拖拽文件到此区域上传',
+    dropHintHasFile: n => `已选择文件：${n}`,
+    cnDocsEmpty: '该目录下暂无文件',
+    toggleFolderAria: n => `展开 / 收起「${n}」`,
+    modalSubmit: '提交',
+    modalCancel: '取消',
   },
   en: {
     kpiTotal: 'Substantive Procedures',
@@ -347,11 +415,21 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     colType: 'Type',
     colSamplingMethod: 'Sampling Method',
     colNoOfSamples: 'No. of samples',
-    colAuditProcedure: 'Audit Procedure',
+    colRelatedSystem: 'Related system',
     colWpTemplate: 'WP Template',
     colWorkingPaper: 'Working Paper',
     colUploader: 'Uploader',
+    colKcwActivityStatus: 'KCW active screen Status',
+    colDocReviewStatus: 'Doc Review Status',
+    colModifiedAfterReview: 'Modified after review',
     colActions: 'Actions',
+    docReviewDo: 'Review',
+    docReviewDone: 'Reviewed',
+    docReviewTitle: 'Mark this document as reviewed',
+    docReviewUndoTitle: 'Revert to "Pending review"',
+    docReviewAria: n => `Review document ${n}`,
+    modifiedNo: 'No',
+    modifiedYes: 'Yes',
     s1Note: 'The system filters the applicable auditing standards / work papers / entity types from the KCw Opinion Profile and shows the linked matches against the attributes of engagements within your management scope.',
     s1Search: 'Search work paper name, KCw Activity',
     s1Empty: 'No matching work paper templates',
@@ -365,6 +443,17 @@ const WPS_COPY: Record<Lang, WpsCopy> = {
     removeWpAria: n => `Remove ${n}`,
     downloadTplTitle: n => `Download WP template (Excel): ${n}`,
     openProcedureTitle: (label, code, itemName) => `Open in Audit Procedure — "${label}"\n${code}${itemName}`,
+    openWpTitle: n => `Open work paper: ${n}`,
+    uploadModalTitle: 'Unified File Pool View - Upload File',
+    uploadApproach: 'Upload Approach:',
+    approachOwnDevice: 'I will upload file from my own device',
+    approachCnDocs: "The file is already in the engagement's cnDocs",
+    dropHint: 'Click or drag file to this area to upload',
+    dropHintHasFile: n => `Selected file: ${n}`,
+    cnDocsEmpty: 'No file in this folder',
+    toggleFolderAria: n => `Expand / collapse "${n}"`,
+    modalSubmit: 'Submit',
+    modalCancel: 'Cancel',
   },
 }
 
@@ -386,16 +475,29 @@ const BUSINESS_PROCESS_EN: Record<string, string> = {
   '资金与融资': 'Treasury & Financing',
 }
 
-// Status 列：数值即英文状态本身，中文界面下映射为中文名称
+// KCW active screen Status 列：数值即英文状态本身，中文界面下映射为中文名称
 const REVIEW_STATUS_ZH: Record<ReviewStatus, string> = {
   'In Progress': '进行中',
   'Pending for review': '待复核',
   'Review Completed': '复核完成',
 }
 
+// 文档审核状态列：同上
+const DOC_REVIEW_STATUS_ZH: Record<DocReviewStatus, string> = {
+  'Pending review': '待审核',
+  'Reviewed': '已审核',
+}
+
 const businessProcessLabel = (v: string, lang: Lang) => (lang === 'zh' ? v : BUSINESS_PROCESS_EN[v] || v)
 
 const reviewStatusLabel = (s: ReviewStatus, lang: Lang) => (lang === 'zh' ? REVIEW_STATUS_ZH[s] : s)
+
+const docReviewStatusLabel = (s: DocReviewStatus, lang: Lang) => (lang === 'zh' ? DOC_REVIEW_STATUS_ZH[s] : s)
+
+/** 文档审核状态徽标配色：已审核=绿，待审核=灰 */
+function docReviewClass(s: DocReviewStatus) {
+  return s === 'Reviewed' ? 'done' : 'todo'
+}
 
 // 「抽样方法 / 样本量」两列：抽样方法为下拉（KSP / MUS / N/A），
 // 选 N/A 时样本量不可填，该单元格直接显示 N/A
@@ -548,6 +650,177 @@ function FileTypeIcon({ name }: { name: string }) {
   return <DocIcon />
 }
 
+/**
+ * 已上传底稿的「文件链接」点击行为。
+ * 本演示没有真实文件存储，按文件名生成并下载一个同名占位文件，
+ * 保证链接可点击且有可验证的反馈。
+ */
+function downloadWorkingPaper(fileName: string) {
+  const blob = new Blob([`Work paper: ${fileName}\n`], { type: 'application/octet-stream' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// ===== 上传弹窗：「文件已在 Engagement 的 cnDocs 中」用的演示目录树 =====
+interface CnDocsNode {
+  id: string
+  name: string
+  type: 'folder' | 'file'
+  children?: CnDocsNode[]
+}
+
+const CNDOCS_TREE: CnDocsNode[] = [
+  {
+    id: 'd-tests', name: 'tests', type: 'folder', children: [
+      { id: 'f-tests-1', name: 'Substantive_Test_Summary.xlsx', type: 'file' },
+      { id: 'f-tests-2', name: 'Walkthrough_Notes.docx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-meetings', name: '03 Meetings & BOD', type: 'folder', children: [
+      {
+        id: 'd-minutes', name: 'Minutes', type: 'folder', children: [
+          { id: 'f-minutes-1', name: 'BOD_Minutes_2024.docx', type: 'file' },
+        ],
+      },
+      { id: 'f-meetings-1', name: 'Meeting_Agenda.docx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-kdc', name: '10 Work with KDC - PP&I', type: 'folder', children: [
+      { id: 'f-kdc-1', name: 'KDC_WorkPaper.xlsx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-admin', name: '01 Administration', type: 'folder', children: [
+      { id: 'f-admin-1', name: 'Engagement_Letter.pdf', type: 'file' },
+      { id: 'f-admin-2', name: 'Independence_Checklist.xlsx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-pbc', name: '06 PBC', type: 'folder', children: [
+      { id: 'f-pbc-1', name: 'PBC_List_Round2.xlsx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-rollforward', name: '09 Roll-forward folder', type: 'folder', children: [
+      { id: 'f-rollforward-1', name: 'RF_Trial_Balance.xlsx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-presstest', name: 'PressTest', type: 'folder', children: [
+      { id: 'f-presstest-1', name: 'PressTest_Result.xlsx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-stocktake', name: '08 Stocktake', type: 'folder', children: [
+      { id: 'f-stocktake-1', name: 'Stocktake_Count_Sheet.xlsx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-forms', name: 'Forms', type: 'folder', children: [
+      { id: 'f-forms-1', name: 'Confirmation_Form.docx', type: 'file' },
+    ],
+  },
+  {
+    id: 'd-group', name: '04 Group reporting', type: 'folder', children: [
+      { id: 'f-group-1', name: 'Group_Package.xlsx', type: 'file' },
+    ],
+  },
+]
+
+/** cnDocs 目录树：文件夹可展开，文件可被选中作为上传来源 */
+function CnDocsTree({
+  nodes,
+  depth = 0,
+  expanded,
+  selectedId,
+  onToggle,
+  onSelect,
+  c,
+}: {
+  nodes: CnDocsNode[]
+  depth?: number
+  expanded: string[]
+  selectedId: string | null
+  onToggle: (id: string) => void
+  onSelect: (node: CnDocsNode) => void
+  c: WpsCopy
+}) {
+  return (
+    <ul className="wps-tree" role={depth === 0 ? 'tree' : 'group'}>
+      {nodes.map(node => {
+        const isFolder = node.type === 'folder'
+        const isOpen = expanded.includes(node.id)
+        return (
+          <li key={node.id} className="wps-tree-item" role="treeitem" aria-expanded={isFolder ? isOpen : undefined}>
+            <div
+              className={`wps-tree-row${selectedId === node.id ? ' is-selected' : ''}`}
+              style={{ paddingLeft: 6 + depth * 16 }}
+            >
+              {isFolder ? (
+                <button
+                  type="button"
+                  className="wps-tree-toggle"
+                  title={c.toggleFolderAria(node.name)}
+                  aria-label={c.toggleFolderAria(node.name)}
+                  onClick={() => onToggle(node.id)}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                    <path d="M9 18V6l9 6z" transform={isOpen ? 'rotate(90 12 12)' : undefined} />
+                  </svg>
+                </button>
+              ) : (
+                <span className="wps-tree-toggle is-placeholder" aria-hidden="true" />
+              )}
+
+              {isFolder ? (
+                <button
+                  type="button"
+                  className="wps-tree-label is-folder"
+                  onClick={() => onToggle(node.id)}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 7a2 2 0 0 1 2-2h3.6l1.7 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  </svg>
+                  <span>{node.name}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="wps-tree-label is-file"
+                  onClick={() => onSelect(node)}
+                >
+                  <span className="wps-file-icon"><FileTypeIcon name={node.name} /></span>
+                  <span>{node.name}</span>
+                </button>
+              )}
+            </div>
+
+            {isFolder && isOpen && node.children && node.children.length > 0 && (
+              <CnDocsTree
+                nodes={node.children}
+                depth={depth + 1}
+                expanded={expanded}
+                selectedId={selectedId}
+                onToggle={onToggle}
+                onSelect={onSelect}
+                c={c}
+              />
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 // ===== 「审计程序」列 =====
 // 展示该行关联的 Audit Procedure 程序类型（短名 + 程序编号），点击跳转到程序明细
 function AuditProcedureCell({ row, onOpen }: { row: SubstWpRow; onOpen: (row: SubstWpRow) => void }) {
@@ -606,7 +879,17 @@ export function WorkPaperStationView({
   // 第 2 节表格数据：工作底稿的上传 / 删除都维护在本地状态里
   const [s2Data, setS2Data] = useState<SubstWpRow[]>(substWpRows)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const pendingRowRef = useRef<string | null>(null)
+
+  // 上传弹窗（Working Paper 列的 Upload）：open 时记录目标行，Submit 时才写回表格
+  const [uploadRowId, setUploadRowId] = useState<string | null>(null)
+  /** '' 表示尚未选择上传方式（此时不展示下方面板，Submit 置灰） */
+  const [uploadApproach, setUploadApproach] = useState<'' | 'device' | 'cndocs'>('')
+  /** 待提交的文件名：来自本机选择或 cnDocs 选中 */
+  const [uploadFileName, setUploadFileName] = useState('')
+  const [dragActive, setDragActive] = useState(false)
+  const [expandedFolders, setExpandedFolders] = useState<string[]>([])
+  const [pickedCnDocId, setPickedCnDocId] = useState<string | null>(null)
+  const uploadModalOpen = uploadRowId !== null
 
   // KPI inputs (derived from substantive procedure rows)
   const wpTotal = s2Data.length
@@ -639,6 +922,21 @@ export function WorkPaperStationView({
     setS2Data(rows => rows.map(r => (r.id === rowId ? { ...r, sampleCount: value } : r)))
   }
 
+  /**
+   * 文档审核：由 Actions 列的审核按钮驱动。
+   * 审核完成的那一刻视为「未被再次修改」，因此把审核后修改标记清零；
+   * 撤销审核后同样清零（审核之前的修改不记录）。
+   */
+  const handleToggleDocReview = (rowId: string) => {
+    setS2Data(rows => rows.map(r => (r.id === rowId
+      ? {
+          ...r,
+          docReviewStatus: r.docReviewStatus === 'Reviewed' ? 'Pending review' : 'Reviewed',
+          modifiedAfterReview: false,
+        }
+      : r)))
+  }
+
   // 底稿模版：点击即生成并下载一份样例 Excel
   const handleDownloadTemplate = (row: SubstWpRow) => {
     downloadSampleWorkPaperTemplate({
@@ -651,25 +949,89 @@ export function WorkPaperStationView({
     })
   }
 
-  // 工作底稿：上传（借用同一个隐藏 input，记录当前操作的行）
-  const handlePickWorkingPaper = (rowId: string) => {
-    pendingRowRef.current = rowId
-    fileInputRef.current?.click()
+  // ===== 工作底稿上传弹窗 =====
+
+  /** 打开上传弹窗：每次都重置为「未选择上传方式、无文件」的初始态 */
+  const openUploadModal = (rowId: string) => {
+    setUploadRowId(rowId)
+    setUploadApproach('')
+    setUploadFileName('')
+    setDragActive(false)
+    setExpandedFolders([])
+    setPickedCnDocId(null)
+  }
+
+  const closeUploadModal = () => {
+    setUploadRowId(null)
+    setDragActive(false)
+  }
+
+  /** 选择上传方式：切换时清掉上一种方式选中的文件 */
+  const handleApproachChange = (approach: 'device' | 'cndocs') => {
+    setUploadApproach(approach)
+    setUploadFileName('')
+    setPickedCnDocId(null)
+  }
+
+  // 方式一：本机上传。点击拖拽区打开系统文件选择框，选中后先回填文件名，点 Submit 才写回表格
+  const handlePickLocalFile = () => fileInputRef.current?.click()
+
+  const acceptLocalFile = (file: File | undefined) => {
+    if (file) setUploadFileName(file.name)
   }
 
   const handleWorkingPaperSelected = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    const rowId = pendingRowRef.current
-    if (file && rowId) {
-      setS2Data(rows => rows.map(r => (r.id === rowId ? { ...r, workingPaper: file.name } : r)))
-    }
+    acceptLocalFile(e.target.files?.[0])
     e.target.value = '' // 允许重复选择同一个文件
-    pendingRowRef.current = null
   }
 
-  // 工作底稿：删除已上传的文件
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setDragActive(false)
+    acceptLocalFile(e.dataTransfer.files?.[0])
+  }
+
+  // 方式二：从 cnDocs 目录树中选一个文件
+  const toggleFolder = (id: string) =>
+    setExpandedFolders(ids => (ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]))
+
+  const handleSelectCnDoc = (node: CnDocsNode) => {
+    setPickedCnDocId(node.id)
+    setUploadFileName(node.name)
+  }
+
+  const handleSubmitUpload = () => {
+    if (!uploadRowId || !uploadFileName.trim()) return
+    const rowId = uploadRowId
+    const fileName = uploadFileName.trim()
+    // 文档若已审核，则上传新版本视为「审核后被修改」；审核之前的修改不记录
+    setS2Data(rows => rows.map(r => (r.id === rowId
+      ? {
+          ...r,
+          workingPaper: fileName,
+          modifiedAfterReview: r.modifiedAfterReview || r.docReviewStatus === 'Reviewed',
+        }
+      : r)))
+    closeUploadModal()
+  }
+
+  // Esc 关闭上传弹窗
+  useEffect(() => {
+    if (!uploadModalOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeUploadModal() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [uploadModalOpen])
+
+  // 工作底稿：删除已上传的文件（已审核后删除同样算「审核后被修改」）
   const handleRemoveWorkingPaper = (rowId: string) => {
-    setS2Data(rows => rows.map(r => (r.id === rowId ? { ...r, workingPaper: '' } : r)))
+    setS2Data(rows => rows.map(r => (r.id === rowId
+      ? {
+          ...r,
+          workingPaper: '',
+          modifiedAfterReview: r.modifiedAfterReview || r.docReviewStatus === 'Reviewed',
+        }
+      : r)))
   }
 
   // 审计程序：跳转到 Audit Procedure 模块，直接打开对应程序类型的明细并高亮该程序
@@ -854,11 +1216,13 @@ export function WorkPaperStationView({
                     <th>{c.colType}</th>
                     <th>{c.colSamplingMethod}</th>
                     <th>{c.colNoOfSamples}</th>
-                    <th>{c.colAuditProcedure}</th>
+                    <th>{c.colRelatedSystem}</th>
                     <th>{c.colWpTemplate}</th>
                     <th>{c.colWorkingPaper}</th>
                     <th>{c.colUploader}</th>
-                    <th>{c.colStatus}</th>
+                    <th>{c.colKcwActivityStatus}</th>
+                    <th>{c.colDocReviewStatus}</th>
+                    <th>{c.colModifiedAfterReview}</th>
                     <th>{c.colActions}</th>
                   </tr>
                 </thead>
@@ -896,9 +1260,17 @@ export function WorkPaperStationView({
                       </td>
                       <td>
                         {row.workingPaper ? (
-                          <span className="wps-file-chip" data-kind={fileKind(row.workingPaper)}>
-                            <span className="wps-file-icon"><FileTypeIcon name={row.workingPaper} /></span>
-                            <span className="wps-file-name" title={row.workingPaper}>{row.workingPaper}</span>
+                          <span className="wps-file-link" data-kind={fileKind(row.workingPaper)}>
+                            {/* 文件名本身即链接：点击打开底稿 */}
+                            <button
+                              type="button"
+                              className="wps-file-open"
+                              title={c.openWpTitle(row.workingPaper)}
+                              onClick={() => downloadWorkingPaper(row.workingPaper)}
+                            >
+                              <span className="wps-file-icon"><FileTypeIcon name={row.workingPaper} /></span>
+                              <span className="wps-file-name">{row.workingPaper}</span>
+                            </button>
                             <button
                               type="button"
                               className="wps-file-del"
@@ -912,20 +1284,50 @@ export function WorkPaperStationView({
                             </button>
                           </span>
                         ) : (
-                          <button type="button" className="wps-mini-upload" onClick={() => handlePickWorkingPaper(row.id)}>{c.upload}</button>
+                          <button type="button" className="wps-mini-upload" onClick={() => openUploadModal(row.id)}>{c.upload}</button>
                         )}
                       </td>
                       <td className="wps-uploader">{row.uploader}</td>
+                      {/* KCW active screen Status */}
                       <td><span className={`review-badge ${reviewClass(row.reviewStatus)}`}>{reviewStatusLabel(row.reviewStatus, lang)}</span></td>
+                      {/* Doc Review Status —— 由 Actions 列的审核按钮驱动 */}
                       <td>
-                        <div className="wps-action-chips">
-                          {row.actions.map(a => <span key={a} className="wps-action-chip">{a}</span>)}
-                        </div>
+                        <span className={`review-badge ${docReviewClass(row.docReviewStatus)}`}>
+                          {docReviewStatusLabel(row.docReviewStatus, lang)}
+                        </span>
+                      </td>
+                      {/* 文档审核完成后是否又被修改：仅用 YES / NO + 图标表达 */}
+                      <td>
+                        {row.modifiedAfterReview ? (
+                          <span className="wps-modified-badge" title={`${c.colModifiedAfterReview}: ${c.modifiedYes}`}>
+                            <svg className="wps-mod-ico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /></svg>
+                            {c.modifiedYes}
+                          </span>
+                        ) : (
+                          <span className="wps-modified-none" title={`${c.colModifiedAfterReview}: ${c.modifiedNo}`}>
+                            <svg className="wps-mod-ico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                            {c.modifiedNo}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`wps-doc-review-btn ${row.docReviewStatus === 'Reviewed' ? 'is-reviewed' : ''}`}
+                          title={row.docReviewStatus === 'Reviewed' ? c.docReviewUndoTitle : c.docReviewTitle}
+                          aria-label={c.docReviewAria(row.procedureName)}
+                          onClick={() => handleToggleDocReview(row.id)}
+                        >
+                          {row.docReviewStatus === 'Reviewed' ? (
+                            <svg className="wps-dr-ico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                          ) : null}
+                          {row.docReviewStatus === 'Reviewed' ? c.docReviewDone : c.docReviewDo}
+                        </button>
                       </td>
                     </tr>
                   ))}
                   {s2Rows.length === 0 && (
-                    <tr><td colSpan={11} className="wps-empty-cell">{c.s2Empty}</td></tr>
+                    <tr><td colSpan={13} className="wps-empty-cell">{c.s2Empty}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -940,6 +1342,112 @@ export function WorkPaperStationView({
             />
         </div>
       </div>
+
+      {/* ===== 上传弹窗：Unified File Pool View - Upload File =====
+          用 Portal 挂到 body，避免祖先元素的 transform / overflow 影响遮罩定位 */}
+      {uploadModalOpen && createPortal(
+        <div className="wps-modal-overlay" onClick={closeUploadModal}>
+          <div
+            className="wps-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={c.uploadModalTitle}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="wps-modal-header">
+              <h3>{c.uploadModalTitle}</h3>
+              <button type="button" className="wps-modal-close" aria-label={c.modalCancel} onClick={closeUploadModal}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M5 5l14 14M19 5 5 19" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="wps-modal-body">
+              {/* 第一步：选择上传方式（未选择时不展示下方面板，Submit 置灰） */}
+              <div className="wps-approach">
+                <span className="wps-approach-label">{c.uploadApproach}</span>
+                <div className="wps-radio-group">
+                  <label className="wps-radio">
+                    <input
+                      type="radio"
+                      name="wps-upload-approach"
+                      checked={uploadApproach === 'device'}
+                      onChange={() => handleApproachChange('device')}
+                    />
+                    <span>{c.approachOwnDevice}</span>
+                  </label>
+                  <label className="wps-radio">
+                    <input
+                      type="radio"
+                      name="wps-upload-approach"
+                      checked={uploadApproach === 'cndocs'}
+                      onChange={() => handleApproachChange('cndocs')}
+                    />
+                    <span>{c.approachCnDocs}</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* 方式一：本机上传 —— 点击或拖拽到该区域 */}
+              {uploadApproach === 'device' && (
+                <div
+                  className={`wps-dropzone${dragActive ? ' is-drag' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={handlePickLocalFile}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePickLocalFile() }
+                  }}
+                  onDragOver={e => { e.preventDefault(); setDragActive(true) }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={handleDrop}
+                >
+                  <svg className="wps-dropzone-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 8a2 2 0 0 1 2-2h3.6l1.7 2H19a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <path d="M12 17v-5" />
+                    <path d="m9.6 14.4 2.4-2.4 2.4 2.4" />
+                  </svg>
+                  <p className="wps-dropzone-text">
+                    {uploadFileName ? c.dropHintHasFile(uploadFileName) : c.dropHint}
+                  </p>
+                </div>
+              )}
+
+              {/* 方式二：文件已在 cnDocs 中 —— 从目录树里选一个文件 */}
+              {uploadApproach === 'cndocs' && (
+                <div className="wps-cndocs">
+                  {CNDOCS_TREE.length === 0 ? (
+                    <p className="wps-cndocs-empty">{c.cnDocsEmpty}</p>
+                  ) : (
+                    <CnDocsTree
+                      nodes={CNDOCS_TREE}
+                      expanded={expandedFolders}
+                      selectedId={pickedCnDocId}
+                      onToggle={toggleFolder}
+                      onSelect={handleSelectCnDoc}
+                      c={c}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="wps-modal-footer">
+              <button
+                type="button"
+                className="wps-btn wps-btn-primary"
+                disabled={!uploadFileName.trim()}
+                onClick={handleSubmitUpload}
+              >
+                {c.modalSubmit}
+              </button>
+              <button type="button" className="wps-btn" onClick={closeUploadModal}>{c.modalCancel}</button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* 工作底稿上传用的隐藏 input，所有行共用 */}
       <input
